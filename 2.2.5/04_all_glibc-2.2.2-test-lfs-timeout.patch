@@ -1,0 +1,13 @@
+fixes a test that will timeout due to ReiserFS' slow handling of sparse files
+
+--- io/test-lfs.c
++++ io/test-lfs.c
+@@ -34,7 +34,7 @@
+ #define PREPARE do_prepare
+ 
+ /* We might need a bit longer timeout.  */
+-#define TIMEOUT 20 /* sec */
++#define TIMEOUT 120 /* sec */
+ 
+ /* This defines the `main' function and some more.  */
+ #include <test-skeleton.c>
