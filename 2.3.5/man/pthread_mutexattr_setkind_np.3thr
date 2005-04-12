@@ -1,0 +1,50 @@
+.TH PTHREAD_MUTEXATTR_SETKIND_NP 3 LinuxThreads
+
+
+.SH NAME
+pthread_mutexattr_setkind_np, pthread_mutexattr_getkind_np \- deprecated mutex creation attributes
+
+.SH SYNOPSIS
+.B #include <pthread.h>
+
+.BI "int pthread_mutexattr_setkind_np(pthread_mutexattr_t *" attr ", int " kind ");"
+
+.BI "int pthread_mutexattr_getkind_np(const pthread_mutexattr_t *" attr ", int *" kind ");"
+
+.SH DESCRIPTION
+
+These functions are deprecated, use 
+.BR "pthread_mutexattr_settype" (3)
+and 
+.BR "pthread_mutexattr_gettype" (3)
+instead.
+
+.SH "RETURN VALUE"
+.B "pthread_mutexattr_getkind_np"
+always returns 0.
+
+.B "pthread_mutexattr_setkind_np"
+returns 0 on success and a non-zero
+error code on error.
+
+.SH ERRORS
+
+On error, 
+.B "pthread_mutexattr_setkind_np"
+returns the following error code:
+.TP
+.B "EINVAL"
+.I "kind"
+is neither 
+.B "PTHREAD_MUTEX_FAST_NP"
+nor 
+.B "PTHREAD_MUTEX_RECURSIVE_NP"
+nor 
+.B "PTHREAD_MUTEX_ERRORCHECK_NP"
+
+.SH AUTHOR
+Xavier Leroy <Xavier.Leroy@inria.fr>
+
+.SH "SEE ALSO"
+.BR "pthread_mutexattr_settype" (3),
+.BR "pthread_mutexattr_gettype" (3).

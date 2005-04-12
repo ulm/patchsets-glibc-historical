@@ -1,0 +1,19 @@
+--- libc-orig/sysdeps/unix/sysv/linux/hppa/sysdep.c	2003-10-15 01:45:16.000000000 -0400
++++ libc/sysdeps/unix/sysv/linux/hppa/sysdep.c	2004-09-20 14:04:24.000000000 -0400
+@@ -46,13 +46,13 @@
+   {
+     register unsigned long int __res asm("r28");
+     LOAD_ARGS_6 (arg0, arg1, arg2, arg3, arg4, arg5)
+-    asm volatile (STW_ASM_PIC
++    asm volatile (SAVE_ASM_PIC
+ 		  "	ble  0x100(%%sr2, %%r0)	\n"
+ 		  "	copy %1, %%r20		\n"
+-		  LDW_ASM_PIC
++		  LOAD_ASM_PIC
+ 		  : "=r" (__res)
+ 		  : "r" (sysnum) ASM_ARGS_6
+-		  : CALL_CLOB_REGS CLOB_ARGS_6);
++		  : "memory", CALL_CLOB_REGS CLOB_ARGS_6);
+     __sys_res = __res;
+   }
+   if ((unsigned long int) __sys_res >= (unsigned long int) -4095)

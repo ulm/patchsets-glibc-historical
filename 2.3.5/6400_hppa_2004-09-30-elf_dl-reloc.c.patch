@@ -1,0 +1,11 @@
+--- libc-orig/elf/dl-reloc.c	2004-03-07 15:36:05.000000000 -0500
++++ libc/elf/dl-reloc.c	2004-03-07 15:35:52.000000000 -0500
+@@ -284,7 +284,7 @@
+ 	  }
+ 
+ 	l->l_reloc_result =
+-	  (ElfW(Addr) *) calloc (sizeof (ElfW(Addr)),
++	  (ElfW(Addr) *) calloc (ELF_MACHINE_SIZEOF_JMP_SLOT,
+ 				 l->l_info[DT_PLTRELSZ]->d_un.d_val);
+ 	if (l->l_reloc_result == NULL)
+ 	  {

@@ -1,0 +1,38 @@
+--- libc/sysdeps/wordsize-64/strtol_l.c.jj	2003-03-03 04:45:12.000000000 -0500
++++ libc/sysdeps/wordsize-64/strtol_l.c	2005-03-24 08:09:38.970943112 -0500
+@@ -8,7 +8,9 @@
+ #undef ____strtoll_l_internal
+ #undef __strtoll_l
+ #undef strtoll_l
++#if !UNSIGNED
+ strong_alias (____strtol_l_internal, ____strtoll_l_internal)
+ libc_hidden_ver (____strtol_l_internal, ____strtoll_l_internal)
+ weak_alias (__strtol_l, __strtoll_l)
+ weak_alias (__strtol_l, strtoll_l)
++#endif
+--- libc/sysdeps/wordsize-64/wcstol_l.c.jj	2002-08-08 07:44:51.000000000 -0400
++++ libc/sysdeps/wordsize-64/wcstol_l.c	2005-03-24 08:09:02.632875928 -0500
+@@ -8,6 +8,8 @@
+ #undef ____wcstoll_l_internal
+ #undef __wcstoll_l
+ #undef wcstoll_l
++#if !UNSIGNED
+ strong_alias (____wcstol_l_internal, ____wcstoll_l_internal)
+ weak_alias (__wcstol_l, __wcstoll_l)
+ weak_alias (__wcstol_l, wcstoll_l)
++#endif
+--- libc/sysdeps/generic/wcstoul_l.c.jj	2004-03-15 09:13:16.000000000 +0100
++++ libc/sysdeps/generic/wcstoul_l.c	2005-03-25 22:00:30.000000000 +0100
+@@ -1,5 +1,5 @@
+ /* Convert string representing a number to integer value, using given locale.
+-   Copyright (C) 1997, 2002, 2004 Free Software Foundation, Inc.
++   Copyright (C) 1997, 2002, 2004, 2005 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
+ 
+@@ -27,4 +27,4 @@
+ extern unsigned long int ____wcstoul_l_internal (const wchar_t *, wchar_t **,
+			 int, int, __locale_t);
+ 
+-#include <wcstol_l.c>
++#include "wcstol_l.c"

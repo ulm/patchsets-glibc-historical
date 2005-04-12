@@ -1,0 +1,102 @@
+1XXX - Redhat/Fedora Patches:
+
+2XXX - SSP Patches:
+2000_all_2.3.2-propolice-guard-functions-v3.patch:
+	SSP support in glibc (where it belongs)
+	To circumvent problems with propolice __guard and
+	__guard_setup__stack_smash_handler
+	
+	http://www.gentoo.org/proj/en/hardened/etdyn-ssp.xml
+2010_all_2.3.3-frandom-detect.patch:
+	patch this regardless of architecture, although it's ssp-related
+
+3XXX - PaX Patches:
+3000_all_2.3.4-dl_execstack-PaX-support.patch:
+	With latest versions of glibc, a lot of apps failed on a PaX enabled
+	system with:
+		 cannot enable executable stack as shared object requires: Permission denied
+	
+	This is due to PaX 'exec-protecting' the stack, and ld.so then trying
+	to make the stack executable due to some libraries not containing the
+	PT_GNU_STACK section.  Bug #32960.  <azarah@gentoo.org> (12 Nov 2003).
+3010_all_2.3.3_pre20040117-pt_pax.patch:
+	Program header support for PaX.
+3020_all_2.3.4.20040808-i386-got-fix.patch:
+	Suppress unresolvable relocation against symbol `main' in Scrt1.o
+	can be reproduced with compiling net-dns/bind-9.2.2-r3 using -pie
+
+4XXX - Hardened Patches:
+4000_all_2.3.4-hardened-sysdep-shared.patch
+
+5XXX - Misc Patches:
+5000_all_2.3.4-mdns-resolver-20041102.patch:
+	multicast DNS aka rendezvous support
+	...patch updated to make mdns optional
+5010_all_2.3.4-features-header-fix.patch:
+	if __OPTIMIZE__ isnt defined, the comparison in this header fails
+5020_all_nomalloccheck.patch:
+	whine whine whine, this patch sets the default for the malloc check
+	to 0, disabling it.
+5030_all_2.3.4-kd-types.patch
+	sys/kd.h sets _LINUX_TYPES_H to stop <linux/types.h> from being brought
+	in. This patch undefines it at the end of the file.
+5050_all_2.3.4-locale-no-archive.patch
+	Don't put all the locales in a single archive.  See bug #82106
+	http://bugs.gentoo.org/show_bug.cgi?id=82106
+5040_all_2.3.4-gcc4.patch
+	http://bugs.gentoo.org/show_bug.cgi?id=88395
+5070_all_cross-compile-nptl.patch
+	Allow nptl when crosscompiling without a libc on the system.
+
+6XXX - Arch Patches:
+6000_alpha_2.3.2-decc-compaq.patch
+	Fix compatability with compaq compilers by ifdef'ing out some
+	2.3.2 additions - <taviso@gentoo.org> (14 Jun 2003).
+6010_alpha_2.3.2-pwrite.patch
+	Fix compilation with >=gcc-3.2.3 (01 Nov 2003 agriffis)
+
+6200_arm_2.3.4-ioperm.patch
+
+6400_hppa_2004-09-30-elf_dl-reloc.c.patch
+6403_hppa_2004-09-30-elf_dl-runtime.c.patch
+6406_hppa_2004-09-30-elf_dynamic-link.h.patch
+6409_hppa_2004-09-30-linuxthreads_descr.h.patch
+6412_hppa_2004-09-30-linuxthreads_oldsemaphore.c.patch
+6415_hppa_2004-09-30-linuxthreads_pthread.c.patch
+6418_hppa_2004-09-30-linuxthreads_pt-machine.c.patch
+6421_hppa_2004-09-30-linuxthreads_spinlock.c.patch
+6424_hppa_2004-09-30-linuxthreads_spinlock.h.patch
+6427_hppa_2004-09-30-linuxthreads_sysdeps_hppa_pspinlock.c.patch
+6430_hppa_2004-09-30-linuxthreads_sysdeps_hppa_pt-machine.h.patch
+6433_hppa_2004-09-30-linuxthreads_sysdeps_pthread_bits_initspin.h.patch
+6436_hppa_2004-09-30-linuxthreads_sysdeps_pthread_bits_libc-lock.h.patch
+6439_hppa_2004-09-30-linuxthreads_sysdeps_pthread_bits_pthreadtypes.h.patch
+6442_hppa_2004-09-30-linuxthreads_sysdeps_pthread_pthread.h.patch
+6445_hppa_2004-09-30-linuxthreads_sysdeps_unix_sysv_linux_hppa_bits_initspin.h.patch
+6448_hppa_2004-09-30-linuxthreads_sysdeps_unix_sysv_linux_hppa_bits_pthreadtypes.h.patch
+6451_hppa_2004-09-30-linuxthreads_sysdeps_unix_sysv_linux_hppa_sysdep-cancel.h.patch
+6454_hppa_2004-09-30-sysdeps_generic_dl-sysdep.c.patch
+6457_hppa_2004-09-30-sysdeps_hppa_atomicity.h.patch
+6460_hppa_2004-09-30-sysdeps_hppa_dl-machine.h.patch
+6463_hppa_2004-09-30-sysdeps_hppa_fpu_libm-test-ulps.patch
+6466_hppa_2004-09-30-sysdeps_ia64_dl-machine.h.patch
+6469_hppa_2004-09-30-sysdeps_unix_sysv_linux_hppa_sysdep.c.patch
+6472_hppa_2004-09-30-sysdeps_unix_sysv_linux_hppa_sysdep.h.patch
+6475_hppa_2004-09-30-sysdeps_unix_sysv_linux_posix_fadvise.c.patch
+	http://parisc-linux.org/~carlos/glibc-work/
+6490_hppa_hardened-disable__init_arrays.patch
+
+6600_mips_librt-mips.patch
+6605_mips_fpu-cw-mips.patch
+6610_mips_addabi.diff
+6615_mips_syscall.h.diff
+6620_mips_sysify.diff
+6625_mips_semtimedop.diff
+6640_mips_unistd_h-fixes.patch
+	A few patches only for the MIPS platform.  Descriptions of what they
+	do can (probably) be found in the patch headers.
+
+6680_mips_nolib3264.patch
+	Need to install into /lib for n32-only userland for now.
+	Propper solution is to make all userland /lib{32|64}-aware.
+

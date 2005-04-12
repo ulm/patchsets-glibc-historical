@@ -1,0 +1,11 @@
+--- libc-orig/linuxthreads/oldsemaphore.c	2004-04-25 23:01:18.000000000 -0400
++++ libc/linuxthreads/oldsemaphore.c	2004-04-25 22:51:35.000000000 -0400
+@@ -31,7 +31,7 @@
+ 
+ typedef struct {
+     long int sem_status;
+-    int sem_spinlock;
++    __atomic_lock_t sem_spinlock;
+ } old_sem_t;
+ 
+ extern int __old_sem_init (old_sem_t *__sem, int __pshared, unsigned int __value);
