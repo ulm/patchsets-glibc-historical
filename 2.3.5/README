@@ -57,35 +57,6 @@
 
 6200_arm_2.3.4-ioperm.patch
 
-6400_hppa_2004-09-30-elf_dl-reloc.c.patch
-6403_hppa_2004-09-30-elf_dl-runtime.c.patch
-6406_hppa_2004-09-30-elf_dynamic-link.h.patch
-6409_hppa_2004-09-30-linuxthreads_descr.h.patch
-6412_hppa_2004-09-30-linuxthreads_oldsemaphore.c.patch
-6415_hppa_2004-09-30-linuxthreads_pthread.c.patch
-6418_hppa_2004-09-30-linuxthreads_pt-machine.c.patch
-6421_hppa_2004-09-30-linuxthreads_spinlock.c.patch
-6424_hppa_2004-09-30-linuxthreads_spinlock.h.patch
-6427_hppa_2004-09-30-linuxthreads_sysdeps_hppa_pspinlock.c.patch
-6430_hppa_2004-09-30-linuxthreads_sysdeps_hppa_pt-machine.h.patch
-6433_hppa_2004-09-30-linuxthreads_sysdeps_pthread_bits_initspin.h.patch
-6436_hppa_2004-09-30-linuxthreads_sysdeps_pthread_bits_libc-lock.h.patch
-6439_hppa_2004-09-30-linuxthreads_sysdeps_pthread_bits_pthreadtypes.h.patch
-6442_hppa_2004-09-30-linuxthreads_sysdeps_pthread_pthread.h.patch
-6445_hppa_2004-09-30-linuxthreads_sysdeps_unix_sysv_linux_hppa_bits_initspin.h.patch
-6448_hppa_2004-09-30-linuxthreads_sysdeps_unix_sysv_linux_hppa_bits_pthreadtypes.h.patch
-6451_hppa_2004-09-30-linuxthreads_sysdeps_unix_sysv_linux_hppa_sysdep-cancel.h.patch
-6454_hppa_2004-09-30-sysdeps_generic_dl-sysdep.c.patch
-6457_hppa_2004-09-30-sysdeps_hppa_atomicity.h.patch
-6460_hppa_2004-09-30-sysdeps_hppa_dl-machine.h.patch
-6463_hppa_2004-09-30-sysdeps_hppa_fpu_libm-test-ulps.patch
-6466_hppa_2004-09-30-sysdeps_ia64_dl-machine.h.patch
-6469_hppa_2004-09-30-sysdeps_unix_sysv_linux_hppa_sysdep.c.patch
-6472_hppa_2004-09-30-sysdeps_unix_sysv_linux_hppa_sysdep.h.patch
-6475_hppa_2004-09-30-sysdeps_unix_sysv_linux_posix_fadvise.c.patch
-	http://parisc-linux.org/~carlos/glibc-work/
-6490_hppa_hardened-disable__init_arrays.patch
-
 6600_mips_librt-mips.patch
 6605_mips_fpu-cw-mips.patch
 6610_mips_addabi.diff
@@ -95,6 +66,9 @@
 6640_mips_unistd_h-fixes.patch
 	A few patches only for the MIPS platform.  Descriptions of what they
 	do can (probably) be found in the patch headers.
+
+6645_mips_shn_undef-hack.patch
+	Hack to hopefully get sandbox working on mips
 
 6680_mips_nolib3264.patch
 	Need to install into /lib for n32-only userland for now.
