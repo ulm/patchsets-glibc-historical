@@ -1,0 +1,41 @@
+CVSROOT:	/cvs/glibc
+Module name:	libc
+Changes by:	drepper@sources.redhat.com	2005-03-20 04:21:08
+
+Modified files:
+	sysdeps/ia64/elf: initfini.c 
+
+Log message:
+	dd local _init and _fini labels.
+
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/ia64/elf/initfini.c,v
+retrieving revision 1.7
+retrieving revision 1.8
+diff -u -r1.7 -r1.8
+--- libc/sysdeps/ia64/elf/initfini.c	2004/08/16 04:51:00	1.7
++++ libc/sysdeps/ia64/elf/initfini.c	2005/03/20 04:21:08	1.8
+@@ -116,13 +116,14 @@
+ "/*@_init_PROLOG_ENDS*/\n"
+ "\n"
+ "/*@_init_EPILOG_BEGINS*/\n"
++"	.section .init\n"
+ "	.proc _init#\n"
++"_init:\n"
+ "	.prologue\n"
+ "	.save ar.pfs, r34\n"
+ "	.vframe r32\n"
+ "	.save rp, r33\n"
+ "	.body\n"
+-"	.section .init\n"
+ "	.regstk 0,2,0,0\n"
+ "	mov r12 = r32\n"
+ "	mov ar.pfs = r34\n"
+@@ -155,6 +156,7 @@
+ "/*@_fini_EPILOG_BEGINS*/\n"
+ "	.section .fini\n"
+ "	.proc _fini#\n"
++"_fini:\n"
+ "	.prologue\n"
+ "	.save ar.pfs, r34\n"
+ "	.vframe r32\n"
