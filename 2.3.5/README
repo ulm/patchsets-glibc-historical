@@ -1,15 +1,5 @@
 1XXX - Redhat/Fedora Patches:
 
-2XXX - SSP Patches:
-2000_all_2.3.2-propolice-guard-functions-v3.patch:
-	SSP support in glibc (where it belongs)
-	To circumvent problems with propolice __guard and
-	__guard_setup__stack_smash_handler
-	
-	http://www.gentoo.org/proj/en/hardened/etdyn-ssp.xml
-2010_all_2.3.3-frandom-detect.patch:
-	patch this regardless of architecture, although it's ssp-related
-
 3XXX - PaX Patches:
 3000_all_2.3.4-dl_execstack-PaX-support.patch:
 	With latest versions of glibc, a lot of apps failed on a PaX enabled
