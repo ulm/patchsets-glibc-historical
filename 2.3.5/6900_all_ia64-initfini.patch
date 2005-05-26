@@ -1,12 +1,6 @@
-CVSROOT:	/cvs/glibc
-Module name:	libc
-Changes by:	drepper@sources.redhat.com	2005-03-20 04:21:08
+2005-02-10  H.J. Lu  <hongjiu.lu@intel.com>
 
-Modified files:
-	sysdeps/ia64/elf: initfini.c 
-
-Log message:
-	dd local _init and _fini labels.
+	* sysdeps/ia64/elf/initfini.c: Add local _init and _fini labels.
 
 ===================================================================
 RCS file: /cvs/glibc/libc/sysdeps/ia64/elf/initfini.c,v
