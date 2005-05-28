@@ -33,3 +33,26 @@ diff -u -r1.7 -r1.8
  "	.prologue\n"
  "	.save ar.pfs, r34\n"
  "	.vframe r32\n"
+===================================================================
+RCS file: /cvs/glibc/libc/linuxthreads/sysdeps/unix/sysv/linux/ia64/pt-initfini.c,v
+retrieving revision 1.6
+retrieving revision 1.7
+diff -u -r1.6 -r1.7
+--- libc/linuxthreads/sysdeps/unix/sysv/linux/ia64/pt-initfini.c	2003/12/11 20:43:51	1.6
++++ libc/linuxthreads/sysdeps/unix/sysv/linux/ia64/pt-initfini.c	2005/03/20 04:19:45	1.7
+@@ -87,6 +87,7 @@
+ /*@_init_EPILOG_BEGINS*/\n\
+ 	.section .init\n\
+ 	.proc _init#\n\
++_init:\n\
+ 	.prologue\n\
+ 	.save ar.pfs, r34\n\
+ 	.vframe r32\n\
+@@ -122,6 +123,7 @@
+ /*@_fini_EPILOG_BEGINS*/\n\
+ 	.section .fini\n\
+ 	.proc _fini#\n\
++_fini:\n\
+ 	.prologue\n\
+ 	.save ar.pfs, r34\n\
+ 	.vframe r32\n\
