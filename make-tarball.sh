@@ -15,15 +15,14 @@ fi
 rm -rf tmp
 rm -f glibc-${gver}-*.tar.bz2
 
-mkdir -p tmp/patch
-cp -r ${gver}/*.patch tmp/patch/ || exit 1
-bzip2 tmp/patch/* || exit 1
+mkdir -p tmp/patches
+cp -r ${gver}/*.patch tmp/patches/ || exit 1
 
 mkdir tmp/man
 cp -r ${gver}/man/* tmp/man/ || exit 1
 
 tar -jcf glibc-${gver}-patches-${pver}.tar.bz2 \
-	-C tmp patch || exit 1
+	-C tmp patches || exit 1
 tar -jcf glibc-${gver}-manpages.tar.bz2 \
 	-C tmp man || exit 1
 rm -r tmp
