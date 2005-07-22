@@ -1,6 +1,8 @@
 1XXX - Redhat/Fedora Patches:
-2000_all_2.3.5-dl-tls.patch:
+1010_all_2.3.5-initstate-r-checks.patch
+1020_all_2.3.5-dl-tls.patch:
 	https://bugs.gentoo.org/show_bug.cgi?id=52374
+1040_all_2.3.3-localedef-fix-trampoline.patch
 
 3XXX - PaX Patches:
 3000_all_2.3.4-dl_execstack-PaX-support.patch:
