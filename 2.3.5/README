@@ -21,6 +21,8 @@
 
 4XXX - Hardened Patches:
 4000_all_2.3.4-hardened-sysdep-shared.patch
+4010_all_2.3.5-hardened-iconvconfig-unnest.patch
+	Unnest a function in iconvconfig.c.  See bug #85718
 
 5XXX - Misc Patches:
 5000_all_2.3.4-mdns-resolver-20041102.patch:
