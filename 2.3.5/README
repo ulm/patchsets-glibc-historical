@@ -51,7 +51,10 @@
 6010_alpha_2.3.2-pwrite.patch
 	Fix compilation with >=gcc-3.2.3 (01 Nov 2003 agriffis)
 
-6200_arm_2.3.4-ioperm.patch
+6200_all_arm-glibc-2.3.4-ioperm.patch
+6201_all_arm-glibc-2.3.4-fix_bad_pc24.patch
+6210_all_arm-glibc-fp-byteorder.patch
+	Patches for ARM, see patch headers.
 
 6600_mips_librt-mips.patch
 6605_mips_fpu-cw-mips.patch
@@ -62,6 +65,12 @@
 6640_mips_unistd_h-fixes.patch
 	A few patches only for the MIPS platform.  Descriptions of what they
 	do can (probably) be found in the patch headers.
+
+6400_all_sh-glibc-2.3.2-fpscr_values.patch
+6401_all_sh-glibc-2.3.3-sh-nptl-multidir.patch
+6402_all_sh-glibc-2.3.3-sh-linux-fcntl_h.patch
+6403_all_sh-glibc-2.3.5-memset-fix.patch
+	Patches for SuperH, see patch headers.
 
 6645_mips_shn_undef-hack.patch
 	Hack to hopefully get sandbox working on mips
