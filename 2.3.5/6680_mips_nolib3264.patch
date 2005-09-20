@@ -1,10 +1,7 @@
-Index: sysdeps/unix/sysv/linux/configure
-===================================================================
-RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/configure,v
-retrieving revision 1.86
-diff -u -r1.86 configure
---- sysdeps/unix/sysv/linux/configure	23 Mar 2003 02:10:04 -0000	1.86
-+++ sysdeps/unix/sysv/linux/configure	1 Jun 2004 04:25:42 -0000
+Disable multilib for mips if we don't want multilib support
+
+--- sysdeps/unix/sysv/linux/configure
++++ sysdeps/unix/sysv/linux/configure
 @@ -224,8 +224,7 @@
  /usr | /usr/)
    # 64-bit libraries on bi-arch platforms go in /lib64 instead of /lib
