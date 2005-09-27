@@ -3,6 +3,9 @@
 1020_all_2.3.5-dl-tls.patch:
 	https://bugs.gentoo.org/show_bug.cgi?id=52374
 1040_all_2.3.3-localedef-fix-trampoline.patch
+1050_all_glibc-2.3.5-PR1078-fwrite-segv.patch
+	Fix from upstream glibc to address segfault in I/O.
+	http://bugs.gentoo.org/97900
 
 3XXX - PaX Patches:
 3000_all_2.3.4-dl_execstack-PaX-support.patch:
@@ -15,9 +18,6 @@
 	PT_GNU_STACK section.  Bug #32960.  <azarah@gentoo.org> (12 Nov 2003).
 3010_all_2.3.3_pre20040117-pt_pax.patch:
 	Program header support for PaX.
-3020_all_2.3.4.20040808-i386-got-fix.patch:
-	Suppress unresolvable relocation against symbol `main' in Scrt1.o
-	can be reproduced with compiling net-dns/bind-9.2.2-r3 using -pie
 
 4XXX - Hardened Patches:
 4000_all_2.3.4-hardened-sysdep-shared.patch
@@ -30,9 +30,6 @@
 	...patch updated to make mdns optional
 5010_all_2.3.4-features-header-fix.patch:
 	if __OPTIMIZE__ isnt defined, the comparison in this header fails
-5020_all_nomalloccheck.patch:
-	whine whine whine, this patch sets the default for the malloc check
-	to 0, disabling it.
 5030_all_2.3.4-kd-types.patch
 	sys/kd.h sets _LINUX_TYPES_H to stop <linux/types.h> from being brought
 	in. This patch undefines it at the end of the file.
