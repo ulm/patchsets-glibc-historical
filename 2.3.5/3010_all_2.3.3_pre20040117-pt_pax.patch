@@ -1,5 +1,5 @@
---- elf/elf.h.orig	2004-01-26 12:54:15.000000000 -0500
-+++ elf/elf.h	2004-01-26 12:53:23.000000000 -0500
+--- elf/elf.h
++++ elf/elf.h
 @@ -568,6 +568,7 @@
  #define PT_GNU_EH_FRAME	0x6474e550	/* GCC .eh_frame_hdr segment */
  #define PT_GNU_STACK	0x6474e551	/* Indicates stack executability */
