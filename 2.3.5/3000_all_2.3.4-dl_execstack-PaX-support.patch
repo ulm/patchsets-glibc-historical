@@ -1,6 +1,13 @@
-diff -Nru glibc-2.3.3.old/sysdeps/unix/sysv/linux/dl-execstack.c glibc-2.3.3/sysdeps/unix/sysv/linux/dl-execstack.c
---- glibc-2.3.3.old/sysdeps/unix/sysv/linux/dl-execstack.c	2004-09-24 01:40:02.663710000 -0400
-+++ glibc-2.3.3/sysdeps/unix/sysv/linux/dl-execstack.c	2004-09-24 01:54:55.883919888 -0400
+	With latest versions of glibc, a lot of apps failed on a PaX enabled
+	system with:
+		 cannot enable executable stack as shared object requires: Permission denied
+	
+	This is due to PaX 'exec-protecting' the stack, and ld.so then trying
+	to make the stack executable due to some libraries not containing the
+	PT_GNU_STACK section.  Bug #32960.  <azarah@gentoo.org> (12 Nov 2003).
+
+--- libc/sysdeps/unix/sysv/linux/dl-execstack.c
++++ libc/sysdeps/unix/sysv/linux/dl-execstack.c
 @@ -56,11 +56,17 @@
  					__stack_prot) == 0, 1))
  	goto return_success;
