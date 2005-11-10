@@ -1,0 +1,17 @@
+temp work around for defunct threads bug in alpha linuxthreads until a real 
+fix can be found
+
+http://bugs.gentoo.org/100259
+http://bugs.debian.org/325600
+
+--- linuxthreads/manager.c
++++ linuxthreads/manager.c
+@@ -971,7 +971,7 @@
+   pid_t pid;
+   int status;
+ 
+-  while ((pid = waitpid_not_cancel(-1, &status, WNOHANG | __WCLONE)) > 0) {
++  while ((pid = wait3(&status, WNOHANG | __WCLONE, NULL)) > 0 ) {
+     pthread_exited(pid);
+     if (WIFSIGNALED(status)) {
+       /* If a thread died due to a signal, send the same signal to
