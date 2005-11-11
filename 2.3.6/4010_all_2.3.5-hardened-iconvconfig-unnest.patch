@@ -1,5 +1,7 @@
---- glibc-2.3.5/iconv/iconvconfig.c.orig	2005-07-24 22:12:13.000000000 +0200
-+++ glibc-2.3.5/iconv/iconvconfig.c	2005-07-24 22:15:49.000000000 +0200
+Move nested function to a static one so we avoid generating a trampoline
+
+--- glibc-2.3.5/iconv/iconvconfig.c
++++ glibc-2.3.5/iconv/iconvconfig.c
 @@ -1013,6 +1013,38 @@
                                module name offset
                           (following last entry with step count 0)

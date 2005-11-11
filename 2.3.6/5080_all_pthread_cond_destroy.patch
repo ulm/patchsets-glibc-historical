@@ -1,31 +1,14 @@
 NPTL patch from fedora.
 
---- glibc-20050722T0433/nptl/ChangeLog	18 Jul 2005 03:26:43 -0000	1.790
-+++ glibc-20050722T0433-fedora/nptl/ChangeLog	21 Jul 2005 08:25:47 -0000	1.706.2.52
-@@ -731,6 +731,11 @@
- 	Move definition inside libpthread, libc, librt check.  Provide
- 	definition for rtld.
+2004-09-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* pthread_cond_destroy.c (__pthread_cond_destroy): If there are
+	waiters, awake all waiters on the associated mutex.
  
-+2004-09-02  Jakub Jelinek  <jakub@redhat.com>
-+
-+	* pthread_cond_destroy.c (__pthread_cond_destroy): If there are
-+	waiters, awake all waiters on the associated mutex.
-+
- 2004-09-02  Ulrich Drepper  <drepper@redhat.com>
- 
- 	* sysdeps/alpha/jmpbuf-unwind.h: Define __libc_unwind_longjmp.
-@@ -2805,6 +2810,11 @@
- 
- 	* Makefile [$(build-shared) = yes] (tests): Depend on $(test-modules).
- 
-+2003-07-22  Jakub Jelinek  <jakub@redhat.com>
-+
-+	* descr.h: Don't include lowlevellock.h, pthreaddef.h and dl-sysdep.h
-+	if __need_struct_pthread_size, instead define lll_lock_t.
-+
- 2003-07-25  Jakub Jelinek  <jakub@redhat.com>
- 
- 	* tst-cancel17.c (do_test): Check if aio_cancel failed.
+2003-07-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* descr.h: Don't include lowlevellock.h, pthreaddef.h and dl-sysdep.h
+	if __need_struct_pthread_size, instead define lll_lock_t.
 --- glibc-20050722T0433/nptl/Makefile	11 Jul 2005 16:40:21 -0000	1.169
 +++ glibc-20050722T0433-fedora/nptl/Makefile	21 Jul 2005 08:25:47 -0000	1.157.2.12
 @@ -502,15 +502,19 @@ $(addprefix $(objpfx), \
