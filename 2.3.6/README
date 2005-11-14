@@ -41,6 +41,9 @@
 5080_all_pthread_cond_destroy.patch
 	If there are waiters when __pthread_cond_destroy()  is called,
 	awake all waiters on the associated mutex.
+5090_all_divdi3-asm-fix.patch
+	Fix building with binutils-2.16.91.0.4 and later.
+	http://sourceware.org/ml/binutils/2005-11/msg00208.html
 	 
 
 6XXX - Arch Patches:
@@ -49,6 +52,9 @@
 	2.3.2 additions - <taviso@gentoo.org> (14 Jun 2003).
 6010_alpha_2.3.2-pwrite.patch
 	Fix compilation with >=gcc-3.2.3 (01 Nov 2003 agriffis)
+
+6100_ppc_2.3.6-ppc-gcc41.patch
+	Fix building on ppc with gcc-4.1.0.  Patch by Halcy0n.
 
 6200_all_arm-glibc-2.3.4-ioperm.patch
 6201_all_arm-glibc-2.3.4-fix_bad_pc24.patch

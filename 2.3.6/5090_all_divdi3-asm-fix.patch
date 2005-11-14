@@ -1,0 +1,54 @@
+From:
+
+  http://sourceware.org/ml/binutils/2005-11/msg00208.html
+
+
+On Tue, Nov 08, 2005 at 11:00:47AM -0800, Khem Raj wrote:
+> Hi Alexandre
+> 
+> This will cause glibc build failure. I am attaching the preprocessed 
+> sourcefile from glibc which
+> shows this problem. It comes from some equates defined in glibc
+> sysdeps/wordsize-32/symbol-hacks.c
+> 
+
+I think it is a glibc bug. It has
+
+	__divdi3 = __divdi3_internal
+	...
+__divdi3:
+
+The new assembler rejects it.
+
+
+H.J.
+----
+2005-11-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* sysdeps/wordsize-32/Makefile (CPPFLAGS-divdi3.c): Set to
+	-Din_divdi3_c
+
+	* sysdeps/wordsize-32/symbol-hacks.h: Skip if in_divdi3_c is
+	defined.
+
+--- sysdeps/wordsize-32/Makefile.as	2002-09-18 23:47:56.000000000 -0700
++++ sysdeps/wordsize-32/Makefile	2005-11-07 15:13:38.000000000 -0800
+@@ -2,5 +2,6 @@ ifeq ($(subdir),csu)
+ ifeq (yes,$(build-shared))
+ sysdep_routines += divdi3
+ shared-only-routines += divdi3
++CPPFLAGS-divdi3.c = -Din_divdi3_c
+ endif
+ endif
+--- sysdeps/wordsize-32/symbol-hacks.h.as	2004-03-08 12:59:34.000000000 -0800
++++ sysdeps/wordsize-32/symbol-hacks.h	2005-11-07 14:57:49.000000000 -0800
+@@ -22,7 +22,7 @@
+    therefore we get PLTs.  Unnecessarily so.  Changing gcc is a big
+    task which might not be worth it so we play tricks with the
+    assembler.  */
+-#if !defined __ASSEMBLER__ && !defined NOT_IN_libc && defined SHARED
++#if !defined __ASSEMBLER__ && !defined in_divdi3_c && !defined NOT_IN_libc && defined SHARED
+ asm ("__divdi3 = __divdi3_internal");
+ asm ("__udivdi3 = __udivdi3_internal");
+ asm ("__moddi3 = __moddi3_internal");
+
