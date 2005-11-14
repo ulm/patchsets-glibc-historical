@@ -43,7 +43,7 @@
 	awake all waiters on the associated mutex.
 5090_all_divdi3-asm-fix.patch
 	Fix building with binutils-2.16.91.0.4 and later.
-	http://sourceware.org/ml/binutils/2005-11/msg00208.html
+	http://sources.redhat.com/ml/libc-alpha/2005-11/msg00033.html
 	 
 
 6XXX - Arch Patches:
