@@ -1,0 +1,26 @@
+2005-11-16  Kaz Kojima  <kkojima@rr.iij4u.or.jp>
+
+	* sysdeps/sh/bits/setjmp.h (_JMPBUF_UNWINDS): Remove incorrect &.
+
+Index: sysdeps/sh/bits/setjmp.h
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/sh/bits/setjmp.h,v
+retrieving revision 1.6
+retrieving revision 1.7
+diff -u -p -r1.6 -r1.7
+--- sysdeps/sh/bits/setjmp.h	12 Apr 2003 00:55:03 -0000	1.6
++++ sysdeps/sh/bits/setjmp.h	16 Nov 2005 07:55:00 -0000	1.7
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1999, 2000, 2003 Free Software Foundation, Inc.
++/* Copyright (C) 1999, 2000, 2003, 2005 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -51,6 +51,6 @@ typedef struct
+ /* Test if longjmp to JMPBUF would unwind the frame
+    containing a local variable at ADDRESS.  */
+ #define _JMPBUF_UNWINDS(jmpbuf, address) \
+-  ((void *) (address) < &(jmpbuf)[0].__regs[7])
++  ((void *) (address) < (jmpbuf)[0].__regs[7])
+ 
+ #endif  /* bits/setjmp.h */
