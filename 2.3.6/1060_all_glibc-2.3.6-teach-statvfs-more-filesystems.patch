@@ -1,0 +1,29 @@
+Teach the internal statvfs more filesystems.
+
+Patch by Kevin F. Quinn
+
+http://bugs.gentoo.org/86515
+
+--- glibc/sysdeps/unix/sysv/linux/internal_statvfs.c
++++ glibc/sysdeps/unix/sysv/linux/internal_statvfs.c
+@@ -71,6 +71,20 @@
+     case NFS_SUPER_MAGIC:
+       fsname = "nfs";
+       break;
++    case REISERFS_SUPER_MAGIC:
++      fsname = "reiserfs";
++      break;
++#ifdef REISER4_SUPER_MAGIC
++    case REISER4_SUPER_MAGIC:
++      fsname = "reiser4";
++      break;
++#endif
++    case JFS_SUPER_MAGIC:
++      fsname = "jfs";
++      break;
++    case XFS_SUPER_MAGIC:
++      fsname = "xfs";
++      break;
+     }
+ 
+   FILE *mtab = __setmntent ("/proc/mounts", "r");
