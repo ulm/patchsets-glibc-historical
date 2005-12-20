@@ -16,6 +16,9 @@
 	This is due to PaX 'exec-protecting' the stack, and ld.so then trying
 	to make the stack executable due to some libraries not containing the
 	PT_GNU_STACK section.  Bug #32960.  <azarah@gentoo.org> (12 Nov 2003).
+
+	Patch also NPTL. Bug #116086. <kevquinn@gentoo.org> (20 Dec 2005).
+
 3010_all_2.3.3_pre20040117-pt_pax.patch:
 	Program header support for PaX.
 

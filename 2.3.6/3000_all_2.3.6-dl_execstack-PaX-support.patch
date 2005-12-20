@@ -6,6 +6,8 @@
 	to make the stack executable due to some libraries not containing the
 	PT_GNU_STACK section.  Bug #32960.  <azarah@gentoo.org> (12 Nov 2003).
 
+	Patch also NPTL. Bug #116086. <kevquinn@gentoo.org> (20 Dec 2005).
+
 --- sysdeps/unix/sysv/linux/dl-execstack.c
 +++ sysdeps/unix/sysv/linux/dl-execstack.c
 @@ -63,7 +63,10 @@
@@ -48,3 +50,15 @@
  	    {
  	      result = errno;
  	      goto out;
+--- nptl/allocatestack.c
++++ nptl/allocatestack.c
+@@ -279,7 +279,8 @@
+   size_t len = pd->stackblock_size - pd->guardsize;
+ #endif
+   if (mprotect (stack, len, PROT_READ | PROT_WRITE | PROT_EXEC) != 0)
+-    return errno;
++    if (errno != EACCES) /* PAX is enabled */
++    	return errno;
+ 
+   return 0;
+ }
