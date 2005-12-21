@@ -4,6 +4,9 @@ Patch by Kevin F. Quinn
 
 http://bugs.gentoo.org/86515
 
+Fixed in upstream cvs:
+http://sourceware.org/bugzilla/show_bug.cgi?id=1978
+
 --- glibc/sysdeps/unix/sysv/linux/internal_statvfs.c
 +++ glibc/sysdeps/unix/sysv/linux/internal_statvfs.c
 @@ -71,6 +71,20 @@
