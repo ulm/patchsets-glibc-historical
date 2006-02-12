@@ -1,0 +1,495 @@
+Do not warn if zic cannot create a hardlink.
+
+diff -Nur --exclude CVS glibc-2.3.6/libidn/ChangeLog glibc-HEAD/libidn/ChangeLog
+--- glibc-2.3.6/libidn/ChangeLog	2004-10-05 16:11:51.000000000 +0000
++++ glibc-HEAD/libidn/ChangeLog	2005-03-15 22:21:12.000000000 +0000
+@@ -1,3 +1,24 @@
++2005-03-08  Paul Eggert  <eggert@cs.ucla.edu>
++
++	* iconvme.c (SIZE_MAX): New macro, if not already defined.
++	(iconv_string): Don't guess a size-zero buffer, as that might cause
++	buffer overrun.  Instead, avoid multiplying by MB_LEN_MAX if the
++	result would be 'too large', where 'too large' is (heuristically)
++	the square root of SIZE_MAX, divided by MB_LEN_MAX to allay
++	overflow concerns.  This will prevent some unwanted malloc failures
++	when the inputs are very large.
++
++2005-02-12  Simon Josefsson  <jas@extundo.com >
++
++	* iconvme.h: New file, extracted from toutf8.c but improved.
++	* iconvme.c: New file.
++	* toutf8.c: Include stringprep.h first, to make the compiler check
++	that stringprep.h is standalone.  Improve comments.  Replace
++	#include of errno.h and sys/param.h with iconvme.h.  Don't define
++	ICONV_CONST.
++	(stringprep_convert): Rewrite to use iconvme.h.
++	* Makefile (libcidn-routines): Add iconvme.
++
+ 2004-10-05  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* idn-stub.c (unload_libidn): Don't define outside libc.
+diff -Nur --exclude CVS glibc-2.3.6/libidn/Makefile glibc-HEAD/libidn/Makefile
+--- glibc-2.3.6/libidn/Makefile	2004-03-12 20:44:43.000000000 +0000
++++ glibc-HEAD/libidn/Makefile	2005-02-22 03:46:53.000000000 +0000
+@@ -1,4 +1,4 @@
+-# Copyright (C) 2003, 2004 Free Software Foundation, Inc.
++# Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
+ # This file is part of the GNU C Library.
+ 
+ # The GNU C Library is free software; you can redistribute it and/or
+@@ -20,14 +20,15 @@
+ 
+ subdir	:= libidn
+ 
+-distribute := punycode.h stringprep.h idna.h
++distribute := punycode.h stringprep.h idna.h iconvme.h
+ 
+ routines = idn-stub
+ 
+ extra-libs		= libcidn
+ extra-libs-others	= $(extra-libs)
+ 
+-libcidn-routines := punycode toutf8 nfkc stringprep rfc3454 profiles idna
++libcidn-routines := punycode toutf8 nfkc stringprep rfc3454 profiles idna \
++		    iconvme
+ 
+ 
+ include ../Makeconfig
+diff -Nur --exclude CVS glibc-2.3.6/libidn/iconvme.c glibc-HEAD/libidn/iconvme.c
+--- glibc-2.3.6/libidn/iconvme.c	1970-01-01 00:00:00.000000000 +0000
++++ glibc-HEAD/libidn/iconvme.c	2005-03-15 22:21:08.000000000 +0000
+@@ -0,0 +1,171 @@
++/* Recode strings between character sets, using iconv.
++   Copyright (C) 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
++
++   This program is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1, or (at
++   your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License along
++   with this program; if not, write to the Free Software Foundation,
++   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
++
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++
++/* Get prototype. */
++#include "iconvme.h"
++
++/* Get malloc. */
++#include <stdlib.h>
++
++/* Get strcmp. */
++#include <string.h>
++
++/* Get errno. */
++#include <errno.h>
++
++#ifdef _LIBC
++# define HAVE_ICONV 1
++#else
++/* Get strdup. */
++# include "strdup.h"
++#endif
++
++#if HAVE_ICONV
++/* Get iconv etc. */
++# include <iconv.h>
++/* Get MB_LEN_MAX, CHAR_BIT.  */
++# include <limits.h>
++#endif
++
++#ifndef SIZE_MAX
++# define SIZE_MAX ((size_t) -1)
++#endif
++
++/* Convert a zero-terminated string STR from the FROM_CODSET code set
++   to the TO_CODESET code set.  The returned string is allocated using
++   malloc, and must be dellocated by the caller using free.  On
++   failure, NULL is returned and errno holds the error reason.  Note
++   that if TO_CODESET uses \0 for anything but to terminate the
++   string, the caller of this function may have difficulties finding
++   out the length of the output string.  */
++char *
++iconv_string (const char *str, const char *from_codeset,
++	      const char *to_codeset)
++{
++  char *dest = NULL;
++#if HAVE_ICONV
++  iconv_t cd;
++  char *outp;
++  char *p = (char *) str;
++  size_t inbytes_remaining = strlen (p);
++  /* Guess the maximum length the output string can have.  */
++  size_t outbuf_size = inbytes_remaining + 1;
++  size_t outbytes_remaining;
++  size_t err;
++  int have_error = 0;
++
++  /* Use a worst-case output size guess, so long as that wouldn't be
++     too large for comfort.  It's OK if the guess is wrong so long as
++     it's nonzero.  */
++  size_t approx_sqrt_SIZE_MAX = SIZE_MAX >> (sizeof (size_t) * CHAR_BIT / 2);
++  if (outbuf_size <= approx_sqrt_SIZE_MAX / MB_LEN_MAX)
++    outbuf_size *= MB_LEN_MAX;
++  outbytes_remaining = outbuf_size - 1;
++#endif
++
++  if (strcmp (to_codeset, from_codeset) == 0)
++    return strdup (str);
++
++#if HAVE_ICONV
++  cd = iconv_open (to_codeset, from_codeset);
++  if (cd == (iconv_t) -1)
++    return NULL;
++
++  outp = dest = (char *) malloc (outbuf_size);
++  if (dest == NULL)
++    goto out;
++
++again:
++  err = iconv (cd, &p, &inbytes_remaining, &outp, &outbytes_remaining);
++
++  if (err == (size_t) - 1)
++    {
++      switch (errno)
++	{
++	case EINVAL:
++	  /* Incomplete text, do not report an error */
++	  break;
++
++	case E2BIG:
++	  {
++	    size_t used = outp - dest;
++	    size_t newsize = outbuf_size * 2;
++	    char *newdest;
++
++	    if (newsize <= outbuf_size)
++	      {
++		errno = ENOMEM;
++		have_error = 1;
++		goto out;
++	      }
++	    newdest = (char *) realloc (dest, newsize);
++	    if (newdest == NULL)
++	      {
++		have_error = 1;
++		goto out;
++	      }
++	    dest = newdest;
++	    outbuf_size = newsize;
++
++	    outp = dest + used;
++	    outbytes_remaining = outbuf_size - used - 1;	/* -1 for NUL */
++
++	    goto again;
++	  }
++	  break;
++
++	case EILSEQ:
++	  have_error = 1;
++	  break;
++
++	default:
++	  have_error = 1;
++	  break;
++	}
++    }
++
++  *outp = '\0';
++
++out:
++  {
++    int save_errno = errno;
++
++    if (iconv_close (cd) < 0 && !have_error)
++      {
++	/* If we didn't have a real error before, make sure we restore
++	   the iconv_close error below. */
++	save_errno = errno;
++	have_error = 1;
++      }
++
++    if (have_error && dest)
++      {
++	free (dest);
++	dest = NULL;
++	errno = save_errno;
++      }
++  }
++#else
++  errno = ENOSYS;
++#endif
++
++  return dest;
++}
+diff -Nur --exclude CVS glibc-2.3.6/libidn/iconvme.h glibc-HEAD/libidn/iconvme.h
+--- glibc-2.3.6/libidn/iconvme.h	1970-01-01 00:00:00.000000000 +0000
++++ glibc-HEAD/libidn/iconvme.h	2005-02-22 01:24:52.000000000 +0000
+@@ -0,0 +1,25 @@
++/* Recode strings between character sets, using iconv.
++   Copyright (C) 2004 Free Software Foundation, Inc.
++   Written by Simon Josefsson.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as published by
++   the Free Software Foundation; either version 2.1, or (at your option)
++   any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License along
++   with this program; if not, write to the Free Software Foundation,
++   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
++
++#ifndef ICONVME_H
++# define ICONVME_H
++
++extern char *iconv_string (const char *string, const char *from_code,
++			   const char *to_code);
++
++#endif /* ICONVME_H */
+diff -Nur --exclude CVS glibc-2.3.6/libidn/toutf8.c glibc-HEAD/libidn/toutf8.c
+--- glibc-2.3.6/libidn/toutf8.c	2004-03-08 20:52:56.000000000 +0000
++++ glibc-HEAD/libidn/toutf8.c	2005-02-22 01:25:30.000000000 +0000
+@@ -1,5 +1,5 @@
+-/* toutf8.c	Convert strings from system locale into UTF-8.
+- * Copyright (C) 2002, 2003, 2004  Simon Josefsson
++/* toutf8.c --- Convert strings from system locale into UTF-8.
++ * Copyright (C) 2002, 2003, 2004, 2005  Simon Josefsson
+  *
+  * This file is part of GNU Libidn.
+  *
+@@ -23,33 +23,36 @@
+ # include "config.h"
+ #endif
+ 
++/* Get prototypes. */
++#include "stringprep.h"
++
++/* Get fprintf. */
+ #include <stdio.h>
++
++/* Get getenv. */
+ #include <stdlib.h>
++
++/* Get strlen. */
+ #include <string.h>
+-#include <errno.h>
+-#include <sys/param.h>
+ 
+-#include "stringprep.h"
++/* Get iconv_string. */
++#include "iconvme.h"
+ 
+ #ifdef _LIBC
+ # define HAVE_ICONV 1
+ # define LOCALE_WORKS 1
+-# define ICONV_CONST
+ #endif
+ 
+-#ifdef HAVE_ICONV
+-# include <iconv.h>
+-
+-# if LOCALE_WORKS
+-#  include <langinfo.h>
+-#  include <locale.h>
+-# endif
++#if LOCALE_WORKS
++# include <langinfo.h>
++# include <locale.h>
++#endif
+ 
+-# ifdef _LIBC
+-#  define stringprep_locale_charset() nl_langinfo (CODESET)
+-# else
++#ifdef _LIBC
++# define stringprep_locale_charset() nl_langinfo (CODESET)
++#else
+ /**
+- * stringprep_locale_charset:
++ * stringprep_locale_charset - return charset used in current locale
+  *
+  * Find out current locale charset.  The function respect the CHARSET
+  * environment variable, but typically uses nl_langinfo(CODESET) when
+@@ -76,19 +79,19 @@
+   if (charset && *charset)
+     return charset;
+ 
+-#  ifdef LOCALE_WORKS
++# ifdef LOCALE_WORKS
+   charset = nl_langinfo (CODESET);
+ 
+   if (charset && *charset)
+     return charset;
+-#  endif
++# endif
+ 
+   return "ASCII";
+ }
+-# endif
++#endif
+ 
+ /**
+- * stringprep_convert:
++ * stringprep_convert - encode string using new character set
+  * @str: input zero-terminated string.
+  * @to_codeset: name of destination character set.
+  * @from_codeset: name of origin character set, as used by @str.
+@@ -103,132 +106,21 @@
+ stringprep_convert (const char *str,
+ 		    const char *to_codeset, const char *from_codeset)
+ {
+-  iconv_t cd;
+-  char *dest;
+-  char *outp;
+-  ICONV_CONST char *p;
+-  size_t inbytes_remaining;
+-  size_t outbytes_remaining;
+-  size_t err;
+-  size_t outbuf_size;
+-  int have_error = 0;
+-
+-  if (strcmp (to_codeset, from_codeset) == 0)
+-    {
+-#if defined HAVE_STRDUP || defined _LIBC
+-      return strdup (str);
++#if HAVE_ICONV
++  return iconv_string (str, from_codeset, to_codeset);
+ #else
+-      char *p;
+-      p = malloc (strlen (str) + 1);
+-      if (!p)
+-	return NULL;
+-      return strcpy (p, str);
+-#endif
+-    }
+-
+-  cd = iconv_open (to_codeset, from_codeset);
+-
+-  if (cd == (iconv_t) - 1)
+-    return NULL;
+-
+-  p = (ICONV_CONST char *) str;
+-
+-  inbytes_remaining = strlen (p);
+-  /* Guess the maximum length the output string can have.  */
+-  outbuf_size = (inbytes_remaining + 1) * MAX (7, MB_CUR_MAX);
+-
+-  outp = dest = malloc (outbuf_size);
+-  if (dest == NULL)
+-    goto out;
+-  outbytes_remaining = outbuf_size - 1;	/* -1 for NUL */
+-
+-again:
+-
+-  err = iconv (cd, (ICONV_CONST char **) &p, &inbytes_remaining,
+-	       &outp, &outbytes_remaining);
+-
+-  if (err == (size_t) - 1)
+-    {
+-      switch (errno)
+-	{
+-	case EINVAL:
+-	  /* Incomplete text, do not report an error */
+-	  break;
+-
+-	case E2BIG:
+-	  {
+-	    size_t used = outp - dest;
+-	    char *newdest;
+-
+-	    outbuf_size *= 2;
+-	    newdest = realloc (dest, outbuf_size);
+-	    if (newdest == NULL)
+-	      {
+-		have_error = 1;
+-		goto out;
+-	      }
+-	    dest = newdest;
+-
+-	    outp = dest + used;
+-	    outbytes_remaining = outbuf_size - used - 1; /* -1 for NUL */
+-
+-	    goto again;
+-	  }
+-	  break;
+-
+-	case EILSEQ:
+-	  have_error = 1;
+-	  break;
+-
+-	default:
+-	  have_error = 1;
+-	  break;
+-	}
+-    }
+-
+-  *outp = '\0';
+-
+-  if (*p != '\0')
+-    have_error = 1;
+-
+- out:
+-  iconv_close (cd);
+-
+-  if (have_error)
+-    {
+-      free (dest);
+-      dest = NULL;
+-    }
+-
+-  return dest;
+-}
+-
+-#else /* HAVE_ICONV */
+-
+-const char *
+-stringprep_locale_charset ()
+-{
+-  return "ASCII";
+-}
+-
+-char *
+-stringprep_convert (const char *str,
+-		    const char *to_codeset, const char *from_codeset)
+-{
+   char *p;
+   fprintf (stderr, "libidn: warning: libiconv not installed, cannot "
+ 	   "convert data to UTF-8\n");
+   p = malloc (strlen (str) + 1);
+   if (!p)
+     return NULL;
+-  strcpy (p, str);
+-  return p;
++  return strcpy (p, str);
++#endif
+ }
+ 
+-#endif /* HAVE_ICONV */
+-
+ /**
+- * stringprep_locale_to_utf8:
++ * stringprep_locale_to_utf8 - convert locale encoded string to UTF-8
+  * @str: input zero terminated string.
+  *
+  * Convert string encoded in the locale's character set into UTF-8 by
+@@ -244,7 +136,7 @@
+ }
+ 
+ /**
+- * stringprep_utf8_to_locale:
++ * stringprep_utf8_to_locale - encode UTF-8 string to locale encoding
+  * @str: input zero terminated string.
+  *
+  * Convert string encoded in UTF-8 into the locale's character set by

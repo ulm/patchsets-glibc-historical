@@ -5,34 +5,6 @@ NPTL patch from fedora.
 	* pthread_cond_destroy.c (__pthread_cond_destroy): If there are
 	waiters, awake all waiters on the associated mutex.
  
-2003-07-22  Jakub Jelinek  <jakub@redhat.com>
-
-	* descr.h: Don't include lowlevellock.h, pthreaddef.h and dl-sysdep.h
-	if __need_struct_pthread_size, instead define lll_lock_t.
---- glibc-20050722T0433/nptl/Makefile	11 Jul 2005 16:40:21 -0000	1.169
-+++ glibc-20050722T0433-fedora/nptl/Makefile	21 Jul 2005 08:25:47 -0000	1.157.2.12
-@@ -502,15 +502,19 @@ $(addprefix $(objpfx), \
-     $(tests) $(xtests) $(test-srcs))): $(objpfx)libpthread.so \
- 				       $(objpfx)libpthread_nonshared.a
- $(objpfx)tst-unload: $(common-objpfx)dlfcn/libdl.so
--# $(objpfx)../libc.so is used instead of $(common-objpfx)libc.so,
-+# $(objpfx)linklibc.so is used instead of $(common-objpfx)libc.so,
- # since otherwise libpthread.so comes before libc.so when linking.
- $(addprefix $(objpfx), $(tests-reverse)): \
--  $(objpfx)../libc.so $(objpfx)libpthread.so \
-+  $(objpfx)linklibc.so $(objpfx)libpthread.so \
-   $(objpfx)libpthread_nonshared.a
- $(objpfx)../libc.so: $(common-objpfx)libc.so ;
- $(addprefix $(objpfx),$(tests-static) $(xtests-static)): $(objpfx)libpthread.a
- 
- $(objpfx)tst-atfork2.out: $(objpfx)tst-atfork2mod.so
-+
-+$(objpfx)linklibc.so: $(common-objpfx)libc.so
-+	ln -s ../libc.so $@
-+generated += libclink.so
- else
- $(addprefix $(objpfx),$(tests) $(test-srcs)): $(objpfx)libpthread.a
- endif
 --- glibc-20050722T0433/nptl/pthread_cond_destroy.c	2 Sep 2004 18:45:37 -0000	1.5
 +++ glibc-20050722T0433-fedora/nptl/pthread_cond_destroy.c	22 Sep 2004 21:21:01 -0000	1.5.2.1
 @@ -44,15 +44,35 @@ __pthread_cond_destroy (cond)
@@ -76,12 +48,3 @@ NPTL patch from fedora.
      }
  
    return 0;
---- glibc-20050722T0433/nptl/sysdeps/unix/sysv/linux/kernel-features.h 1 Jan 1970 00:00:00 -0000
-+++ glibc-20050722T0433-fedora/nptl/sysdeps/unix/sysv/linux/kernel-features.h	22 Sep 2004 21:21:02 -0000	1.1.2.1
-@@ -0,0 +1,6 @@
-+#include_next <kernel-features.h>
-+
-+/* NPTL can always assume all clone thread flags work.  */
-+#ifndef __ASSUME_CLONE_THREAD_FLAGS
-+# define __ASSUME_CLONE_THREAD_FLAGS	1
-+#endif
