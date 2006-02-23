@@ -1,11 +1,20 @@
 Sniped from:
 http://rpm.sh-linux.org/rpm-2004/target/SRPMS/glibc-2.3.3-27.12.src.rpm
-
 http://bugs.gentoo.org/show_bug.cgi?id=100696
 
---- nptl/Makefile
-+++ nptl/Makefile
-@@ -320,7 +320,7 @@
+2006-01-03  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* Makefile ($(objpfx)$(multidir)): Use mkdir -p.
+
+Index: nptl/Makefile
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/Makefile,v
+retrieving revision 1.174
+retrieving revision 1.175
+diff -u -p -r1.174 -r1.175
+--- nptl/Makefile	28 Dec 2005 20:48:24 -0000	1.174
++++ nptl/Makefile	5 Jan 2006 08:16:20 -0000	1.175
+@@ -324,7 +324,7 @@ crti-objs += $(multidir)/crti.o
  crtn-objs += $(multidir)/crtn.o
  omit-deps += $(multidir)/crti $(multidir)/crtn
  $(objpfx)$(multidir):
