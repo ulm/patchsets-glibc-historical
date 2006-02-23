@@ -1,0 +1,55 @@
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=398
+
+Date: Mon, 12 Jul 2004 12:45:10 +0900
+From: GOTO Masanori <gotom at debian dot or dot jp>
+To: Martin Schwidefsky <schwidefsky at de dot ibm dot com>,
+	libc-alpha at sources dot redhat dot com
+Cc: gotom at debian dot or dot jp
+Subject: [PATCH] include s390 sysdep.h to fix compilation failure
+
+This patch includes sysdep.h for dl-machine.h on s390 because CFI
+directive macros need it.  Without this patch, my compilation was
+failed on s390.
+
+Regards,
+-- gotom
+
+
+2004-07-10  GOTO Masanori  <gotom@debian.or.jp>
+
+	* sysdeps/s390/s390-32/dl-machine.h: Include sysdep.h
+	  for CFI directive.
+	* sysdeps/s390/s390-64/dl-machine.h: Likewise.
+
+
+Index: sysdeps/s390/s390-32/dl-machine.h
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/s390/s390-32/dl-machine.h,v
+retrieving revision 1.20
+diff -u -r1.20 dl-machine.h
+--- sysdeps/s390/s390-32/dl-machine.h	5 Mar 2004 10:25:33 -0000	1.20
++++ sysdeps/s390/s390-32/dl-machine.h	10 Jul 2004 04:26:31 -0000
+@@ -27,6 +27,7 @@
+ #include <sys/param.h>
+ #include <string.h>
+ #include <link.h>
++#include <sysdep.h>
+ 
+ /* This is an older, now obsolete value.  */
+ #define EM_S390_OLD	0xA390
+Index: sysdeps/s390/s390-64/dl-machine.h
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/s390/s390-64/dl-machine.h,v
+retrieving revision 1.19
+diff -u -r1.19 dl-machine.h
+--- sysdeps/s390/s390-64/dl-machine.h	5 Mar 2004 10:26:20 -0000	1.19
++++ sysdeps/s390/s390-64/dl-machine.h	10 Jul 2004 04:26:31 -0000
+@@ -27,6 +27,7 @@
+ #include <sys/param.h>
+ #include <string.h>
+ #include <link.h>
++#include <sysdep.h>
+ 
+ /* This is an older, now obsolete value.  */
+ #define EM_S390_OLD	0xA390
+
