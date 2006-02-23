@@ -146,7 +146,7 @@ Index: sysdeps/x86_64/strlen.S
 -2:
 -	subq %rdi, %rax		/* compute difference to string start */
 -	ret
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/Attic/6905_amd64_2.3.3-amd64-string.patch,v 1.1 2006/02/12 12:31:29 azarah Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
@@ -639,7 +639,7 @@ Index: sysdeps/x86_64/strcpy.S
 -#include "asm-syntax.h"
 -#include "bp-sym.h"
 -#include "bp-asm.h"
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/Attic/6905_amd64_2.3.3-amd64-string.patch,v 1.1 2006/02/12 12:31:29 azarah Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
  
 -#ifndef USE_AS_STPCPY
 +# (c) 2002 Advanced Micro Devices, Inc.
@@ -2659,7 +2659,7 @@ Index: sysdeps/x86_64/strcmp.S
 -#include "asm-syntax.h"
 -#include "bp-sym.h"
 -#include "bp-asm.h"
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/Attic/6905_amd64_2.3.3-amd64-string.patch,v 1.1 2006/02/12 12:31:29 azarah Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
@@ -3307,7 +3307,7 @@ Index: sysdeps/x86_64/memcmp.S
 --- sysdeps/x86_64/memcmp.S	created
 +++ sysdeps/x86_64/memcmp.S	2004-03-07 12:52:04.000000000 +0100	1.1
 @@ -0,0 +1,442 @@
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/Attic/6905_amd64_2.3.3-amd64-string.patch,v 1.1 2006/02/12 12:31:29 azarah Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
@@ -3757,7 +3757,7 @@ Index: sysdeps/x86_64/strncmp.S
 #--- sysdeps/x86_64/strncmp.S	created
 #+++ sysdeps/x86_64/strncmp.S	2004-02-11 07:19:15.000000000 +0100	1.1
 #@@ -0,0 +1,15 @@
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/Attic/6905_amd64_2.3.3-amd64-string.patch,v 1.1 2006/02/12 12:31:29 azarah Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
