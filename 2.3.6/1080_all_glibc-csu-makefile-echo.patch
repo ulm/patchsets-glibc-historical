@@ -1,0 +1,22 @@
+http://bugs.gentoo.org/123804
+
+2005-02-26  GOTO Masanori  <gotom@debian.or.jp>
+
+	* csu/Makefile: Use printf instead of echo for some shells.
+
+===================================================================
+RCS file: /cvs/glibc/libc/csu/Makefile,v
+retrieving revision 1.75
+retrieving revision 1.76
+diff -u -r1.75 -r1.76
+--- libc/csu/Makefile	2005/01/03 17:57:14	1.75
++++ libc/csu/Makefile	2005/03/01 01:44:36	1.76
+@@ -241,7 +241,7 @@
+ 	 esac; \
+ 	 files="$(all-Banner-files)";				\
+ 	 if test -n "$$files"; then				\
+-	   echo "\"Available extensions:\\n\"";			\
++	   printf '"Available extensions:\\n"\n';		\
+ 	   sed -e '/^#/d' -e 's/^[[:space:]]*/	/'		\
+ 	       -e 's/^\(.*\)$$/\"\1\\n\"/' $$files;		\
+ 	 fi) > $@T
