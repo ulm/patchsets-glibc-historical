@@ -1,0 +1,14 @@
+http://bugs.gentoo.org/82106
+http://lists.debian.org/debian-glibc/2003/03/msg00537.html
+
+--- glibc-2.3.4/localedata/Makefile
++++ glibc-2.3.4/localedata/Makefile
+@@ -206,7 +206,7 @@ INSTALL-SUPPORTED-LOCALES=$(addprefix in
+ 
+ # Sometimes the whole collection of locale files should be installed.
+ LOCALEDEF=I18NPATH=. GCONV_PATH=$(common-objpfx)iconvdata LC_ALL=C \
+-$(common-objpfx)elf/ld.so --library-path $(rpath-link) $(common-objpfx)locale/localedef
++$(common-objpfx)elf/ld.so --library-path $(rpath-link) $(common-objpfx)locale/localedef --no-archive
+ install-locales: $(INSTALL-SUPPORTED-LOCALES)
+ 
+ install-locales-dir:
