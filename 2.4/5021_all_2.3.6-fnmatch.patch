@@ -1,0 +1,75 @@
+When fnmatch detects an invalid multibyte character it should fall back to
+single byte matching, so that "*" has a chance to match such a string.
+
+Andreas.
+
+2005-04-12  Andreas Schwab  <schwab@suse.de>
+
+	* posix/fnmatch.c (fnmatch): If conversion to wide character
+	fails fall back to single byte matching.
+
+--- posix/fnmatch.c	30 Mar 2005 04:17:47 -0000	1.51
++++ posix/fnmatch.c	12 Apr 2005 11:35:51 -0000
+@@ -344,10 +344,8 @@ fnmatch (pattern, string, flags)
+ 	  wpattern = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+ 	  n = mbsrtowcs (wpattern, &p, n + 1, &ps);
+ 	  if (__builtin_expect (n == (size_t) -1, 0))
+-	    /* Something wrong.
+-	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+-	       already done?  */
+-	    return -1;
++	    /* Something wrong.  Fall back to single byte matching.  */
++	    goto try_singlebyte;
+ 	  if (p)
+ 	    memset (&ps, '\0', sizeof (ps));
+ 	}
+@@ -355,10 +353,8 @@ fnmatch (pattern, string, flags)
+ 	{
+ 	  n = mbsrtowcs (NULL, &pattern, 0, &ps);
+ 	  if (__builtin_expect (n == (size_t) -1, 0))
+-	    /* Something wrong.
+-	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+-	       already done?  */
+-	    return -1;
++	    /* Something wrong.  Fall back to single byte matching.  */
++	    goto try_singlebyte;
+ 	  wpattern = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+ 	  assert (mbsinit (&ps));
+ 	  (void) mbsrtowcs (wpattern, &pattern, n + 1, &ps);
+@@ -376,10 +372,8 @@ fnmatch (pattern, string, flags)
+ 	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+ 	  n = mbsrtowcs (wstring, &p, n + 1, &ps);
+ 	  if (__builtin_expect (n == (size_t) -1, 0))
+-	    /* Something wrong.
+-	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+-	       already done?  */
+-	    return -1;
++	    /* Something wrong.  Fall back to single byte matching.  */
++	    goto try_singlebyte;
+ 	  if (p)
+ 	    memset (&ps, '\0', sizeof (ps));
+ 	}
+@@ -387,11 +381,8 @@ fnmatch (pattern, string, flags)
+ 	{
+ 	  n = mbsrtowcs (NULL, &string, 0, &ps);
+ 	  if (__builtin_expect (n == (size_t) -1, 0))
+-	    /* Something wrong.
+-	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+-	       already done?  */
+-	    return -1;
+-	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
++	    /* Something wrong.  Fall back to single byte matching.  */
++	    goto try_singlebyte;
+ 	  assert (mbsinit (&ps));
+ 	  (void) mbsrtowcs (wstring, &string, n + 1, &ps);
+ 	}
+@@ -399,6 +390,8 @@ fnmatch (pattern, string, flags)
+       return internal_fnwmatch (wpattern, wstring, wstring + n,
+ 				flags & FNM_PERIOD, flags);
+     }
++
++ try_singlebyte:
+ # endif  /* mbstate_t and mbsrtowcs or _LIBC.  */
+ 
+   return internal_fnmatch (pattern, string, string + strlen (string),
+

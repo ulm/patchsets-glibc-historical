@@ -1,0 +1,16 @@
+	Hack to hopefully get sandbox working on mips
+
+--- glibc-2.3.4.orig/elf/do-lookup.h
++++ glibc-2.3.4/elf/do-lookup.h
+@@ -187,6 +187,11 @@ do_lookup_x (const char *undef_name, uns
+ 		}
+ 	      /* FALLTHROUGH */
+ 	    case STB_GLOBAL:
++	      /* HACK: MIPS marks its lazy evaluation stubs with SHN_UNDEF
++		 symbols, we skip them. */
++	      if (sym->st_shndx == SHN_UNDEF)
++		break;
++
+ 	      /* Global definition.  Just what we need.  */
+ 	      result->s = sym;
+ 	      result->m = map;
