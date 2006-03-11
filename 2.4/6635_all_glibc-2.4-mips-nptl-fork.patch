@@ -1,6 +1,6 @@
 2006-03-11  Mike Frysinger  <vapier@gentoo.org>
 
-	* sysdeps/unix/sysv/linux/mips/nptl/fork.c: Use correct path to vfork.c.
+	* sysdeps/unix/sysv/linux/mips/nptl/fork.c: Use correct path to fork.c.
 
 --- ports/sysdeps/unix/sysv/linux/mips/nptl/fork.c
 +++ ports/sysdeps/unix/sysv/linux/mips/nptl/fork.c
