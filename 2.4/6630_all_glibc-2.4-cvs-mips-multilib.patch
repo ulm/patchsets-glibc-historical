@@ -1,0 +1,80 @@
+Date: Thu, 2 Mar 2006 14:17:17 -0500
+From: Daniel Jacobowitz <drow@false.org>
+To: libc-ports@sourceware.org
+Cc: Roland McGrath <roland@redhat.com>
+Subject: MIPS64 build fix - modifies main tree
+
+In order to build a mips64 toolchain from ports, I need this patch.  Most
+of it is just future-proofing: allowing ports fragments to set more things.
+The only bit that's vital is removing the MIPS case for ldd_rewrite_script,
+so that we can set it using the proper path; ../sysdeps is no longer
+correct.
+
+OK?
+
+-- 
+Daniel Jacobowitz
+CodeSourcery
+
+2006-03-02  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/mips/configure.in: Set libc_cv_slibdir,
+	libc_cv_localedir, libdir, arch_minimum_kernel, and
+	libc_cv_gcc_unwind_find_fde.
+	* sysdeps/unix/sysv/linux/mips/mips64/configure.in: Set
+	ldd_rewrite_script.
+	* sysdeps/unix/sysv/linux/mips/configure: Regenerated.
+	* sysdeps/unix/sysv/linux/mips/mips64/configure: Regenerated.
+
+Index: libc/ports/sysdeps/unix/sysv/linux/mips/configure.in
+===================================================================
+--- libc.orig/ports/sysdeps/unix/sysv/linux/mips/configure.in	2005-02-25 10:18:06.000000000 -0500
++++ libc/ports/sysdeps/unix/sysv/linux/mips/configure.in	2006-03-02 10:46:17.000000000 -0500
+@@ -76,3 +76,37 @@ mips*)
+   echo '#include <asm/unistd.h>' > asm-unistd.h
+   ;;
+ esac
++
++case "$prefix" in
++/usr | /usr/)
++  # 64-bit libraries on bi-arch platforms go in /lib64 instead of /lib.
++  # Allow earlier configure scripts to handle libc_cv_slibdir, libdir,
++  # and libc_cv_localedir.
++  test -n "$libc_cv_slibdir" || \
++  case $machine in
++  mips/mips64/n64/* )
++    libc_cv_slibdir="/lib64"
++    if test "$libdir" = '${exec_prefix}/lib'; then
++      libdir='${exec_prefix}/lib64';
++      # Locale data can be shared between 32bit and 64bit libraries
++      libc_cv_localedir='${exec_prefix}/lib/locale'
++    fi
++    ;;
++  mips/mips64/n32/* )
++    libc_cv_slibdir="/lib32"
++    if test "$libdir" = '${exec_prefix}/lib'; then
++      libdir='${exec_prefix}/lib32';
++      # Locale data can be shared between 32bit and 64bit libraries
++      libc_cv_localedir='${exec_prefix}/lib/locale'
++    fi
++    ;;
++  *)
++    libc_cv_slibdir="/lib"
++    ;;
++  esac
++esac
++
++if test -z "$arch_minimum_kernel"; then
++  arch_minimum_kernel=2.4.0
++  libc_cv_gcc_unwind_find_fde=yes
++fi
+Index: libc/ports/sysdeps/unix/sysv/linux/mips/mips64/configure.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ libc/ports/sysdeps/unix/sysv/linux/mips/mips64/configure.in	2006-03-02 10:47:39.000000000 -0500
+@@ -0,0 +1,5 @@
++sinclude(./aclocal.m4)dnl Autoconf lossage
++GLIBC_PROVIDES dnl See aclocal.m4 in the top level source directory.
++# Local configure fragment for sysdeps/unix/sysv/linux/mips/mips64.
++
++ldd_rewrite_script=$dest/ldd-rewrite.sed
