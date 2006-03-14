@@ -1,5 +1,9 @@
-# DP: add clock_{get,set}time@@GLIBC_2.0
-# DP: although it should actually be @@GLIBC_2.2
+we kind of screwed ourselves into a corner by having the clock symbols
+exported only with the glibc-2.0 version ... this patch fixes the
+export so all new binaries built against librt will use the correct
+glibc-2.2 symbol version
+
+one day, we'll just drop this on the floor (maybe after 2006.1)
 
 --- ports/sysdeps/unix/sysv/linux/mips/Versions
 +++ ports/sysdeps/unix/sysv/linux/mips/Versions
@@ -23,3 +27,63 @@
    GLIBC_2.1
    GLIBC_2.2
    GLIBC_2.3
+--- sysdeps/unix/clock_gettime.c
++++ sysdeps/unix/clock_gettime.c
+@@ -23,6 +23,7 @@
+ #include <sys/time.h>
+ #include <libc-internal.h>
+ #include <ldsodefs.h>
++#include <shlib-compat.h>
+ 
+ 
+ #if HP_TIMING_AVAIL
+@@ -90,7 +91,7 @@
+ 
+ /* Get current value of CLOCK and store it in TP.  */
+ int
+-clock_gettime (clockid_t clock_id, struct timespec *tp)
++__clock_gettime (clockid_t clock_id, struct timespec *tp)
+ {
+   int retval = -1;
+   struct timeval tv;
+@@ -131,4 +132,10 @@
+ 
+   return retval;
+ }
+-librt_hidden_def (clock_gettime)
++versioned_symbol (librt, __clock_gettime, clock_gettime, GLIBC_2_2);
++librt_hidden_ver (__clock_gettime, clock_gettime)
++
++#if defined __mips__ && defined SHARED
++strong_alias (__clock_gettime, __mips_clock_gettime)
++compat_symbol (librt, __mips_clock_gettime, clock_gettime, GLIBC_2_0);
++#endif
+--- sysdeps/unix/clock_settime.c
++++ sysdeps/unix/clock_settime.c
+@@ -21,6 +21,7 @@
+ #include <sys/time.h>
+ #include <libc-internal.h>
+ #include <ldsodefs.h>
++#include <shlib-compat.h>
+ 
+ 
+ #if HP_TIMING_AVAIL
+@@ -38,7 +39,7 @@
+ 
+ /* Set CLOCK to value TP.  */
+ int
+-clock_settime (clockid_t clock_id, const struct timespec *tp)
++__clock_settime (clockid_t clock_id, const struct timespec *tp)
+ {
+   int retval;
+ 
+@@ -123,3 +124,9 @@
+ 
+   return retval;
+ }
++versioned_symbol (librt, __clock_settime, clock_settime, GLIBC_2_2);
++
++#if defined __mips__ && defined SHARED
++strong_alias (__clock_settime, __mips_clock_settime)
++compat_symbol (librt, __mips_clock_settime, clock_settime, GLIBC_2_0);
++#endif
