@@ -1,7 +1,7 @@
 # DP: add clock_{get,set}time@@GLIBC_2.0
 # DP: although it should actually be @@GLIBC_2.2
 
---- ports/sysdeps/unix/sysv/linux/mips/Versions.orig
+--- ports/sysdeps/unix/sysv/linux/mips/Versions
 +++ ports/sysdeps/unix/sysv/linux/mips/Versions
 @@ -34,3 +34,9 @@
      _sys_errlist; sys_errlist; _sys_nerr; sys_nerr;
@@ -13,3 +13,13 @@
 +    clock_gettime; clock_settime;
 +  }
 +}
+--- Versions.def
++++ Versions.def
+@@ -90,6 +90,7 @@
+   GLIBC_PRIVATE
+ }
+ librt {
++  GLIBC_2.0
+   GLIBC_2.1
+   GLIBC_2.2
+   GLIBC_2.3
