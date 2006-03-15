@@ -1,14 +1,18 @@
 Patch for improved string handling on amd64, bug #100289.
 http://bugs.gentoo.org/show_bug.cgi?id=100289
+
 NB: Please note that the hunk to add sysdeps/x86_64/strncmp.S have
     been removed, as it does not do bounds checking.
     http://bugs.gentoo.org/show_bug.cgi?id=100289#c78
+
+Also, misc PIC/SHARED handling has been fixed up:
+http://bugs.gentoo.org/124682
 
 ============================================================
 Index: sysdeps/x86_64/strlen.S
 --- sysdeps/x86_64/strlen.S	29 Apr 2003 22:47:18 -0000	1.2
 +++ sysdeps/x86_64/strlen.S	7 Mar 2004 14:42:19 -0000
-@@ -1,139 +1,405 @@
+@@ -1,139 +1,412 @@
 -/* strlen(str) -- determine the length of the string STR.
 -   Copyright (C) 2002, 2003 Free Software Foundation, Inc.
 -   Based on i486 version contributed by Ulrich Drepper <drepper@redhat.com>.
@@ -146,7 +150,7 @@ Index: sysdeps/x86_64/strlen.S
 -2:
 -	subq %rdi, %rax		/* compute difference to string start */
 -	ret
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.2 2006/03/15 04:08:46 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
@@ -155,9 +159,11 @@ Index: sysdeps/x86_64/strlen.S
 +# INCLUDED WITH THIS FILE
 +
 +#include "sysdep.h"
-+#include <rtld-global-offsets.h>
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
 +
-+#ifdef PIC
++#if defined PIC && defined SHARED
 +	.globl _rtld_local_ro
 +        .hidden _rtld_local_ro
 +        .set    _rtld_local_ro,_rtld_global_ro
@@ -289,8 +295,13 @@ Index: sysdeps/x86_64/strlen.S
 +#       mov     (%rsi), %rax
 +
 +#ifdef PIC
++# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE1SIZE(%r8), %r9
++# else
++        mov     _dl_cache1size@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
 +#else
 +        mov     _dl_cache1size, %r9
 +#endif
@@ -555,7 +566,7 @@ Index: sysdeps/x86_64/strlen.S
 Index: sysdeps/x86_64/dl-machine.h
 --- sysdeps/x86_64/dl-machine.h	6 Jan 2005 22:40:15 -0000	1.27
 +++ sysdeps/x86_64/dl-machine.h	17 Jan 2005 10:58:03 -0000
-@@ -208,6 +208,40 @@ dl_platform_init (void)
+@@ -337,6 +337,40 @@ dl_platform_init (void)
    if (GLRO(dl_platform) != NULL && *GLRO(dl_platform) == '\0')
      /* Avoid an empty string which would disturb us.  */
      GLRO(dl_platform) = NULL;
@@ -614,7 +625,7 @@ Index: sysdeps/x86_64/Makefile
 Index: sysdeps/x86_64/strcpy.S
 --- sysdeps/x86_64/strcpy.S	29 Apr 2003 22:47:18 -0000	1.2
 +++ sysdeps/x86_64/strcpy.S	7 Mar 2004 14:42:20 -0000
-@@ -1,159 +1,833 @@
+@@ -1,159 +1,845 @@
 -/* strcpy/stpcpy implementation for x86-64.
 -   Copyright (C) 2002 Free Software Foundation, Inc.
 -   This file is part of the GNU C Library.
@@ -639,7 +650,7 @@ Index: sysdeps/x86_64/strcpy.S
 -#include "asm-syntax.h"
 -#include "bp-sym.h"
 -#include "bp-asm.h"
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.2 2006/03/15 04:08:46 vapier Exp $
  
 -#ifndef USE_AS_STPCPY
 +# (c) 2002 Advanced Micro Devices, Inc.
@@ -649,10 +660,12 @@ Index: sysdeps/x86_64/strcpy.S
 +# INCLUDED WITH THIS FILE
 +
 +#include "sysdep.h"
-+#include <rtld-global-offsets.h>
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
 +
 +	/* XXX:	strncpy is broken, just use this for strcpy for now.  */
-+#ifdef PIC
++#if defined PIC && defined SHARED
 +	.globl _rtld_local_ro
 +        .hidden _rtld_local_ro
 +        .set    _rtld_local_ro,_rtld_global_ro
@@ -960,8 +973,13 @@ Index: sysdeps/x86_64/strcpy.S
 +
 +LABEL(64try):
 +#ifdef PIC
++# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %r9
++# else
++        mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
 +#else
 +        mov     _dl_cache1sizehalf, %r9
 +#endif
@@ -1124,8 +1142,13 @@ Index: sysdeps/x86_64/strcpy.S
 +
 +LABEL(pretry):
 +#ifdef PIC
++# ifdef SHARED
 +	mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r8), %r9
++# else
++	mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
 +#else
 +        mov     _dl_cache2sizehalf, %r9
 +#endif
@@ -1598,7 +1621,7 @@ Index: sysdeps/x86_64/strcpy.S
 Index: sysdeps/x86_64/memset.S
 --- sysdeps/x86_64/memset.S	18 Oct 2004 04:17:08 -0000	1.3
 +++ sysdeps/x86_64/memset.S	17 Jan 2005 09:39:39 -0000
-@@ -1,138 +1,320 @@
+@@ -1,138 +1,332 @@
 -/* memset/bzero -- set memory area to CH/0
 -   Optimized version for x86-64.
 -   Copyright (C) 2002, 2003, 2004 Free Software Foundation, Inc.
@@ -1630,7 +1653,9 @@ Index: sysdeps/x86_64/memset.S
  #include "asm-syntax.h"
  #include "bp-sym.h"
  #include "bp-asm.h"
-+#include <rtld-global-offsets.h>
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
  
  /* BEWARE: `#ifdef memset' means that memset is redefined as `bzero' */
  #define BZERO_P (defined memset)
@@ -1638,7 +1663,7 @@ Index: sysdeps/x86_64/memset.S
 -/* This is somehow experimental and could made dependend on the cache
 -   size.  */
 -#define LARGE $120000
-+#ifdef PIC
++#if defined PIC && defined SHARED
 +	.globl _rtld_local_ro
 +        .hidden _rtld_local_ro
 +        .set    _rtld_local_ro,_rtld_global_ro
@@ -1785,8 +1810,13 @@ Index: sysdeps/x86_64/memset.S
 +LABEL(32after):
 +
 +#ifdef PIC
++# ifdef SHARED
 +	mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov     RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %r9
++# else
++	mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov     (%r8), %r9
++# endif
  #else
 -	/* Populate 8 bit data to full 64-bit.  */
 -	movabs	$0x0101010101010101,%r8
@@ -1874,8 +1904,13 @@ Index: sysdeps/x86_64/memset.S
 +
 +LABEL(alignafter):
 +#ifdef PIC
++# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL(%rip), %r9
 +	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r9), %r8
++# else
++        mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r9
++	mov	(%r9), %r8
++# endif
 +	# For MP System half cache size is better, for UP full cache size
 +	# is better -> use half cache size only
  #else
@@ -2032,7 +2067,7 @@ Index: sysdeps/x86_64/memset.S
 Index: sysdeps/x86_64/memcpy.S
 --- sysdeps/x86_64/memcpy.S	18 Oct 2004 04:17:08 -0000	1.5
 +++ sysdeps/x86_64/memcpy.S	17 Jan 2005 09:39:39 -0000
-@@ -1,101 +1,520 @@
+@@ -1,101 +1,537 @@
 -/* Highly optimized version for x86-64.
 -   Copyright (C) 1997, 2000, 2002, 2003, 2004 Free Software Foundation, Inc.
 -   This file is part of the GNU C Library.
@@ -2062,7 +2097,9 @@ Index: sysdeps/x86_64/memcpy.S
  #include "asm-syntax.h"
  #include "bp-sym.h"
  #include "bp-asm.h"
-+#include <rtld-global-offsets.h>
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
  
  /* BEWARE: `#ifdef memcpy' means that memcpy is redefined as `mempcpy',
     and the return value is the byte after the last one copied in
@@ -2075,7 +2112,7 @@ Index: sysdeps/x86_64/memcpy.S
 +#endif
 +
 +
-+#ifdef PIC
++#if defined PIC  && defined SHARED
 +	.globl _rtld_local_ro
 +        .hidden _rtld_local_ro
 +        .set    _rtld_local_ro,_rtld_global_ro
@@ -2286,8 +2323,13 @@ Index: sysdeps/x86_64/memcpy.S
 +
 +LABEL(32after):
 +#ifdef PIC
++# ifdef SHARED
 +	mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov     RTLD_GLOBAL_DL_CACHE1SIZE(%r8), %r9
++# else
++	mov     _dl_cache1size@GOTPCREL(%rip), %r8
++	mov     (%r8), %r9
++# endif
  #else
 -	movq	%r10, %rax		/* Set return value.  */
 -	
@@ -2324,8 +2366,13 @@ Index: sysdeps/x86_64/memcpy.S
 +
 +LABEL(fasttry):
 +#ifdef PIC
++# ifdef SHARED
 +	mov     _rtld_local_ro@GOTPCREL(%rip), %r9
 +	mov     RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r9), %r11
++# else
++	mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r9
++	mov     (%r9), %r11
++# endif
 +#else
 +	mov     _dl_cache1sizehalf, %r11
 +#endif
@@ -2438,8 +2485,13 @@ Index: sysdeps/x86_64/memcpy.S
 +
 +LABEL(pretry):
 +#ifdef PIC
++# ifdef SHARED
 +	mov     _rtld_local_ro@GOTPCREL(%rip), %r11
 +	mov     RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r11), %r8
++# else
++	mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r11
++	mov     (%r11), %r8
++# endif
 +#else
 +	mov     _dl_cache2sizehalf, %r8
 +#endif
@@ -2627,8 +2679,8 @@ Index: sysdeps/x86_64/mempcpy.S
 @@ -1,3 +1,4 @@
 +#define USE_AS_MEMPCPY
  #define memcpy __mempcpy
+ #define __memcpy_chk __mempcpy_chk
  #include <sysdeps/x86_64/memcpy.S>
- 
 ============================================================
 Index: sysdeps/x86_64/strcmp.S
 --- sysdeps/x86_64/strcmp.S	29 Apr 2003 22:47:18 -0000	1.2
@@ -2659,7 +2711,7 @@ Index: sysdeps/x86_64/strcmp.S
 -#include "asm-syntax.h"
 -#include "bp-sym.h"
 -#include "bp-asm.h"
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.2 2006/03/15 04:08:46 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
@@ -3306,8 +3358,8 @@ Index: sysdeps/x86_64/elf/rtld-global-offsets.sym
 Index: sysdeps/x86_64/memcmp.S
 --- sysdeps/x86_64/memcmp.S	created
 +++ sysdeps/x86_64/memcmp.S	2004-03-07 12:52:04.000000000 +0100	1.1
-@@ -0,0 +1,442 @@
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
+@@ -0,0 +1,459 @@
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.2 2006/03/15 04:08:46 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
@@ -3316,9 +3368,11 @@ Index: sysdeps/x86_64/memcmp.S
 +# INCLUDED WITH THIS FILE
 +
 +#include "sysdep.h"
-+#include <rtld-global-offsets.h>
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
 +
-+#ifdef PIC
++#if defined PIC && defined SHARED
 +	.globl _rtld_local_ro
 +        .hidden _rtld_local_ro
 +        .set    _rtld_local_ro,_rtld_global_ro
@@ -3439,8 +3493,13 @@ Index: sysdeps/x86_64/memcmp.S
 +L(memcmp32after):
 +
 +#ifdef PIC
++# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %r9
++# else
++        mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
 +#else
 +        mov     _dl_cache1sizehalf, %r9
 +#endif
@@ -3479,8 +3538,13 @@ Index: sysdeps/x86_64/memcmp.S
 +
 +L(memcmp64try):
 +#ifdef PIC
++# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %rcx
++# else
++        mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %rcx
++# endif
 +#else
 +        mov     _dl_cache1sizehalf, %rcx
 +#endif
@@ -3551,8 +3615,13 @@ Index: sysdeps/x86_64/memcmp.S
 +
 +L(memcmppre):                              # 64-byte prefetching
 +#ifdef PIC
++# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r8), %rcx
++# else
++        mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %rcx
++# endif
 +#else
 +        mov     _dl_cache2sizehalf, %rcx
 +#endif
@@ -3757,7 +3826,7 @@ Index: sysdeps/x86_64/strncmp.S
 #--- sysdeps/x86_64/strncmp.S	created
 #+++ sysdeps/x86_64/strncmp.S	2004-02-11 07:19:15.000000000 +0100	1.1
 #@@ -0,0 +1,15 @@
-+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.1 2006/02/23 01:38:57 vapier Exp $
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.3.6/6905_all_2.3.3-amd64-string.patch,v 1.2 2006/03/15 04:08:46 vapier Exp $
 +
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
