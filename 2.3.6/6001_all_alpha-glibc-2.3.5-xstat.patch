@@ -1,3 +1,18 @@
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=1026
+http://sourceware.org/ml/libc-alpha/2005-02/msg00122.html
+
+2005-02-26  GOTO Masanori  <gotom@debian.or.jp>
+
+	* sysdeps/unix/sysv/linux/kernel-features.h: Define
+	__ASSUME_STAT64_SYSCALL.
+	* sysdeps/unix/sysv/linux/alpha/fxstat.c: Check
+	__ASSUME_STAT64_SYSCALL.
+	* sysdeps/unix/sysv/linux/alpha/lxstat.c: Likewise.
+	* sysdeps/unix/sysv/linux/alpha/xstat.c: Likewise.
+	* sysdeps/unix/sysv/linux/alpha/xstatconv.c: Don't define
+	__libc_missing_axp_stat64 when it's not needed.
+	* sysdeps/unix/sysv/linux/alpha/xstatconv.h: Likewise.
+
 --- sysdeps/unix/sysv/linux/kernel-features.h
 +++ sysdeps/unix/sysv/linux/kernel-features.h
 @@ -413,6 +413,11 @@
