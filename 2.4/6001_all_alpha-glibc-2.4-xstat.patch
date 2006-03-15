@@ -7,6 +7,7 @@ http://sourceware.org/ml/libc-alpha/2005-02/msg00122.html
 	__ASSUME_STAT64_SYSCALL.
 	* sysdeps/unix/sysv/linux/alpha/fxstat.c: Check
 	__ASSUME_STAT64_SYSCALL.
+	* sysdeps/unix/sysv/linux/alpha/fxstatat.c: Likewise.
 	* sysdeps/unix/sysv/linux/alpha/lxstat.c: Likewise.
 	* sysdeps/unix/sysv/linux/alpha/xstat.c: Likewise.
 	* sysdeps/unix/sysv/linux/alpha/xstatconv.c: Don't define
@@ -75,6 +76,37 @@ http://sourceware.org/ml/libc-alpha/2005-02/msg00122.html
    return -1;
  }
  hidden_def (__fxstat)
+--- sysdeps/unix/sysv/linux/alpha/fxstatat.c
++++ sysdeps/unix/sysv/linux/alpha/fxstatat.c
+@@ -65,6 +65,20 @@ __fxstatat (int vers, int fd, const char
+   int result, errno_out;
+   struct kernel_stat kst;
+ 
++#if __ASSUME_STAT64_SYSCALL > 0
++  if (vers == _STAT_VER_KERNEL64)
++    {
++      if (flag & AT_SYMLINK_NOFOLLOW)
++	result = INTERNAL_SYSCALL (lstat64, err, 2, file, st);
++      else
++	result = INTERNAL_SYSCALL (stat64, err, 2, file, st);
++
++      if (__builtin_expect (!INTERNAL_SYSCALL_ERROR_P (result, err), 1))
++	return result;
++      errno_out = INTERNAL_SYSCALL_ERRNO (result, err);
++      goto fail;
++    }
++#elif defined __NR_stat64
+   if (vers == _STAT_VER_KERNEL64 && !__libc_missing_axp_stat64)
+     {
+       if (flag & AT_SYMLINK_NOFOLLOW)
+@@ -79,6 +93,7 @@ __fxstatat (int vers, int fd, const char
+ 	goto fail;
+       __libc_missing_axp_stat64 = 1;
+     }
++#endif
+ 
+   if (flag & AT_SYMLINK_NOFOLLOW)
+     result = INTERNAL_SYSCALL (lstat, err, 2, file, &kst);
 --- sysdeps/unix/sysv/linux/alpha/lxstat.c
 +++ sysdeps/unix/sysv/linux/alpha/lxstat.c
 @@ -35,27 +35,39 @@ int
