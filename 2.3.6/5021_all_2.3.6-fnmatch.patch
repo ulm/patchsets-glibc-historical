@@ -1,3 +1,5 @@
+http://sourceware.org/ml/libc-hacker/2002-11/msg00071.html
+
 When fnmatch detects an invalid multibyte character it should fall back to
 single byte matching, so that "*" has a chance to match such a string.
 
@@ -49,7 +51,7 @@ Andreas.
  	  if (p)
  	    memset (&ps, '\0', sizeof (ps));
  	}
-@@ -387,11 +381,8 @@ fnmatch (pattern, string, flags)
+@@ -387,10 +381,8 @@ fnmatch (pattern, string, flags)
  	{
  	  n = mbsrtowcs (NULL, &string, 0, &ps);
  	  if (__builtin_expect (n == (size_t) -1, 0))
@@ -57,12 +59,11 @@ Andreas.
 -	       XXX Do we have to set `errno' to something which mbsrtows hasn't
 -	       already done?  */
 -	    return -1;
--	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
 +	    /* Something wrong.  Fall back to single byte matching.  */
 +	    goto try_singlebyte;
+ 	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
  	  assert (mbsinit (&ps));
  	  (void) mbsrtowcs (wstring, &string, n + 1, &ps);
- 	}
 @@ -399,6 +390,8 @@ fnmatch (pattern, string, flags)
        return internal_fnwmatch (wpattern, wstring, wstring + n,
  				flags & FNM_PERIOD, flags);
