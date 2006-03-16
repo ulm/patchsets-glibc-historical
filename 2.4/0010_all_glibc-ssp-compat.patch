@@ -38,15 +38,25 @@ uses __stack_chk_guard and __stack_chk_fail.
  #else
 --- glibc-2.4/csu/libc-start.c
 +++ glibc-2.4/csu/libc-start.c
-@@ -40,6 +40,7 @@ extern void __pthread_initialize_minimal
-    in thread local area.  */
+@@ -28,8 +28,8 @@
+ extern int __libc_multiple_libcs;
+ 
+ #include <tls.h>
++#include <dl-osinfo.h>
+ #ifndef SHARED
+-# include <dl-osinfo.h>
+ extern void __pthread_initialize_minimal (void)
+ # if !(USE_TLS - 0) && !defined NONTLS_INIT_TP
+      __attribute__ ((weak))
+@@ -41,6 +41,7 @@
  uintptr_t __stack_chk_guard attribute_relro;
  # endif
-+OLD_DECLARE_STACK_GUARD
  #endif
++OLD_DECLARE_STACK_GUARD
  
  #ifdef HAVE_PTR_NTHREADS
-@@ -152,6 +153,7 @@ LIBC_START_MAIN (int (*main) (int, char 
+ /* We need atomic operations.  */
+@@ -152,6 +153,7 @@
  # ifndef SHARED
    /* Set up the stack checker's canary.  */
    uintptr_t stack_chk_guard = _dl_setup_stack_chk_guard ();
@@ -91,6 +101,21 @@ uses __stack_chk_guard and __stack_chk_fail.
    GLIBC_2.4 {
      # stack canary
      __stack_chk_guard;
+--- glibc-2.4/csu/Versions
++++ glibc-2.4/csu/Versions
+@@ -17,6 +17,12 @@
+     # New special glibc functions.
+     gnu_get_libc_release; gnu_get_libc_version;
+   }
++  GLIBC_2.3.2 {
++%ifdef ENABLE_OLD_SSP_COMPAT
++    # global objects and functions for the old propolice patch in gcc
++    __guard; __stack_smash_handler;
++%endif
++  }
+   GLIBC_PRIVATE {
+ %if USE_TLS && HAVE___THREAD
+     # This version is for the TLS symbol, GLIBC_2.0 is the old object symbol.
 --- glibc-2.4/debug/Versions
 +++ glibc-2.4/debug/Versions
 @@ -10,6 +10,12 @@ libc {
