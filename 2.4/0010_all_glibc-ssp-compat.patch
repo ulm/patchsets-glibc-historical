@@ -2,65 +2,49 @@ Add backwards compat support for gcc-3.x ssp ... older ssp versions
 used __guard and __stack_smash_handler symbols while gcc-4.1 and newer
 uses __stack_chk_guard and __stack_chk_fail.
 
---- glibc-2.4/sysdeps/unix/sysv/linux/dl-osinfo.h
-+++ glibc-2.4/sysdeps/unix/sysv/linux/dl-osinfo.h
-@@ -179,3 +179,13 @@ _dl_setup_stack_chk_guard (void)
-   p[sizeof (ret) - 2] = '\n';
-   return ret;
- }
-+
-+#ifdef ENABLE_OLD_SSP_COMPAT
-+# define OLD_DECLARE_STACK_GUARD  \
-+	uintptr_t __guard_local attribute_relro attribute_hidden __attribute__ ((nocommon)); \
-+	strong_alias (__guard_local, __guard);
-+# define OLD_SET_STACK_GUARD(val) (__guard_local = (val)) 
-+#else
-+# define OLD_DECLARE_STACK_GUARD
-+# define OLD_SET_STACK_GUARD(val)
-+#endif
 --- glibc-2.4/elf/rtld.c
 +++ glibc-2.4/elf/rtld.c
-@@ -89,6 +89,7 @@ INTDEF(_dl_argv)
+@@ -89,6 +89,10 @@ INTDEF(_dl_argv)
     in thread local area.  */
  uintptr_t __stack_chk_guard attribute_relro;
  #endif
-+OLD_DECLARE_STACK_GUARD
++#ifdef ENABLE_OLD_SSP_COMPAT
++uintptr_t __guard_local attribute_relro attribute_hidden __attribute__ ((nocommon));
++strong_alias (__guard_local, __guard);
++#endif
  
  /* Only exported for architectures that don't store the pointer guard
     value in thread local area.  */
-@@ -1834,6 +1835,7 @@ ERROR: ld.so: object '%s' cannot be load
+@@ -1834,6 +1835,9 @@ ERROR: ld.so: object '%s' cannot be load
  
    /* Set up the stack checker's canary.  */
    uintptr_t stack_chk_guard = _dl_setup_stack_chk_guard ();
-+  OLD_SET_STACK_GUARD (stack_chk_guard);
++#ifdef ENABLE_OLD_SSP_COMPAT
++  __guard_local = stack_chk_guard;
++#endif
  #ifdef THREAD_SET_STACK_GUARD
    THREAD_SET_STACK_GUARD (stack_chk_guard);
  #else
 --- glibc-2.4/csu/libc-start.c
 +++ glibc-2.4/csu/libc-start.c
-@@ -28,8 +28,8 @@
- extern int __libc_multiple_libcs;
- 
- #include <tls.h>
-+#include <dl-osinfo.h>
- #ifndef SHARED
--# include <dl-osinfo.h>
- extern void __pthread_initialize_minimal (void)
- # if !(USE_TLS - 0) && !defined NONTLS_INIT_TP
-      __attribute__ ((weak))
-@@ -41,6 +41,7 @@
+@@ -41,6 +41,10 @@
  uintptr_t __stack_chk_guard attribute_relro;
  # endif
  #endif
-+OLD_DECLARE_STACK_GUARD
++#ifdef ENABLE_OLD_SSP_COMPAT
++uintptr_t __guard_local attribute_relro attribute_hidden __attribute__ ((nocommon,weak));
++weak_alias (__guard_local, __guard);
++#endif
  
  #ifdef HAVE_PTR_NTHREADS
  /* We need atomic operations.  */
-@@ -152,6 +153,7 @@
+@@ -152,6 +153,9 @@
  # ifndef SHARED
    /* Set up the stack checker's canary.  */
    uintptr_t stack_chk_guard = _dl_setup_stack_chk_guard ();
-+  OLD_SET_STACK_GUARD (stack_chk_guard);
++#ifdef ENABLE_OLD_SSP_COMPAT
++  __guard_local = stack_chk_guard;
++#endif
  #  ifdef THREAD_SET_STACK_GUARD
    THREAD_SET_STACK_GUARD (stack_chk_guard);
  #  else
@@ -110,7 +94,7 @@ uses __stack_chk_guard and __stack_chk_fail.
 +  GLIBC_2.3.2 {
 +%ifdef ENABLE_OLD_SSP_COMPAT
 +    # global objects and functions for the old propolice patch in gcc
-+    __guard; __stack_smash_handler;
++    __guard;
 +%endif
 +  }
    GLIBC_PRIVATE {
