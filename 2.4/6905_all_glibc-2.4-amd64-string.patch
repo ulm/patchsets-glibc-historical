@@ -1,0 +1,3862 @@
+This patch is taken from current SuSE rpm: glibc-2.4-6.src.rpm
+
+Patch for improved string handling on amd64
+http://bugs.gentoo.org/100289
+
+NB: Please note that the hunk to add sysdeps/x86_64/strncmp.S hase
+    been removed, as it does not do bounds checking.
+    http://bugs.gentoo.org/100289#c78
+
+Also, misc PIC/SHARED handling has been fixed up:
+http://bugs.gentoo.org/124682
+
+============================================================
+Index: sysdeps/x86_64/strlen.S
+--- sysdeps/x86_64/strlen.S	29 Apr 2003 22:47:18 -0000	1.2
++++ sysdeps/x86_64/strlen.S	7 Mar 2004 14:42:19 -0000
+@@ -1,139 +1,412 @@
+-/* strlen(str) -- determine the length of the string STR.
+-   Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+-   Based on i486 version contributed by Ulrich Drepper <drepper@redhat.com>.
+-   This file is part of the GNU C Library.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
+-
+-#include <sysdep.h>
+-#include "asm-syntax.h"
+-#include "bp-sym.h"
+-#include "bp-asm.h"
+-
+-
+-	.text
+-ENTRY (strlen)
+-	movq %rdi, %rcx		/* Duplicate source pointer. */
+-	andl $7, %ecx		/* mask alignment bits */
+-	movq %rdi, %rax		/* duplicate destination.  */
+-	jz 1f			/* aligned => start loop */
+-
+-	neg %ecx		/* We need to align to 8 bytes.  */
+-	addl $8,%ecx
+-	/* Search the first bytes directly.  */
+-0:	cmpb $0x0,(%rax)	/* is byte NUL? */
+-	je 2f			/* yes => return */
+-	incq %rax		/* increment pointer */
+-	decl %ecx
+-	jnz 0b
+-
+-1:	movq $0xfefefefefefefeff,%r8 /* Save magic.  */
+-
+-	.p2align 4		/* Align loop.  */
+-4:	/* Main Loop is unrolled 4 times.  */
+-	/* First unroll.  */
+-	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
+-	addq $8,%rax		/* adjust pointer for next word */
+-	movq %r8, %rdx		/* magic value */
+-	addq %rcx, %rdx		/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc 3f			/* highest byte is NUL => return pointer */
+-	xorq %rcx, %rdx		/* (word+magic)^word */
+-	orq %r8, %rdx		/* set all non-carry bits */
+-	incq %rdx		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-	jnz 3f			/* found NUL => return pointer */
+-
+-	/* Second unroll.  */
+-	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
+-	addq $8,%rax		/* adjust pointer for next word */
+-	movq %r8, %rdx		/* magic value */
+-	addq %rcx, %rdx		/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc 3f			/* highest byte is NUL => return pointer */
+-	xorq %rcx, %rdx		/* (word+magic)^word */
+-	orq %r8, %rdx		/* set all non-carry bits */
+-	incq %rdx		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-	jnz 3f			/* found NUL => return pointer */
+-
+-	/* Third unroll.  */
+-	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
+-	addq $8,%rax		/* adjust pointer for next word */
+-	movq %r8, %rdx		/* magic value */
+-	addq %rcx, %rdx		/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc 3f			/* highest byte is NUL => return pointer */
+-	xorq %rcx, %rdx		/* (word+magic)^word */
+-	orq %r8, %rdx		/* set all non-carry bits */
+-	incq %rdx		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-	jnz 3f			/* found NUL => return pointer */
+-
+-	/* Fourth unroll.  */
+-	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
+-	addq $8,%rax		/* adjust pointer for next word */
+-	movq %r8, %rdx		/* magic value */
+-	addq %rcx, %rdx		/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc 3f			/* highest byte is NUL => return pointer */
+-	xorq %rcx, %rdx		/* (word+magic)^word */
+-	orq %r8, %rdx		/* set all non-carry bits */
+-	incq %rdx		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-	jz 4b			/* no NUL found => continue loop */
+-
+-	.p2align 4		/* Align, it's a jump target.  */
+-3:	subq $8,%rax		/* correct pointer increment.  */
+-
+-	testb %cl, %cl		/* is first byte NUL? */
+-	jz 2f			/* yes => return */
+-	incq %rax		/* increment pointer */
+-
+-	testb %ch, %ch		/* is second byte NUL? */
+-	jz 2f			/* yes => return */
+-	incq %rax		/* increment pointer */
+-
+-	testl $0x00ff0000, %ecx /* is third byte NUL? */
+-	jz 2f			/* yes => return pointer */
+-	incq %rax		/* increment pointer */
+-
+-	testl $0xff000000, %ecx /* is fourth byte NUL? */
+-	jz 2f			/* yes => return pointer */
+-	incq %rax		/* increment pointer */
+-
+-	shrq $32, %rcx		/* look at other half.  */
+-
+-	testb %cl, %cl		/* is first byte NUL? */
+-	jz 2f			/* yes => return */
+-	incq %rax		/* increment pointer */
+-
+-	testb %ch, %ch		/* is second byte NUL? */
+-	jz 2f			/* yes => return */
+-	incq %rax		/* increment pointer */
+-
+-	testl $0xff0000, %ecx	/* is third byte NUL? */
+-	jz 2f			/* yes => return pointer */
+-	incq %rax		/* increment pointer */
+-2:
+-	subq %rdi, %rax		/* compute difference to string start */
+-	ret
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.4/Attic/6905_all_glibc-2.4-amd64-string.patch,v 1.1 2006/03/17 03:04:51 vapier Exp $
++
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
++
++#include "sysdep.h"
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
++
++#if defined PIC && defined SHARED
++	.globl _rtld_local_ro
++        .hidden _rtld_local_ro
++        .set    _rtld_local_ro,_rtld_global_ro
++#endif
++        .text
++
++ENTRY   (strlen)                # (const char *s)
++
++        mov     %rdi, %rsi
++        neg     %rdi
++
++L(strlenaligntry):
++        mov     %rsi , %r8
++        and     $7, %r8d
++	jz	L(strlenalignafter)
++
++L(strlenalign):                            # 8-byte align
++        sub     $8, %r8
++
++        .p2align 4
++
++L(strlenalignloop):
++        cmpb    $0, (%rsi)
++        je      L(exit)
++
++        inc     %rsi
++        inc     %r8
++        jnz     L(strlenalignloop)
++
++        .p2align 4
++
++L(strlenalignafter):
++
++L(strlen56try):
++
++L(strlen56):                               # 56-byte
++        mov     (%rsi), %rax
++        mov     $0xfefefefefefefeff, %rcx
++
++L(strlen56loop):
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        jnc     L(strlentail)
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        inc     %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++L(strlen56after):
++
++L(strlen32):                               # 32-byte
++#       mov     $0xfefefefefefefeff, %rcx
++#       mov     (%rsi), %rax
++
++#ifdef PIC
++# ifdef SHARED
++        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov	RTLD_GLOBAL_DL_CACHE1SIZE(%r8), %r9
++# else
++        mov     _dl_cache1size@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
++#else
++        mov     _dl_cache1size, %r9
++#endif
++	
++        .p2align 4
++
++L(strlen32loop):
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        sub     $32, %r9
++
++        mov     8 (%rsi), %rax
++        lea     8 (%rsi), %rsi
++
++        jbe     L(strlen32loop)
++
++L(strlen32after):
++
++L(strlenpretry):
++
++L(strlenpre):                              # 64-byte prefetch
++#       mov     $0xfefefefefefefeff, %rcx
++#       mov     (%rsi), %rax
++
++        .p2align 4
++
++L(strlenpreloop):
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %rdx, %rdx
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %rdx, %r8
++        jnz     L(strlentail)
++
++        prefetcht0 512 (%rsi)
++
++        mov     8 (%rsi), %rax
++        add     $8, %rsi
++
++        jmp     L(strlenpreloop)
++
++        .p2align 4
++
++L(strlenpreafter):
++
++L(strlentailtry):
++
++L(strlentail):                             # 4-byte tail
++
++L(strlentailloop):
++        test    %al, %al
++        jz      L(exit)
++
++        inc     %rsi
++
++        test    %ah, %ah
++        jz      L(exit)
++
++        inc     %rsi
++
++        test    $0x00ff0000, %eax
++        jz      L(exit)
++
++        inc     %rsi
++
++        test    $0xff000000, %eax
++        jz      L(exit)
++
++        inc     %rsi
++
++        shr     $32, %rax
++        jmp     L(strlentailloop)
++
++L(strlentailafter):
++
++        .p2align 4
++
++L(exit):
++        lea     (%rdi, %rsi), %rax
++        ret
++
+ END (strlen)
+ libc_hidden_builtin_def (strlen)
+============================================================
+Index: sysdeps/x86_64/dl-machine.h
+--- sysdeps/x86_64/dl-machine.h	6 Jan 2005 22:40:15 -0000	1.27
++++ sysdeps/x86_64/dl-machine.h	17 Jan 2005 07:36:01 -0000
+@@ -219,6 +219,40 @@ dl_platform_init (void)
+   if (GLRO(dl_platform) != NULL && *GLRO(dl_platform) == '\0')
+     /* Avoid an empty string which would disturb us.  */
+     GLRO(dl_platform) = NULL;
++
++  long int t1, t2;
++  t1 = 0;
++  t2 = 0;
++  
++  asm (
++       "mov	$0x80000000, %%eax		# get highest level of support\n\t"
++       "cpuid\n\t"
++       "cmp     $0x80000006, %%eax	# check for support of cache info\n\t"
++       "jb      1f\n\t"
++       "mov     $0x80000005, %%eax	# get L1 info\n\t"
++       "cpuid\n\t"
++       "shr     $24, %%ecx\n\t"
++       "shl     $10, %%ecx\n\t"
++       "mov     %%rcx, %0\n\t"
++       "mov     $0x80000006, %%eax    	# get L2 info\n\t"
++       "cpuid\n\t"
++       "shr     $16, %%ecx\n\t"
++       "shl     $10, %%ecx\n\t"
++       "mov     %%rcx, %1\n\t"
++       "1:\n\t"
++       :"=r" (t1), "=r" (t2) :: "%rbx", "%rax", "%rcx", "%rdx"
++       );
++
++  if (t1)
++    {
++      GLRO(dl_cache1size) = t1;
++      GLRO(dl_cache1sizehalf) = t1 / 2;
++    }
++  if (t2)
++    {
++      GLRO(dl_cache2size) = t2;
++      GLRO(dl_cache2sizehalf) = t2 / 2;
++    }
+ }
+ 
+ static inline Elf64_Addr
+============================================================
+Index: sysdeps/x86_64/Makefile
+--- sysdeps/x86_64/Makefile	21 Aug 2002 07:54:22 -0000	1.3
++++ sysdeps/x86_64/Makefile	7 Mar 2004 14:42:20 -0000
+@@ -4,6 +4,9 @@ long-double-fcts = yes
+ ifeq ($(subdir),csu)
+ sysdep_routines += hp-timing
+ elide-routines.os += hp-timing
++
++# get offset to rtld_global._dl_*
++gen-as-const-headers += rtld-global-offsets.sym
+ endif
+ 
+ ifeq ($(subdir),gmon)
+============================================================
+Index: sysdeps/x86_64/strcpy.S
+--- sysdeps/x86_64/strcpy.S	29 Apr 2003 22:47:18 -0000	1.2
++++ sysdeps/x86_64/strcpy.S	7 Mar 2004 14:42:20 -0000
+@@ -1,159 +1,845 @@
+-/* strcpy/stpcpy implementation for x86-64.
+-   Copyright (C) 2002 Free Software Foundation, Inc.
+-   This file is part of the GNU C Library.
+-   Contributed by Andreas Jaeger <aj@suse.de>, 2002.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
+-
+-#include <sysdep.h>
+-#include "asm-syntax.h"
+-#include "bp-sym.h"
+-#include "bp-asm.h"
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.4/Attic/6905_all_glibc-2.4-amd64-string.patch,v 1.1 2006/03/17 03:04:51 vapier Exp $
+ 
+-#ifndef USE_AS_STPCPY
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
++
++#include "sysdep.h"
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
++
++	/* XXX:	strncpy is broken, just use this for strcpy for now.  */
++#if defined PIC && defined SHARED
++	.globl _rtld_local_ro
++        .hidden _rtld_local_ro
++        .set    _rtld_local_ro,_rtld_global_ro
++#endif
++#ifndef STRCPY
+ # define STRCPY strcpy
+ #endif
++#define LABEL(s) L(strcpy##s)
++
++        .text
++
++ENTRY   (STRCPY)                        # (char *, const char *)
++
++#ifdef USE_AS_STRNCPY			// (char *, const char *, size_t)
++	test	%rdx, %rdx		# (char *, const char *, size_t)
++	mov	%rdx, %r11
++	jz	LABEL(exitn)		# early exit
++#endif
++
++        xor     %edx, %edx
++
++LABEL(aligntry):
++        mov     %rsi, %r8		# align by source
++        and     $7, %r8
++	jz	LABEL(alignafter)
++
++LABEL(align):				# 8-byte align
++        sub     $8, %r8
+ 
+-	.text
+-ENTRY (BP_SYM (STRCPY))
+-	movq %rsi, %rcx		/* Source register. */
+-	andl $7, %ecx		/* mask alignment bits */
+-	movq %rdi, %rdx		/* Duplicate destination pointer.  */
+-
+-	jz 5f			/* aligned => start loop */
+-
+-	neg %ecx		/* We need to align to 8 bytes.  */
+-	addl $8,%ecx
+-	/* Search the first bytes directly.  */
+-0:
+-	movb	(%rsi), %al	/* Fetch a byte */
+-	testb	%al, %al	/* Is it NUL? */
+-	movb	%al, (%rdx)	/* Store it */
+-	jz	4f		/* If it was NUL, done! */
+-	incq	%rsi
+-	incq	%rdx
+-	decl	%ecx
+-	jnz	0b
+-
+-5:
+-	movq $0xfefefefefefefeff,%r8
+-
+-	/* Now the sources is aligned.  Unfortunatly we cannot force
+-	   to have both source and destination aligned, so ignore the
+-	   alignment of the destination.  */
+ 	.p2align 4
+-1:
+-	/* 1st unroll.  */
+-	movq	(%rsi), %rax	/* Read double word (8 bytes).  */
+-	addq	$8, %rsi	/* Adjust pointer for next word.  */
+-	movq	%rax, %r9	/* Save a copy for NUL finding.  */
+-	addq	%r8, %r9	/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc	3f		/* highest byte is NUL => return pointer */
+-	xorq	%rax, %r9	/* (word+magic)^word */
+-	orq	%r8, %r9	/* set all non-carry bits */
+-	incq	%r9		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-
+-	jnz	3f		/* found NUL => return pointer */
+-
+-	movq	%rax, (%rdx)	/* Write value to destination.  */
+-	addq	$8, %rdx	/* Adjust pointer.  */
+-
+-	/* 2nd unroll.  */
+-	movq	(%rsi), %rax	/* Read double word (8 bytes).  */
+-	addq	$8, %rsi	/* Adjust pointer for next word.  */
+-	movq	%rax, %r9	/* Save a copy for NUL finding.  */
+-	addq	%r8, %r9	/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc	3f		/* highest byte is NUL => return pointer */
+-	xorq	%rax, %r9	/* (word+magic)^word */
+-	orq	%r8, %r9	/* set all non-carry bits */
+-	incq	%r9		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-
+-	jnz	3f		/* found NUL => return pointer */
+-
+-	movq	%rax, (%rdx)	/* Write value to destination.  */
+-	addq	$8, %rdx	/* Adjust pointer.  */
+-
+-	/* 3rd unroll.  */
+-	movq	(%rsi), %rax	/* Read double word (8 bytes).  */
+-	addq	$8, %rsi	/* Adjust pointer for next word.  */
+-	movq	%rax, %r9	/* Save a copy for NUL finding.  */
+-	addq	%r8, %r9	/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc	3f		/* highest byte is NUL => return pointer */
+-	xorq	%rax, %r9	/* (word+magic)^word */
+-	orq	%r8, %r9	/* set all non-carry bits */
+-	incq	%r9		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-
+-	jnz	3f		/* found NUL => return pointer */
+-
+-	movq	%rax, (%rdx)	/* Write value to destination.  */
+-	addq	$8, %rdx	/* Adjust pointer.  */
+-
+-	/* 4th unroll.  */
+-	movq	(%rsi), %rax	/* Read double word (8 bytes).  */
+-	addq	$8, %rsi	/* Adjust pointer for next word.  */
+-	movq	%rax, %r9	/* Save a copy for NUL finding.  */
+-	addq	%r8, %r9	/* add the magic value to the word.  We get
+-				   carry bits reported for each byte which
+-				   is *not* 0 */
+-	jnc	3f		/* highest byte is NUL => return pointer */
+-	xorq	%rax, %r9	/* (word+magic)^word */
+-	orq	%r8, %r9	/* set all non-carry bits */
+-	incq	%r9		/* add 1: if one carry bit was *not* set
+-				   the addition will not result in 0.  */
+-
+-	jnz	3f		/* found NUL => return pointer */
+-
+-	movq	%rax, (%rdx)	/* Write value to destination.  */
+-	addq	$8, %rdx	/* Adjust pointer.  */
+-	jmp	1b		/* Next iteration.  */
+ 
+-	/* Do the last few bytes. %rax contains the value to write.
+-	   The loop is unrolled twice.  */
++LABEL(alignloop):
++#ifdef USE_AS_STRNCPY
++	dec	%r11
++	jl	LABEL(exitn)
++#endif
++
++        mov     (%rsi, %rdx), %al       # check if same character
++        test    %al, %al                # check if character a NUL
++        mov     %al, (%rdi, %rdx)
++        jz      LABEL(exit)
++
++        inc     %edx
++        inc     %r8
++        jnz     LABEL(alignloop)
++
+ 	.p2align 4
++
++LABEL(alignafter):
++
++LABEL(8try):
++        mov     $0xfefefefefefefeff, %rcx
++
++LABEL(8):                               # 8-byte
++        mov     (%rsi, %rdx), %rax
++
++LABEL(8loop):
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++LABEL(8after):
++
++LABEL(64try):
++#ifdef PIC
++# ifdef SHARED
++        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov	RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %r9
++# else
++        mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
++#else
++        mov     _dl_cache1sizehalf, %r9
++#endif
++
++
++LABEL(64):				# 64-byte
++
++        .p2align 4
++
++LABEL(64loop):
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        cmp     %r9, %rdx
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        lea     8 (%rdx), %rdx
++
++        jbe     LABEL(64loop)
++
++LABEL(64after):
++
++LABEL(pretry):
++#ifdef PIC
++# ifdef SHARED
++	mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r8), %r9
++# else
++	mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
++#else
++        mov     _dl_cache2sizehalf, %r9
++#endif
++
++LABEL(pre):                              # 64-byte prefetch
++
++        .p2align 4
++
++LABEL(preloop):
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        mov     %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %edx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(tail)
++
++        cmp     %r9, %rdx
++
++        mov     %rax, (%rdi, %rdx)
++        prefetcht0 512 + 8 (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        prefetcht0 512 + 8 (%rsi, %rdx)
++        lea     8 (%rdx), %rdx
++
++        jb	LABEL(preloop)
++
++        .p2align 4
++
++LABEL(preafter):
++
++LABEL(NTtry):
++	sfence
++
++LABEL(NT):				# 64-byte NT
++
++        .p2align 4
++
++LABEL(NTloop):
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++        mov     8 (%rsi, %rdx), %rax
++        add     $8, %rdx
++
++#ifdef USE_AS_STRNCPY
++	sub	$8, %r11
++	jl	LABEL(tail)
++#endif
++
++        mov     %rcx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        xor     %rax, %r8
++        or      %rcx, %r8
++        sub     %r10, %r8
++        jnz     LABEL(NTtail)
++
++        movnti  %rax, (%rdi, %rdx)
++	mov     8 (%rsi, %rdx), %rax
++	prefetchnta 768 + 8 (%rsi, %rdx)
++        add     $8, %rdx
++
++        jmp     LABEL(NTloop)
++
++        .p2align 4
++
++LABEL(NTtail):
++	sfence
++
++        .p2align 4
++
++LABEL(NTafter):
++
++LABEL(tailtry):
++
++LABEL(tail):                             # 1-byte tail
++#ifdef USE_AS_STRNCPY
++	add	$8, %r11
++#endif
++
++        .p2align 4
++
++LABEL(tailloop):
++#ifdef USE_AS_STRNCPY
++	dec	%r11
++	jl	LABEL(exitn)
++#endif
++
++        test    %al, %al
++        mov     %al, (%rdi, %rdx)
++        jz      LABEL(exit)
++
++	inc     %rdx
++
++#ifdef USE_AS_STRNCPY
++	dec	%r11
++	jl	LABEL(exitn)
++
++	mov	%ah, %al
++#endif
++
++        test    %ah, %ah
++        mov     %ah, (%rdi, %rdx)
++        jz      LABEL(exit)
++
++        inc     %rdx
++
++#ifdef USE_AS_STRNCPY
++	dec	%r11
++	jl	LABEL(exitn)
++#endif
++
++        shr     $16, %rax
++
++        test    %al, %al
++        mov     %al, (%rdi, %rdx)
++        jz      LABEL(exit)
++
++        inc     %rdx
++
++#ifdef USE_AS_STRNCPY
++	dec	%r11
++	jl	LABEL(exitn)
++
++	mov	%ah, %al
++#endif
++
++        test    %ah, %ah
++        mov     %ah, (%rdi, %rdx)
++        jz      LABEL(exit)
++
++        shr     $16, %rax
++        inc     %rdx
++
++        jmp     LABEL(tailloop)
++
++        .p2align 4
++
++LABEL(tailafter):
++
++LABEL(exit):
++#ifdef USE_AS_STRNCPY
++	test	%r11, %r11
++	mov	%r11, %rcx
++
++#ifdef USE_AS_STPCPY
++        lea     (%rdi, %rdx), %r8
++#else
++        mov     %rdi, %r8
++#endif
++
++	jz	2f
++
++	xor	%eax, %eax		# bzero () would do too, but usually there are only a handfull of bytes left
++	shr	$3, %rcx
++        lea     1 (%rdi, %rdx), %rdi
++	jz	1f
++
++	rep	stosq
++
++1:
++	mov	%r11d, %ecx
++	and	$7, %ecx
++	jz	2f
++
++        .p2align 4,, 3
++
+ 3:
+-	/* Note that stpcpy needs to return with the value of the NUL
+-	   byte.  */
+-	movb	%al, (%rdx)	/* 1st byte.  */
+-	testb	%al, %al	/* Is it NUL.  */
+-	jz	4f		/* yes, finish.  */
+-	incq	%rdx		/* Increment destination.  */
+-	movb	%ah, (%rdx)	/* 2nd byte.  */
+-	testb	%ah, %ah	/* Is it NUL?.  */
+-	jz	4f		/* yes, finish.  */
+-	incq	%rdx		/* Increment destination.  */
+-	shrq	$16, %rax	/* Shift...  */
+-	jmp	3b		/* and look at next two bytes in %rax.  */
++	dec	%ecx
++	mov	%al, (%rdi, %rcx)
++	jnz	3b
++
++        .p2align 4,, 3
++
++2:
++	mov	%r8, %rax
++        ret
++	
++#endif
++
++        .p2align 4
+ 
+-4:
++LABEL(exitn):
+ #ifdef USE_AS_STPCPY
+-	movq	%rdx, %rax	/* Destination is return value.  */
++        lea     (%rdi, %rdx), %rax
+ #else
+-	movq	%rdi, %rax	/* Source is return value.  */
++        mov     %rdi, %rax
+ #endif
+-	retq
+-END (BP_SYM (STRCPY))
+-#ifndef USE_AS_STPCPY
+-libc_hidden_builtin_def (strcpy)
++
++        ret
++
++END (STRCPY)
++#if !defined USE_AS_STPCPY && !defined USE_AS_STRNCPY
++libc_hidden_builtin_def (STRCPY)
+ #endif
+============================================================
+Index: sysdeps/x86_64/mempcpy.S
+--- sysdeps/x86_64/mempcpy.S	31 Aug 2002 17:33:34 -0000	1.1
++++ sysdeps/x86_64/mempcpy.S	7 Mar 2004 14:42:20 -0000
+@@ -1,3 +1,4 @@
++#define USE_AS_MEMPCPY
+ #define memcpy __mempcpy
+ #define __memcpy_chk __mempcpy_chk
+ #include <sysdeps/x86_64/memcpy.S>
+============================================================
+Index: sysdeps/unix/sysv/linux/x86_64/dl-procinfo.c
+--- sysdeps/unix/sysv/linux/x86_64/dl-procinfo.c	25 Sep 2003 22:00:18 -0000	1.2
++++ sysdeps/unix/sysv/linux/x86_64/dl-procinfo.c	7 Mar 2004 14:42:20 -0000
+@@ -1,5 +1,5 @@
+ #ifdef IS_IN_ldconfig
+ # include <sysdeps/i386/dl-procinfo.c>
+ #else
+-# include <sysdeps/generic/dl-procinfo.c>
++# include <sysdeps/x86_64/dl-procinfo.c>
+ #endif
+============================================================
+Index: sysdeps/x86_64/dl-procinfo.c
+--- sysdeps/x86_64/dl-procinfo.c	created
++++ sysdeps/x86_64/dl-procinfo.c	2004-03-07 15:14:03.000000000 +0100	1.1
+@@ -0,0 +1,108 @@
++/* Data for x86-64 version of processor capability information.
++   Copyright (C) 2004 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2004.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++/* This information must be kept in sync with the _DL_HWCAP_COUNT and
++   _DL_PLATFORM_COUNT definitions in procinfo.h.
++
++   If anything should be added here check whether the size of each string
++   is still ok with the given array size.
++
++   All the #ifdefs in the definitions ar equite irritating but
++   necessary if we want to avoid duplicating the information.  There
++   are three different modes:
++
++   - PROCINFO_DECL is defined.  This means we are only interested in
++     declarations.
++
++   - PROCINFO_DECL is not defined:
++
++     + if SHARED is defined the file is included in an array
++       initializer.  The .element = { ... } syntax is needed.
++
++     + if SHARED is not defined a normal array initialization is
++       needed.
++  */
++
++#ifndef PROCINFO_CLASS
++#define PROCINFO_CLASS
++#endif
++
++  /* _dl_cache1size: size of L1 cache  */
++#if !defined PROCINFO_DECL && defined SHARED
++  ._dl_cache1size
++#else
++PROCINFO_CLASS long int _dl_cache1size
++#endif
++#ifndef PROCINFO_DECL
++= 1024 * 64
++#endif
++#if !defined SHARED || defined PROCINFO_DECL
++;
++#else
++,
++#endif
++
++  /* _dl_cache1sizehalf: 1/2 size of L1 cache  */
++#if !defined PROCINFO_DECL && defined SHARED
++  ._dl_cache1sizehalf
++#else
++PROCINFO_CLASS long int _dl_cache1sizehalf
++#endif
++#ifndef PROCINFO_DECL
++= 1024 * 64 / 2
++#endif
++#if !defined SHARED || defined PROCINFO_DECL
++;
++#else
++,
++#endif
++
++  /* _dl_cache2size: size of L2 cache  */
++#if !defined PROCINFO_DECL && defined SHARED
++  ._dl_cache2size
++#else
++PROCINFO_CLASS long int _dl_cache2size
++#endif
++#ifndef PROCINFO_DECL
++= 1024 * 1024
++#endif
++#if !defined SHARED || defined PROCINFO_DECL
++;
++#else
++,
++#endif
++
++  /* _dl_cache2size: 1/2 size of L2 cache  */
++#if !defined PROCINFO_DECL && defined SHARED
++  ._dl_cache2sizehalf
++#else
++PROCINFO_CLASS long int _dl_cache2sizehalf
++#endif
++#ifndef PROCINFO_DECL
++= 1024 * 1024 / 2
++#endif
++#if !defined SHARED || defined PROCINFO_DECL
++;
++#else
++,
++#endif
++
++#undef PROCINFO_DECL
++#undef PROCINFO_CLASS
+============================================================
+Index: sysdeps/x86_64/elf/rtld-global-offsets.sym
+--- sysdeps/x86_64/elf/rtld-global-offsets.sym	created
++++ sysdeps/x86_64/elf/rtld-global-offsets.sym	2004-03-07 15:11:52.000000000 +0100	1.1
+@@ -0,0 +1,10 @@
++#define SHARED 1
++
++#include <ldsodefs.h>
++
++#define rtdl_global_offsetof(mem) offsetof (struct rtld_global_ro, mem)
++
++RTLD_GLOBAL_DL_CACHE1SIZE	rtdl_global_offsetof (_dl_cache1size)
++RTLD_GLOBAL_DL_CACHE1SIZEHALF	rtdl_global_offsetof (_dl_cache1sizehalf)
++RTLD_GLOBAL_DL_CACHE2SIZE	rtdl_global_offsetof (_dl_cache2size)
++RTLD_GLOBAL_DL_CACHE2SIZEHALF	rtdl_global_offsetof (_dl_cache2sizehalf)
+============================================================
+Index: sysdeps/x86_64/memcmp.S
+--- sysdeps/x86_64/memcmp.S	created
++++ sysdeps/x86_64/memcmp.S	2004-03-07 12:52:04.000000000 +0100	1.1
+@@ -0,0 +1,459 @@
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.4/Attic/6905_all_glibc-2.4-amd64-string.patch,v 1.1 2006/03/17 03:04:51 vapier Exp $
++
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
++
++#include "sysdep.h"
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
++
++#if defined PIC && defined SHARED
++	.globl _rtld_local_ro
++        .hidden _rtld_local_ro
++        .set    _rtld_local_ro,_rtld_global_ro
++#endif
++
++        .text
++
++ENTRY   (memcmp)                        # (const void *, const void*, size_t)
++
++L(memcmptry1):
++        cmp     $8, %rdx
++        jae     L(memcmp1after)
++
++L(memcmp1):                                # 1-byte
++        test    %rdx, %rdx
++        mov     $0, %eax
++        jz      L(memcmpexit)
++
++L(memcmp1loop):
++        movzbl  (%rdi), %eax
++        movzbl  (%rsi), %ecx
++        sub     %ecx, %eax
++        jnz     L(memcmpexit)
++
++        dec     %rdx
++
++        lea     1 (%rdi), %rdi
++        lea     1 (%rsi), %rsi
++
++        jnz     L(memcmp1loop)
++
++L(memcmpexit):
++        rep
++        ret
++
++        .p2align 4
++
++L(memcmp1after):
++
++L(memcmp8try):
++        cmp     $32, %rdx
++        jae     L(memcmp8after)
++
++L(memcmp8):                        # 8-byte
++        mov     %edx, %ecx
++        shr     $3, %ecx
++        jz      L(memcmp1)
++
++        .p2align 4
++
++L(memcmp8loop):
++        mov     (%rsi), %rax
++        cmp     (%rdi), %rax
++        jne     L(memcmp1)
++
++        sub     $8, %rdx
++        dec     %ecx
++
++        lea     8 (%rsi), %rsi
++        lea     8 (%rdi), %rdi
++
++        jnz     L(memcmp8loop)
++
++L(memcmp8skip):
++        and     $7, %edx
++        jnz     L(memcmp1)
++
++        xor     %eax, %eax
++        ret
++
++        .p2align 4
++
++L(memcmp8after):
++
++L(memcmp32try):
++        cmp     $2048, %rdx
++        ja      L(memcmp32after)
++
++L(memcmp32):                               # 32-byte
++        mov     %edx, %ecx
++        shr     $5, %ecx
++        jz      L(memcmp8)
++
++        .p2align 4
++
++L(memcmp32loop):
++        mov        (%rsi), %rax
++        mov      8 (%rsi),  %r8
++        mov     16 (%rsi),  %r9
++        mov     24 (%rsi), %r10
++        sub        (%rdi), %rax
++        sub      8 (%rdi),  %r8
++        sub     16 (%rdi),  %r9
++        sub     24 (%rdi), %r10
++
++        or      %rax,  %r8
++        or       %r9, %r10
++        or       %r8, %r10
++        jnz     L(memcmp8)
++
++        sub     $32, %rdx
++        dec     %ecx
++
++        lea     32 (%rsi), %rsi
++        lea     32 (%rdi), %rdi
++
++        jnz     L(memcmp32loop)
++
++L(memcmp32skip):
++        and     $31, %edx
++        jnz     L(memcmp8)
++
++        xor     %eax, %eax
++        ret
++
++        .p2align 4
++
++L(memcmp32after):
++
++#ifdef PIC
++# ifdef SHARED
++        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov	RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %r9
++# else
++        mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %r9
++# endif
++#else
++        mov     _dl_cache1sizehalf, %r9
++#endif
++	prefetcht0 (%r9)
++
++
++.alignsrctry:
++        mov     %esi, %r8d      # align by source
++
++        and     $7, %r8d
++        jz      .alignsrcafter  # not unaligned
++
++.alignsrc:                      # align
++        lea     -8 (%r8, %rdx), %rdx
++        sub     $8, %r8d
++
++#       .p2align 4
++
++.alignsrcloop:
++        movzbl  (%rdi), %eax
++        movzbl  (%rsi), %ecx
++        sub     %ecx, %eax
++        jnz     L(memcmpexit)
++
++        inc     %r8d
++
++        lea     1 (%rdi), %rdi
++        lea     1 (%rsi), %rsi
++
++        jnz     .alignsrcloop
++
++        .p2align 4
++
++.alignsrcafter:
++
++
++L(memcmp64try):
++#ifdef PIC
++# ifdef SHARED
++        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov	RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %rcx
++# else
++        mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %rcx
++# endif
++#else
++        mov     _dl_cache1sizehalf, %rcx
++#endif
++        cmp	%rdx, %rcx
++        cmova   %rdx, %rcx
++
++L(memcmp64):                               # 64-byte
++        shr     $6, %rcx
++        jz      L(memcmp32)
++
++        .p2align 4
++
++L(memcmp64loop):
++        mov        (%rsi), %rax
++        mov      8 (%rsi),  %r8
++        sub        (%rdi), %rax
++        sub      8 (%rdi),  %r8
++        or      %r8,  %rax
++
++        mov     16 (%rsi),  %r9
++        mov     24 (%rsi), %r10
++        sub     16 (%rdi),  %r9
++        sub     24 (%rdi), %r10
++        or      %r10, %r9
++
++        or      %r9,  %rax
++        jnz     L(memcmp32)
++
++        mov     32 (%rsi), %rax
++        mov     40 (%rsi),  %r8
++        sub     32 (%rdi), %rax
++        sub     40 (%rdi),  %r8
++        or      %r8,  %rax
++
++        mov     48 (%rsi),  %r9
++        mov     56 (%rsi), %r10
++        sub     48 (%rdi),  %r9
++        sub     56 (%rdi), %r10
++        or      %r10, %r9
++
++        or      %r9,  %rax
++        jnz    	L(memcmp32)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        sub     $64, %rdx
++        dec     %rcx
++        jnz     L(memcmp64loop)
++
++#       .p2align 4
++
++L(memcmp64skip):
++        cmp     $2048, %rdx
++        ja     L(memcmp64after)
++
++        test    %edx, %edx
++        jnz     L(memcmp32)
++
++        xor     %eax, %eax
++        ret
++
++        .p2align 4
++
++L(memcmp64after):
++
++L(memcmppretry):
++
++L(memcmppre):                              # 64-byte prefetching
++#ifdef PIC
++# ifdef SHARED
++        mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r8), %rcx
++# else
++        mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r8
++	mov	(%r8), %rcx
++# endif
++#else
++        mov     _dl_cache2sizehalf, %rcx
++#endif
++        cmp	%rdx, %rcx
++        cmova   %rdx, %rcx
++
++        shr     $6, %rcx
++        jz      L(memcmppreskip)
++
++        prefetcht0 512 (%rsi)
++        prefetcht0 512 (%rdi)
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r9
++        mov     16 (%rsi), %r10
++        mov     24 (%rsi), %r11
++        sub        (%rdi), %rax
++        sub      8 (%rdi), %r9
++        sub     16 (%rdi), %r10
++        sub     24 (%rdi), %r11
++
++        or       %r9, %rax
++        or      %r11, %r10
++        or      %r10, %rax
++        jnz     L(memcmp32)
++
++        mov     32 (%rsi), %rax
++        mov     40 (%rsi), %r9
++        mov     48 (%rsi), %r10
++        mov     56 (%rsi), %r11
++        sub     32 (%rdi), %rax
++        sub     40 (%rdi), %r9
++        sub     48 (%rdi), %r10
++        sub     56 (%rdi), %r11
++
++        or       %r9, %rax
++        or      %r11, %r10
++        or      %r10, %rax
++        jnz     L(memcmp32)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        sub     $64, %rdx
++        dec     %rcx
++
++        .p2align 4
++
++L(memcmppreloop):
++        prefetcht0 512 (%rsi)
++        prefetcht0 512 (%rdi)
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r9
++        mov     16 (%rsi), %r10
++        mov     24 (%rsi), %r11
++        sub        (%rdi), %rax
++        sub      8 (%rdi), %r9
++        sub     16 (%rdi), %r10
++        sub     24 (%rdi), %r11
++
++        or       %r9, %rax
++        or      %r11, %r10
++        or      %r10, %rax
++        jnz     L(memcmp32)
++
++        mov     32 (%rsi), %rax
++        mov     40 (%rsi), %r9
++        mov     48 (%rsi), %r10
++        mov     56 (%rsi), %r11
++        sub     32 (%rdi), %rax
++        sub     40 (%rdi), %r9
++        sub     48 (%rdi), %r10
++        sub     56 (%rdi), %r11
++
++        or       %r9, %rax
++        or      %r11, %r10
++        or      %r10, %rax
++        jnz     L(memcmp32)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        sub     $64, %rdx
++        dec     %rcx
++        jnz     L(memcmppreloop)
++
++#       .p2align 4
++
++L(memcmppreskip):
++        cmp     $2048, %rdx
++        ja      L(memcmppreafter)
++
++        test    %edx, %edx
++        jnz     L(memcmp32)
++
++        xor     %eax, %eax
++        ret
++
++        .p2align 4
++
++L(memcmppreafter):
++
++L(memcmp128try):
++
++L(memcmp128):                              # 128-byte
++        mov     %rdx, %rcx
++        shr     $7, %rcx
++        jz      L(memcmp128skip)
++
++        .p2align 4
++
++L(memcmp128loop):
++        prefetcht0 512 (%rsi)
++        prefetcht0 512 (%rdi)
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r8
++        sub        (%rdi), %rax
++        sub      8 (%rdi), %r8
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++        sub     16 (%rdi), %r9
++        sub     24 (%rdi), %r10
++
++        or       %r8, %rax
++        or       %r9, %r10
++        or      %r10, %rax
++
++        mov     32 (%rsi), %r8
++        mov     40 (%rsi), %r9
++        sub     32 (%rdi), %r8
++        sub     40 (%rdi), %r9
++        mov     48 (%rsi), %r10
++        mov     56 (%rsi), %r11
++        sub     48 (%rdi), %r10
++        sub     56 (%rdi), %r11
++
++        or       %r9, %r8
++        or      %r11, %r10
++        or      %r10, %r8
++
++        or      %r8, %rax
++        jnz     L(memcmp32)
++
++        prefetcht0 576 (%rsi)
++        prefetcht0 576 (%rdi)
++
++        mov      64 (%rsi), %rax
++        mov      72 (%rsi), %r8
++        sub      64 (%rdi), %rax
++        sub      72 (%rdi), %r8
++        mov      80 (%rsi), %r9
++        mov      88 (%rsi), %r10
++        sub      80 (%rdi), %r9
++        sub      88 (%rdi), %r10
++
++        or       %r8, %rax
++        or       %r9, %r10
++        or      %r10, %rax
++
++        mov      96 (%rsi), %r8
++        mov     104 (%rsi), %r9
++        sub      96 (%rdi), %r8
++        sub     104 (%rdi), %r9
++        mov     112 (%rsi), %r10
++        mov     120 (%rsi), %r11
++        sub     112 (%rdi), %r10
++        sub     120 (%rdi), %r11
++
++        or       %r9, %r8
++        or      %r11, %r10
++        or      %r10, %r8
++
++        or      %r8, %rax
++        jnz     L(memcmp32)
++
++        sub     $128, %rdx
++        dec     %rcx
++
++        lea     128 (%rsi), %rsi
++        lea     128 (%rdi), %rdi
++
++        jnz     L(memcmp128loop)
++
++L(memcmp128skip):
++        and     $127, %edx
++        jnz     L(memcmp32)
++
++        xor     %eax, %eax
++        ret
++
++END     (memcmp)
++
++#undef bcmp
++weak_alias (memcmp, bcmp)
+============================================================
+Index: sysdeps/x86_64/bcopy.S
+--- sysdeps/x86_64/bcopy.S	created
++++ sysdeps/x86_64/bcopy.S	2004-02-13 12:08:57.000000000 +0100	1.1
+@@ -0,0 +1,13 @@
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.4/Attic/6905_all_glibc-2.4-amd64-string.patch,v 1.1 2006/03/17 03:04:51 vapier Exp $
++
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
++
++#define USE_AS_BCOPY
++#define memcpy bcopy
++
++#include <sysdeps/x86_64/memcpy.S>
++
+
+This is wrong: http://bugs.gentoo.org/show_bug.cgi?id=100289#c78
+
+============================================================
+Index: sysdeps/x86_64/strncmp.S
+#--- sysdeps/x86_64/strncmp.S	created
+#+++ sysdeps/x86_64/strncmp.S	2004-02-11 07:19:15.000000000 +0100	1.1
+#@@ -0,0 +1,15 @@
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.4/Attic/6905_all_glibc-2.4-amd64-string.patch,v 1.1 2006/03/17 03:04:51 vapier Exp $
++
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
++
++#define USE_AS_STRNCMP
++#define strcmp strncmp
++
++#include "strcmp.S"
++
++weak_alias (strncmp, __strncmp)
++libc_hidden_builtin_def (strncmp)
+============================================================
+Index: sysdeps/x86_64/memcpy.S
+--- sysdeps/x86_64/memcpy.S	18 Oct 2004 04:17:08 -0000	1.5
++++ sysdeps/x86_64/memcpy.S	16 Apr 2005 10:26:23 -0000
+@@ -1,101 +1,537 @@
+-/* Highly optimized version for x86-64.
+-   Copyright (C) 1997, 2000, 2002, 2003, 2004 Free Software Foundation, Inc.
+-   This file is part of the GNU C Library.
+-   Based on i586 version contributed by Ulrich Drepper <drepper@cygnus.com>, 1997.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
+ 
+ #include <sysdep.h>
+ #include "asm-syntax.h"
+ #include "bp-sym.h"
+ #include "bp-asm.h"
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
+ 
+ /* BEWARE: `#ifdef memcpy' means that memcpy is redefined as `mempcpy',
+    and the return value is the byte after the last one copied in
+    the destination. */
+-#define MEMPCPY_P (defined memcpy)
++#if defined memcpy
++# define MEMPCPY_P 1
++#else
++# define MEMPCPY_P 0
++#endif
++
++
++#if defined PIC  && defined SHARED
++	.globl _rtld_local_ro
++        .hidden _rtld_local_ro
++        .set    _rtld_local_ro,_rtld_global_ro
++#endif
++	
++#define LABEL(s) L(memcpy##s)
+ 
+         .text
+-#if defined PIC && !defined NOT_IN_libc
++#if defined PIC && !defined NOT_IN_libc && !defined USE_AS_BCOPY
+ ENTRY (__memcpy_chk)
+-	cmpq	%rdx, %rcx
+-	jb	HIDDEN_JUMPTARGET (__chk_fail)
++       cmpq    %rdx, %rcx
++       jb      HIDDEN_JUMPTARGET (__chk_fail)
+ END (__memcpy_chk)
+ #endif
+-ENTRY (BP_SYM (memcpy))
+-	/* Cutoff for the big loop is a size of 32 bytes since otherwise
+-	   the loop will never be entered.  */
+-	cmpq	$32, %rdx
+-	movq	%rdx, %rcx
+-#if !MEMPCPY_P
+-	movq	%rdi, %r10	/* Save value. */
++
++ENTRY   (memcpy)                        # (void *, const void*, size_t)
++
++LABEL(1try):
++        cmp     $8, %rdx
++#if defined (USE_AS_MEMPCPY)
++        lea     (%rdi, %rdx), %rax
++#elif defined (USE_AS_BCOPY)
++	mov	%rsi, %rax
++	mov	%rdi, %rsi
++	mov	%rax, %rdi
++#else
++        mov     %rdi, %rax
+ #endif
++        jae     LABEL(1after)
++
++LABEL(1):				# 1-byte
++        test    $4, %dl
++        jz      LABEL(1a)
++
++        mov     (%rsi), %ecx
++        mov     %ecx, (%rdi)
++
++        add	$4, %rsi
++        add	$4, %rdi
++
++LABEL(1a):
++        test    $2, %dl
++        jz      LABEL(1b)
++
++        mov     (%rsi), %cx
++        mov     %cx, (%rdi)
++
++        add	$2, %rsi
++        add	$2, %rdi
++
++LABEL(1b):
++        test    $1, %dl
++        jz      LABEL(exit)
++
++        mov     (%rsi), %cl
++        mov     %cl, (%rdi)
++
++LABEL(exit):
++        rep
++        ret
++
++        .p2align 4
++
++LABEL(1after):
++        push    %rax
+ 
+-	/* We need this in any case.  */
+-	cld
++LABEL(8try):
++        cmp     $32, %rdx
++        jae     LABEL(8after)
+ 
+-	jbe	1f
++LABEL(8):                        # 8-byte
++        mov     %edx, %ecx
++        shr     $3, %ecx
++        jz      LABEL(8skip)
+ 
+-	/* Align destination.  */
+-	movq	%rdi, %rax
+-	negq	%rax
+-	andq	$7, %rax
+-	subq	%rax, %rcx
+-	xchgq	%rax, %rcx
++        .p2align 4
+ 
+-	rep; movsb
++LABEL(8loop):
++        dec     %ecx
+ 
+-	movq	%rax, %rcx
+-	subq	$32, %rcx
+-	js	2f
++        mov     (%rsi), %rax
++        mov     %rax, (%rdi)
+ 
+-	.p2align 4
+-3:
++        lea     8 (%rsi), %rsi
++        lea     8 (%rdi), %rdi
+ 
+-	/* Now correct the loop counter.  Please note that in the following
+-	   code the flags are not changed anymore.  */
+-	subq	$32, %rcx
++        jnz     LABEL(8loop)
+ 
+-	movq	(%rsi), %rax
+-	movq	8(%rsi), %rdx
+-	movq	16(%rsi), %r8
+-	movq	24(%rsi), %r9
+-	movq	%rax, (%rdi)
+-	movq	%rdx, 8(%rdi)
+-	movq	%r8, 16(%rdi)
+-	movq	%r9, 24(%rdi)
++LABEL(8skip):
++        and     $7, %edx
++        pop     %rax
++        jnz     LABEL(1)
+ 
+-	leaq	32(%rsi), %rsi
+-	leaq	32(%rdi), %rdi
++        rep
++        ret
+ 
+-	jns	3b
++        .p2align 4
+ 
+-	/* Correct extra loop counter modification.  */
+-2:	addq	$32, %rcx
+-1:	rep; movsb
++LABEL(8after):
+ 
+-#if MEMPCPY_P
+-	movq	%rdi, %rax		/* Set return value.  */
++LABEL(32try):
++	mov	$512, %r8d		# size for unaligned data
++	mov	$4096, %r9d		# size for aligned data
++	test	$7, %esi		# check if either source..
++	cmovz	%r9, %r8
++	test	$7, %edi		# .. or destination is aligned
++	cmovz	%r9, %r8
++
++        cmp     %r8, %rdx
++        ja	LABEL(32after)
++
++LABEL(32):				# 32-byte
++        mov     %edx, %ecx
++        shr     $5, %ecx
++        jz      LABEL(32skip)
++
++        .p2align 4
++
++LABEL(32loop):
++        dec     %ecx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r8
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++
++        mov     %rax,    (%rdi)
++        mov      %r8,  8 (%rdi)
++        mov      %r9, 16 (%rdi)
++        mov     %r10, 24 (%rdi)
++
++        lea     32 (%rsi), %rsi
++        lea     32 (%rdi), %rdi
++
++        jz      LABEL(32skip)
++
++        dec     %ecx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r8
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++
++        mov     %rax,    (%rdi)
++        mov      %r8,  8 (%rdi)
++        mov      %r9, 16 (%rdi)
++        mov     %r10, 24 (%rdi)
++
++        lea     32 (%rsi), %rsi
++        lea     32 (%rdi), %rdi
++
++        jnz     LABEL(32loop)
++
++        .p2align 4
++
++LABEL(32skip):
++        and     $31, %edx
++        jnz     LABEL(8)
++
++        pop     %rax
++        ret
++
++        .p2align 4
++
++LABEL(32after):
++#ifdef PIC
++# ifdef SHARED
++	mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov     RTLD_GLOBAL_DL_CACHE1SIZE(%r8), %r9
++# else
++	mov     _dl_cache1size@GOTPCREL(%rip), %r8
++	mov     (%r8), %r9
++# endif
+ #else
+-	movq	%r10, %rax		/* Set return value.  */
+-	
++	mov     _dl_cache1size, %r9
+ #endif
++	prefetcht0 (%r9)		# improves test further ahead
++
++LABEL(aligntry):
++        mov     %edi, %r8d      	# align by destination
++
++        and	$7, %r8d
++        jz      LABEL(alignafter)  	# not unaligned
++
++LABEL(align):                      	# align
++        lea     -8 (%r8, %rdx), %rdx
++        sub     $8, %r8d
++
++        .p2align 4
++
++LABEL(alignloop):
++        inc     %r8d
++
++        mov     (%rsi), %al
++        mov     %al, (%rdi)
++
++        lea     1 (%rsi), %rsi
++        lea     1 (%rdi), %rdi
++
++        jnz     LABEL(alignloop)
++
++        .p2align 4
++
++LABEL(alignafter):
++
++LABEL(fasttry):
++#ifdef PIC
++# ifdef SHARED
++	mov     _rtld_local_ro@GOTPCREL(%rip), %r9
++	mov     RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r9), %r11
++# else
++	mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r9
++	mov     (%r9), %r11
++# endif
++#else
++	mov     _dl_cache1sizehalf, %r11
++#endif
++        cmp     %rdx, %r11
++        cmova   %rdx, %r11
++
++LABEL(fast):
++	mov	%r11, %rcx
++	and	$-8, %r11
++	shr	$3, %rcx
++	jz	LABEL(fastskip)
++
++	rep				# good ol' MOVS
++	movsq
++
++LABEL(fastskip):
++	sub	%r11, %rdx
++	test	$-8, %rdx
++	jnz	LABEL(64after)
++
++	and	$7, %edx
++	pop	%rax
++	jnz	LABEL(1)
++
++	rep
+ 	ret
+ 
+-END (BP_SYM (memcpy))
++        .p2align 4
++
++LABEL(64):                               # 64-byte
++        mov     %r11, %rcx
++        and     $-64, %r11
++        shr     $6, %rcx
++        jz      LABEL(64skip)
++
++        .p2align 4
++
++LABEL(64loop):
++        dec     %ecx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r8
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++
++        mov     %rax,    (%rdi)
++        mov      %r8,  8 (%rdi)
++        mov      %r9, 16 (%rdi)
++        mov     %r10, 24 (%rdi)
++
++        mov     32 (%rsi), %rax
++        mov     40 (%rsi), %r8
++        mov     48 (%rsi), %r9
++        mov     56 (%rsi), %r10
++
++        mov     %rax, 32 (%rdi)
++        mov      %r8, 40 (%rdi)
++        mov      %r9, 48 (%rdi)
++        mov     %r10, 56 (%rdi)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        jz      LABEL(64skip)
++
++        dec     %ecx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r8
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++
++        mov     %rax,    (%rdi)
++        mov      %r8,  8 (%rdi)
++        mov      %r9, 16 (%rdi)
++        mov     %r10, 24 (%rdi)
++
++        mov     32 (%rsi), %rax
++        mov     40 (%rsi), %r8
++        mov     48 (%rsi), %r9
++        mov     56 (%rsi), %r10
++
++        mov     %rax, 32 (%rdi)
++        mov      %r8, 40 (%rdi)
++        mov      %r9, 48 (%rdi)
++        mov     %r10, 56 (%rdi)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        jnz     LABEL(64loop)
++
++        .p2align 4
++
++LABEL(64skip):
++        sub     %r11, %rdx
++        test    $-64, %rdx
++        jnz     LABEL(64after)
++
++        and     $63, %edx
++        jnz     LABEL(32)
++
++        pop     %rax
++        ret
++
++        .p2align 4
++
++LABEL(64after):
++
++LABEL(pretry):
++#ifdef PIC
++# ifdef SHARED
++	mov     _rtld_local_ro@GOTPCREL(%rip), %r11
++	mov     RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r11), %r8
++# else
++	mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r11
++	mov     (%r11), %r8
++# endif
++#else
++	mov     _dl_cache2sizehalf, %r8
++#endif
++        cmp     %rdx, %r8
++        cmova   %rdx, %r8
++
++LABEL(pre):                              # 64-byte prefetching
++        mov     %r8, %rcx
++        and     $-64, %r8
++        shr     $6, %rcx
++        jz      LABEL(preskip)
++
++	push	%r15
++        push    %r14
++        push    %r13
++        push    %r12
++        push    %rbx
++
++	mov	$896, %r15		# 1P look-ahead (MP improves with 640)
++
++        .p2align 4
++
++LABEL(preloop):
++        dec     %rcx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %rbx
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++        mov     32 (%rsi), %r11
++        mov     40 (%rsi), %r12
++        mov     48 (%rsi), %r13
++        mov     56 (%rsi), %r14
++
++        prefetcht0    (%rsi, %r15)
++        prefetcht0 64 (%rsi, %r15)
++
++        mov     %rax,    (%rdi)
++        mov     %rbx,  8 (%rdi)
++        mov      %r9, 16 (%rdi)
++        mov     %r10, 24 (%rdi)
++        mov     %r11, 32 (%rdi)
++        mov     %r12, 40 (%rdi)
++        mov     %r13, 48 (%rdi)
++        mov     %r14, 56 (%rdi)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        jz      LABEL(preskipa)
++
++        dec     %rcx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %rbx
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++        mov     32 (%rsi), %r11
++        mov     40 (%rsi), %r12
++        mov     48 (%rsi), %r13
++        mov     56 (%rsi), %r14
++
++        mov     %rax,    (%rdi)
++        mov     %rbx,  8 (%rdi)
++        mov      %r9, 16 (%rdi)
++        mov     %r10, 24 (%rdi)
++        mov     %r11, 32 (%rdi)
++        mov     %r12, 40 (%rdi)
++        mov     %r13, 48 (%rdi)
++        mov     %r14, 56 (%rdi)
++
++        prefetcht0 -64 (%rdi, %r15)
++        prefetcht0     (%rdi, %r15)
++
++        lea     64 (%rsi), %rsi
++        lea     64 (%rdi), %rdi
++
++        jnz     LABEL(preloop)
++
++LABEL(preskipa):
++        pop     %rbx
++        pop     %r12
++        pop     %r13
++        pop     %r14
++        pop	%r15
++
++#       .p2align 4
++
++LABEL(preskip):
++        sub     %r8, %rdx
++        test    $-64, %rdx
++        jnz     LABEL(preafter)
++
++        and     $63, %edx
++        jnz     LABEL(32)
++
++        pop     %rax
++        ret
++
++        .p2align 4
++
++LABEL(preafter):
++
++LABEL(NTtry):
++
++LABEL(NT):                               # NT 64-byte
++        mov     %rdx, %rcx
++        shr     $7, %rcx
++        jz      LABEL(NTskip)
++
++        push    %r14
++        push    %r13
++        push    %r12
++
++       .p2align 4
++
++LABEL(NTloop):
++        prefetchnta 768 (%rsi)		# prefetching NT here is not so good on B0 and C0 MP systems
++        prefetchnta 832 (%rsi)
++
++        dec     %rcx
++
++        mov        (%rsi), %rax
++        mov      8 (%rsi), %r8
++        mov     16 (%rsi), %r9
++        mov     24 (%rsi), %r10
++        mov     32 (%rsi), %r11
++        mov     40 (%rsi), %r12
++        mov     48 (%rsi), %r13
++        mov     56 (%rsi), %r14
++
++        movnti  %rax,    (%rdi)
++        movnti   %r8,  8 (%rdi)
++        movnti   %r9, 16 (%rdi)
++        movnti  %r10, 24 (%rdi)
++        movnti  %r11, 32 (%rdi)
++        movnti  %r12, 40 (%rdi)
++        movnti  %r13, 48 (%rdi)
++        movnti  %r14, 56 (%rdi)
++
++        mov      64 (%rsi), %rax
++        mov      72 (%rsi), %r8
++        mov      80 (%rsi), %r9
++        mov      88 (%rsi), %r10
++        mov      96 (%rsi), %r11
++        mov     104 (%rsi), %r12
++        mov     112 (%rsi), %r13
++        mov     120 (%rsi), %r14
++
++        movnti  %rax,  64 (%rdi)
++        movnti   %r8,  72 (%rdi)
++        movnti   %r9,  80 (%rdi)
++        movnti  %r10,  88 (%rdi)
++        movnti  %r11,  96 (%rdi)
++        movnti  %r12, 104 (%rdi)
++        movnti  %r13, 112 (%rdi)
++        movnti  %r14, 120 (%rdi)
++
++        lea     128 (%rsi), %rsi
++        lea     128 (%rdi), %rdi
++
++        jnz     LABEL(NTloop)
++
++        sfence
++
++        pop     %r12
++        pop     %r13
++        pop     %r14
++
++LABEL(NTskip):
++        and     $127, %edx
++        jnz     LABEL(32)
++
++        pop     %rax
++        ret
++
++END (memcpy)
+ #if !MEMPCPY_P
+ libc_hidden_builtin_def (memcpy)
+ #endif
+============================================================
+Index: sysdeps/x86_64/strcmp.S
+--- sysdeps/x86_64/strcmp.S	31 Mar 2005 10:00:13 -0000	1.3
++++ sysdeps/x86_64/strcmp.S	16 Apr 2005 10:26:23 -0000
+@@ -1,45 +1,487 @@
+-/* Highly optimized version for x86-64.
+-   Copyright (C) 1999, 2000, 2002, 2003, 2005 Free Software Foundation, Inc.
+-   This file is part of the GNU C Library.
+-   Based on i686 version contributed by Ulrich Drepper
+-   <drepper@cygnus.com>, 1999.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
+-
+-#include <sysdep.h>
+-#include "asm-syntax.h"
+-#include "bp-sym.h"
+-#include "bp-asm.h"
++# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/2.4/Attic/6905_all_glibc-2.4-amd64-string.patch,v 1.1 2006/03/17 03:04:51 vapier Exp $
++
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
++
++#include "sysdep.h"
++
++#define LABEL(s) L##s
+ 
+         .text
+-ENTRY (BP_SYM (strcmp))
+-L(oop):	movb	(%rdi), %al
+-	cmpb	(%rsi), %al
+-	jne	L(neq)
+-	incq	%rdi
+-	incq	%rsi
+-	testb	%al, %al
+-	jnz	L(oop)
+-
+-	xorl	%eax, %eax
+-	ret
+-
+-L(neq):	movl	$1, %eax
+-	movl	$-1, %ecx
+-	cmovbl	%ecx, %eax
+-	ret
+-END (BP_SYM (strcmp))
++
++ENTRY   (strcmp)			# (const char *, const char *)
++
++        xor     %ecx, %ecx
++
++#ifdef USE_AS_STRNCMP			// (const char *, const char *, size_t)
++        mov	%r14, -8 (%rsp)
++	mov	%rdx, %r14
++
++	test	%rdx, %rdx
++	mov	%edx, %eax
++	jz	.LABEL(exitz)
++#endif
++
++.LABEL(aligntry):
++        mov     %rsi, %r8		# align by "source"
++        and     $8 - 1, %r8		# between 0 and 8 characters compared
++	jz	.LABEL(alignafter)
++
++.LABEL(align):
++        sub     $8, %r8
++
++        .p2align 4
++
++.LABEL(alignloop):
++        mov     (%rsi, %rcx), %al
++        mov	(%rdi, %rcx), %dl
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.LABEL(exitafter)
++#endif
++
++        cmp     %dl, %al		# check if same character
++        jne     .LABEL(exitafter)
++        test    %al, %al		# check if character a NUL
++        jz      .LABEL(exitafter)
++
++        inc     %ecx
++
++        inc     %r8
++        jnz     .LABEL(alignloop)
++
++        .p2align 4
++
++.LABEL(alignafter):
++
++        mov	%r15, -32 (%rsp)
++        mov	%rbp, -24 (%rsp)
++        mov	%rbx, -16 (%rsp)
++
++.LABEL(pagealigntry):			# page align by "destination"
++	mov	$4096, %r15d		# page size is 4096
++        lea	(%rdi, %rcx), %ebp
++        and     $4095, %ebp		# page mask
++        sub	%r15d, %ebp
++
++.LABEL(64):                              # 64-byte
++	mov     $0xfefefefefefefeff, %rbx # magic number
++
++        .p2align 4
++
++.LABEL(64loop):
++	add	$64, %ebp		# check if "destination" crosses a page unevenly
++	jle	.LABEL(64gobble)
++
++        sub	%r15d, %ebp
++        lea	64 (%rcx), %r8
++
++        .p2align 4
++
++.LABEL(64nibble):
++        mov     (%rsi, %rcx), %al
++        mov	(%rdi, %rcx), %dl
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al		# check if same character
++        jne     .exit
++        test    %al, %al		# check if character a NUL
++        jz      .exit
++
++        inc	%ecx
++
++        cmp	%ecx, %r8d
++        ja	.LABEL(64nibble)
++
++        .p2align 4
++
++.LABEL(64gobble):
++        mov     (%rsi, %rcx), %rax
++        mov     (%rdi, %rcx), %rdx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        mov     8 (%rsi, %rcx), %rax
++        mov     8 (%rdi, %rcx), %rdx
++        add     $8, %ecx
++
++#ifdef USE_AS_STRNCMP
++	sub	$8, %r14
++	jl	.LABEL(tail)
++#endif
++
++        mov     %rbx, %r8
++        add     %rax, %r8
++        sbb     %r10, %r10
++
++        mov     %rbx, %r9
++        add     %rdx, %r9
++        sbb     %r11, %r11
++
++        xor     %rax, %r8
++        or      %rbx, %r8
++        sub     %r10, %r8
++        jnz     .LABEL(tail)
++
++        xor     %rdx, %r9
++        or      %rbx, %r9
++        sub     %r11, %r9
++        jnz     .LABEL(tail)
++
++        cmp     %rdx, %rax
++        jne     .LABEL(tail)
++
++        add	$8, %ecx
++
++        jmp	.LABEL(64loop)
++
++.LABEL(64after):
++
++.LABEL(tailtry):
++#	mov     (%rsi, %rcx), %rax
++#	mov     (%rdi, %rcx), %rdx
++#	add     $8, %rcx
++
++.LABEL(tail):				# byte tail
++#ifdef USE_AS_STRNCMP
++	add	$7, %r14
++#endif
++
++        cmp     %dl, %al		# check if same character
++        jne     .exit
++        test    %al, %al		# check if character a NUL
++        jz      .exit
++
++        shr	$8, %rax
++        shr	$8, %rdx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++        test    %al, %al
++        jz      .exit
++
++        shr	$8, %rax
++        shr	$8, %rdx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++        test    %al, %al
++        jz      .exit
++
++        shr	$8, %rax
++        shr	$8, %rdx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++        test    %al, %al
++        jz      .exit
++
++        shr	$8, %rax
++        shr	$8, %rdx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++        test    %al, %al
++        jz      .exit
++
++        shr	$8, %eax
++        shr	$8, %edx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++        test    %al, %al
++        jz      .exit
++
++        shr	$8, %eax
++        shr	$8, %edx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++        test    %al, %al
++        jz      .exit
++
++        shr	$8, %eax
++        shr	$8, %edx
++
++#ifdef USE_AS_STRNCMP
++	dec	%r14
++	jl	.exit
++#endif
++
++        cmp     %dl, %al
++        jne     .exit
++#	test    %al, %al
++#	jz      .exit
++
++        .p2align 4,, 15
++
++.LABEL(tailafter):
++
++.exit:
++	mov	-32 (%rsp), %r15
++	mov	-24 (%rsp), %rbp
++        mov	-16 (%rsp), %rbx
++
++        .p2align 4,, 3
++
++.LABEL(exitafter):
++#ifdef USE_AS_STRNCMP
++	test	%r14, %r14
++	cmovl	%edx, %eax
++#endif
++
++	movzx	%al, %eax
++	movzx	%dl, %edx
++	sub	%eax, %edx
++	xchg	%edx, %eax
++
++#ifdef USE_AS_STRNCMP
++.LABEL(exitz):
++	mov	-8 (%rsp), %r14
++#endif
++        ret
++
++END     (strcmp)
+ libc_hidden_builtin_def (strcmp)
+============================================================
+Index: sysdeps/x86_64/memset.S
+--- sysdeps/x86_64/memset.S	31 Mar 2005 10:00:13 -0000	1.5
++++ sysdeps/x86_64/memset.S	16 Apr 2005 10:26:23 -0000
+@@ -1,138 +1,331 @@
+-/* memset/bzero -- set memory area to CH/0
+-   Optimized version for x86-64.
+-   Copyright (C) 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
+-   This file is part of the GNU C Library.
+-   Contributed by Andreas Jaeger <aj@suse.de>.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
++# (c) 2002 Advanced Micro Devices, Inc.
++# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
++# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
++# LICENSE FOUND IN THE "README" FILE THAT IS
++# INCLUDED WITH THIS FILE
+ 
+ #include <sysdep.h>
+ #include "asm-syntax.h"
+ #include "bp-sym.h"
+ #include "bp-asm.h"
++#if defined PIC && defined SHARED
++# include <rtld-global-offsets.h>
++#endif
+ 
+ /* BEWARE: `#ifdef memset' means that memset is redefined as `bzero' */
+ #define BZERO_P (defined memset)
+ 
+-/* This is somehow experimental and could made dependend on the cache
+-   size.  */
+-#define LARGE $120000
++#if defined PIC && defined SHARED
++	.globl _rtld_local_ro
++        .hidden _rtld_local_ro
++        .set    _rtld_local_ro,_rtld_global_ro
++#endif
++
++#define LABEL(s) L(memset##s)
+ 
+         .text
+ #if !BZERO_P && defined PIC && !defined NOT_IN_libc
+ ENTRY (__memset_chk)
+-	cmpq	%rdx, %rcx
+-	jb	HIDDEN_JUMPTARGET (__chk_fail)
++       cmpq    %rdx, %rcx
++       jb      HIDDEN_JUMPTARGET (__chk_fail)
+ END (__memset_chk)
+ #endif
+-ENTRY (memset)
++
++ENTRY (memset)                	# (void *, const void*, size_t)
++
+ #if BZERO_P
+-	mov	%rsi,%rdx	/* Adjust parameter.  */
+-	xorl	%esi,%esi	/* Fill with 0s.  */
++        mov     %rsi, %rdx		# memset doubles as bzero
++        xorl    %esi, %esi
++#else
++	mov	$0x0101010101010101, %rcx # memset is itself
++        movzx   %sil, %rsi
++        imul    %rcx, %rsi		# replicate 8 times
+ #endif
+-	cmp	$0x7,%rdx	/* Check for small length.  */
+-	mov	%rdi,%rcx	/* Save ptr as return value.  */
+-	jbe	7f
+ 
+-#if BZERO_P
+-	mov	%rsi,%r8	/* Just copy 0.  */
++LABEL(try1):
++        cmp     $64, %rdx
++        mov     %rdi, %rax		# return memory block address (even for bzero ())
++        jae	LABEL(1after)
++
++LABEL(1):                                # 1-byte
++        test    $1, %dl
++        jz      LABEL(1a)
++
++        mov     %sil, (%rdi)
++        inc	%rdi
++
++LABEL(1a):
++        test    $2, %dl
++        jz      LABEL(1b)
++
++        mov     %si, (%rdi)
++        add	$2, %rdi
++
++LABEL(1b):
++        test    $4, %dl
++        jz      LABEL(1c)
++
++        mov     %esi, (%rdi)
++	add	$4, %rdi
++
++LABEL(1c):
++        test    $8, %dl
++        jz      LABEL(1d)
++
++        mov     %rsi, (%rdi)
++	add	$8, %rdi
++
++LABEL(1d):
++        test    $16, %dl
++        jz      LABEL(1e)
++
++        mov     %rsi,   (%rdi)
++        mov     %rsi, 8 (%rdi)
++	add	$16, %rdi
++
++LABEL(1e):
++
++        test    $32, %dl
++        jz      LABEL(1f)
++
++        mov     %rsi,    (%rdi)
++        mov     %rsi,  8 (%rdi)
++        mov     %rsi, 16 (%rdi)
++        mov     %rsi, 24 (%rdi)
++#	add	$32, %rdi
++
++LABEL(1f):
++
++LABEL(exit):
++        rep
++        ret
++
++        .p2align 4
++
++LABEL(1after):
++
++LABEL(32try):
++        cmp     $256, %rdx
++        ja     LABEL(32after)
++
++LABEL(32):                               # 32-byte
++        mov     %edx, %ecx
++        shr     $5, %ecx
++        jz      LABEL(32skip)
++
++        .p2align 4
++
++LABEL(32loop):
++        dec     %ecx
++
++        mov     %rsi,    (%rdi)
++        mov     %rsi,  8 (%rdi)
++        mov     %rsi, 16 (%rdi)
++        mov     %rsi, 24 (%rdi)
++
++        lea     32 (%rdi), %rdi
++
++        jz      LABEL(32skip)
++
++        dec     %ecx
++
++        mov     %rsi,    (%rdi)
++        mov     %rsi,  8 (%rdi)
++        mov     %rsi, 16 (%rdi)
++        mov     %rsi, 24 (%rdi)
++
++        lea     32 (%rdi), %rdi
++
++        jnz     LABEL(32loop)
++
++        .p2align 4
++
++LABEL(32skip):
++        and     $31, %edx
++        jnz     LABEL(1)
++
++        rep
++        ret
++
++        .p2align 4
++
++LABEL(32after):
++
++#ifdef PIC
++# ifdef SHARED
++	mov     _rtld_local_ro@GOTPCREL(%rip), %r8
++	mov     RTLD_GLOBAL_DL_CACHE1SIZEHALF(%r8), %r9
++# else
++	mov     _dl_cache1sizehalf@GOTPCREL(%rip), %r8
++	mov     (%r8), %r9
++# endif
+ #else
+-	/* Populate 8 bit data to full 64-bit.  */
+-	movabs	$0x0101010101010101,%r8
+-	movzbl	%sil,%eax
+-	imul	%rax,%r8
++	mov     _dl_cache1sizehalf, %r9
+ #endif
+-	test	$0x7,%edi	/* Check for alignment.  */
+-	je	2f
++	prefetcht0 (%r9)		# improves test further ahead
+ 
+-	.p2align 4
+-1:	/* Align ptr to 8 byte.  */
+-	mov	%sil,(%rcx)
+-	dec	%rdx
+-	inc	%rcx
+-	test	$0x7,%ecx
+-	jne	1b
+-
+-2:	/* Check for really large regions.  */
+-	mov	%rdx,%rax
+-	shr	$0x6,%rax
+-	je	4f
+-	cmp	LARGE, %rdx
+-	jae	11f
++LABEL(aligntry):
++        mov     %edi, %ecx              # align by destination
+ 
+-	.p2align 4
+-3:	/* Copy 64 bytes.  */
+-	mov	%r8,(%rcx)
+-	mov	%r8,0x8(%rcx)
+-	mov	%r8,0x10(%rcx)
+-	mov	%r8,0x18(%rcx)
+-	mov	%r8,0x20(%rcx)
+-	mov	%r8,0x28(%rcx)
+-	mov	%r8,0x30(%rcx)
+-	mov	%r8,0x38(%rcx)
+-	add	$0x40,%rcx
+-	dec	%rax
+-	jne	3b
+-
+-4:	/* Copy final bytes.  */
+-	and	$0x3f,%edx
+-	mov	%rdx,%rax
+-	shr	$0x3,%rax
+-	je	6f
+-
+-5:	/* First in chunks of 8 bytes.  */
+-	mov	%r8,(%rcx)
+-	add	$0x8,%rcx
+-	dec	%rax
+-	jne	5b
+-6:
+-	and	$0x7,%edx
+-7:
+-	test	%rdx,%rdx
+-	je	9f
+-8:	/* And finally as bytes (up to 7).  */
+-	mov	%sil,(%rcx)
+-	inc	%rcx
+-	dec	%rdx
+-	jne	8b
+-9:
+-#if BZERO_P
+-	nop
++        and     $7, %ecx                # skip if already aligned
++        jz      LABEL(alignafter)
++
++LABEL(align):                            # align
++        lea     -8 (%rcx, %rdx), %rdx
++        sub     $8, %ecx
++
++        .p2align 4
++
++LABEL(alignloop):
++        inc     %ecx
++
++        mov     %sil, (%rdi)
++        lea     1 (%rdi), %rdi
++
++        jnz     LABEL(alignloop)
++
++        .p2align 4
++
++LABEL(alignafter):
++#ifdef PIC
++# ifdef SHARED
++        mov     _rtld_local_ro@GOTPCREL(%rip), %r9
++	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF(%r9), %r8
++# else
++        mov     _dl_cache2sizehalf@GOTPCREL(%rip), %r9
++	mov	(%r9), %r8
++# endif
++	# For MP System half cache size is better, for UP full cache size
++	# is better -> use half cache size only
+ #else
+-	/* Load result (only if used as memset).  */
+-	mov	%rdi,%rax	/* start address of destination is result */
++        mov     _dl_cache2sizehalf, %r8
+ #endif
+-	retq
++        cmp     %rdx, %r8
++        cmova   %rdx, %r8
++
++LABEL(fasttry):
++	cmp	$2048, %rdx		# this is slow for some block sizes
++	jb	LABEL(64)
++
++LABEL(fast):				# microcode
++	mov	%r8, %rcx
++	and	$-8, %r8
++	shr	$3, %rcx
++
++	xchg	%rax, %rsi
++
++	rep
++	stosq
++
++	xchg	%rax, %rsi
++
++LABEL(fastskip):
++	sub	%r8, %rdx
++	ja	LABEL(64after)
++
++	and	$7, %edx
++	jnz	LABEL(1)
++
++	rep
++	ret
+ 
+ 	.p2align 4
+-11:	/* Copy 64 bytes without polluting the cache.  */
+-	/* We could use	movntdq    %xmm0,(%rcx) here to further
+-	   speed up for large cases but let's not use XMM registers.  */
+-	movnti	%r8,(%rcx)
+-	movnti  %r8,0x8(%rcx)
+-	movnti  %r8,0x10(%rcx)
+-	movnti  %r8,0x18(%rcx)
+-	movnti  %r8,0x20(%rcx)
+-	movnti  %r8,0x28(%rcx)
+-	movnti  %r8,0x30(%rcx)
+-	movnti  %r8,0x38(%rcx)
+-	add	$0x40,%rcx
+-	dec	%rax
+-	jne	11b
+-	jmp	4b
++
++LABEL(fastafter):
++
++LABEL(64try):
++
++LABEL(64):                               # 64-byte
++        mov     %r8, %rcx
++        and     $-64, %r8
++        shr     $6, %rcx
++
++        dec     %rcx                    # this iteration starts the prefetcher sooner
++
++        mov     %rsi,    (%rdi)
++        mov     %rsi,  8 (%rdi)
++        mov     %rsi, 16 (%rdi)
++        mov     %rsi, 24 (%rdi)
++        mov     %rsi, 32 (%rdi)
++        mov     %rsi, 40 (%rdi)
++        mov     %rsi, 48 (%rdi)
++        mov     %rsi, 56 (%rdi)
++
++        lea     64 (%rdi), %rdi
++
++        .p2align 4
++
++LABEL(64loop):
++        dec     %rcx
++
++        mov     %rsi,    (%rdi)
++        mov     %rsi,  8 (%rdi)
++        mov     %rsi, 16 (%rdi)
++        mov     %rsi, 24 (%rdi)
++        mov     %rsi, 32 (%rdi)
++        mov     %rsi, 40 (%rdi)
++        mov     %rsi, 48 (%rdi)
++        mov     %rsi, 56 (%rdi)
++
++        lea     64 (%rdi), %rdi
++
++        jnz     LABEL(64loop)
++
++LABEL(64skip):
++        sub     %r8, %rdx
++        ja      LABEL(64after)
++
++	and     $63, %edx
++	jnz     LABEL(32)
++
++        rep
++        ret
++
++        .p2align 4
++
++LABEL(64after):
++
++LABEL(NTtry):
++
++LABEL(NT):                               # 128-byte
++        mov     %rdx, %rcx
++        shr     $7, %rcx
++        jz      LABEL(NTskip)
++
++        .p2align 4
++
++LABEL(NTloop):                  # on an MP system it would be better to prefetchnta 320 (%rdi) and 384 (%rdi) here, but not so on an 1P system
++        dec     %rcx
++
++        movnti  %rsi,     (%rdi)
++        movnti  %rsi,   8 (%rdi)
++        movnti  %rsi,  16 (%rdi)
++        movnti  %rsi,  24 (%rdi)
++        movnti  %rsi,  32 (%rdi)
++        movnti  %rsi,  40 (%rdi)
++        movnti  %rsi,  48 (%rdi)
++        movnti  %rsi,  56 (%rdi)
++        movnti  %rsi,  64 (%rdi)
++        movnti  %rsi,  72 (%rdi)
++        movnti  %rsi,  80 (%rdi)
++        movnti  %rsi,  88 (%rdi)
++        movnti  %rsi,  96 (%rdi)
++        movnti  %rsi, 104 (%rdi)
++        movnti  %rsi, 112 (%rdi)
++        movnti  %rsi, 120 (%rdi)
++
++        lea     128 (%rdi), %rdi
++
++        jnz     LABEL(NTloop)
++
++        sfence
++
++LABEL(NTskip):
++        and     $127, %edx
++        jnz     LABEL(32)
++
++        rep
++        ret
+ 
+ END (memset)
+ #if !BZERO_P
