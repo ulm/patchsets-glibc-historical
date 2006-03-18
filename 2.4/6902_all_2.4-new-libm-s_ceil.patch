@@ -1,0 +1,40 @@
+This patch is taken from current SuSE rpm: glibc-2.4-6.src.rpm
+Requires 6901_all_2.4-new-libm-20060314.patch
+
+This fixes ceil (x) for -1.0 < x < 0.
+
+--- sysdeps/x86_64/fpu/s_ceil.c	2003-11-26 15:25:50.000000000 +0100
++++ sysdeps/x86_64/fpu/s_ceil.c	2003-11-27 13:57:35.000000000 +0100
+@@ -34,7 +34,11 @@
+         /* x is +zero or -zero; return the same zero */
+           return x;
+       else if (xneg) /* x < 0.0 */
+-        return 0.0;
++       {
++          /* Return zero with the sign of x */
++          PUT_BITS_DP64(SIGNBIT_DP64, x);
++          return x;
++       }
+       else
+         return 1.0;
+     }
+--- sysdeps/x86_64/fpu/s_ceilf.c	2003-11-26 15:25:50.000000000 +0100
++++ sysdeps/x86_64/fpu/s_ceilf.c	2003-11-27 13:57:35.000000000 +0100
+@@ -34,7 +34,11 @@
+         /* x is +zero or -zero; return the same zero */
+         return x;
+       else if (xneg) /* x < 0.0 */
+-        return 0.0F;
++        {
++      	   /* Return zero with the sign of x */
++           PUT_BITS_SP32(SIGNBIT_SP32, x);
++           return x;
++        }
+       else
+         return 1.0F;
+     }
+
+-- 
+ Andreas Jaeger, aj@suse.de, http://www.suse.de/~aj
+  SuSE Linux AG, Deutschherrnstr. 15-19, 90429 Nürnberg, Germany
+   GPG fingerprint = 93A3 365E CE47 B889 DF7F  FED1 389A 563C C272 A126
