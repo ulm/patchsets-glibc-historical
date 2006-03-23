@@ -1,3 +1,5 @@
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=2477
+
 Fix building nptl on hardened
 
 http://bugs.gentoo.org/52254
