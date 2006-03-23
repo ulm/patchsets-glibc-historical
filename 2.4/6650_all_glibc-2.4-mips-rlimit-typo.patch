@@ -1,0 +1,18 @@
+http://sourceware.org/ml/libc-ports/2006-03/msg00026.html
+
+2006-03-18  Denis Barbier  <barbier@linuxfr.org>
+
+	* sysdeps/unix/sysv/linux/mips/bits/resource.h (__RLIMIT_RTPRIO):
+	Fix _RLIMIT_RTPRIO typo.
+
+--- ports/sysdeps/unix/sysv/linux/mips/bits/resource.h
++++ ports/sysdeps/unix/sysv/linux/mips/bits/resource.h
+@@ -98,7 +98,7 @@ enum __rlimit_resource
+   /* Maximum realtime priority allowed for non-priviledged
+      processes.  */
+   __RLIMIT_RTPRIO = 14,
+-#define RLIMIT_RTPRIO _RLIMIT_RTPRIO
++#define RLIMIT_RTPRIO __RLIMIT_RTPRIO
+ 
+   __RLIMIT_NLIMITS = 15,
+   __RLIM_NLIMITS = __RLIMIT_NLIMITS
