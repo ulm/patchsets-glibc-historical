@@ -1,0 +1,159 @@
+http://sourceware.org/ml/binutils/2006-01/msg00171.html
+
+--- glibc-2.4/elf/dl-lookup.c
++++ glibc-2.4/elf/dl-lookup.c
+@@ -206,10 +206,38 @@ _dl_lookup_symbol_x (const char *undef_n
+ 		     const struct r_found_version *version,
+ 		     int type_class, int flags, struct link_map *skip_map)
+ {
+-  const unsigned long int hash = _dl_elf_hash (undef_name);
++  unsigned long int hash;
+   struct sym_val current_value = { NULL, NULL };
+   struct r_scope_elem **scope = symbol_scope;
+ 
++  /* This sucks mostly - but people sadly don't pass a symtab index, or hashvals ptr in.  */
++  const Elf_Symndx *hashvals;
++
++  if (__builtin_expect (undef_map != NULL, 1) &&
++      __builtin_expect (undef_map->l_info[SUSEIDX(DT_SUSE_HASHVALS)] != NULL, 1) &&
++      __builtin_expect ((hashvals = (const void *)D_PTR (undef_map, l_info[SUSEIDX(DT_SUSE_HASHVALS)])) != NULL, 1) &&
++      __builtin_expect (*ref != NULL, 1))
++    {
++      const ElfW(Sym) *symtab = (const void *) D_PTR (undef_map, l_info[DT_SYMTAB]);
++      hashvals += *ref - symtab;
++
++      if (__builtin_expect ((ElfW(Addr))hashvals >= undef_map->l_map_end, 0) ||
++	  __builtin_expect ((ElfW(Addr))hashvals <= undef_map->l_map_start, 0))
++        _dl_debug_printf ("out of bounds madness ... 0x%x\n", (int) hashvals);
++      else
++      {
++        hash = *hashvals;
++#if 0
++	if (hash != _dl_elf_hash (undef_name))
++          _dl_debug_printf ("Hash difference ! 0x%x 0x%x [offset 0x%x]\n",
++			    (int) _dl_elf_hash (undef_name),
++			    (int) hash, (int) (*ref - symtab));
++#endif
++      }
++    }
++  else
++    hash = _dl_elf_hash (undef_name); 
++
+   bump_num_relocations ();
+ 
+   /* No other flag than DL_LOOKUP_ADD_DEPENDENCY is allowed if we look
+--- glibc-2.4/elf/do-lookup.h
++++ glibc-2.4/elf/do-lookup.h
+@@ -17,6 +17,9 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++# define SUSEIDX(sym)	(DT_NUM + DT_THISPROCNUM + DT_VERSIONTAGNUM + \
++			 DT_EXTRANUM + DT_VALNUM + DT_ADDRNUM + DT_SUSE_TAGIDX (sym))
++
+ /* Inner part of the lookup functions.  We return a value > 0 if we
+    found the symbol, the value 0 if nothing is found and < 0 if
+    something bad happened.  */
+@@ -35,6 +38,7 @@ do_lookup_x (const char *undef_name, uns
+   do
+     {
+       const ElfW(Sym) *symtab;
++      const Elf_Symndx *hashvals;
+       const char *strtab;
+       const ElfW(Half) *verstab;
+       Elf_Symndx symidx;
+@@ -63,9 +67,10 @@ do_lookup_x (const char *undef_name, uns
+ 			  map->l_name[0] ? map->l_name : rtld_progname,
+ 			  map->l_ns);
+ 
+-      symtab = (const void *) D_PTR (map, l_info[DT_SYMTAB]);
+-      strtab = (const void *) D_PTR (map, l_info[DT_STRTAB]);
+-      verstab = map->l_versyms;
++      if (__builtin_expect (map->l_info[SUSEIDX(DT_SUSE_HASHVALS)] != NULL, 1))
++        hashvals = (const void *) D_PTR (map, l_info[SUSEIDX(DT_SUSE_HASHVALS)]);
++      else
++	hashvals = NULL;
+ 
+       /* Search the appropriate hash bucket in this object's symbol table
+ 	 for a definition for the same symbol name.  */
+@@ -73,6 +78,20 @@ do_lookup_x (const char *undef_name, uns
+ 	   symidx != STN_UNDEF;
+ 	   symidx = map->l_chain[symidx])
+ 	{
++	  if (__builtin_expect (hashvals != NULL, 1) &&
++	      __builtin_expect ((ElfW(Addr))hashvals < map->l_map_end, 1) &&
++	      __builtin_expect ((ElfW(Addr))hashvals > map->l_map_start, 1))
++	    {
++	      if (__builtin_expect (hashvals[symidx] != hash, 1))
++	        continue;
++	    }
++	  /* If hashvals is present 99.9% of the loop is done: what follows
++	     is the very un-common / direct-hit case.  */
++
++	  symtab = (const void *) D_PTR (map, l_info[DT_SYMTAB]);
++	  strtab = (const void *) D_PTR (map, l_info[DT_STRTAB]);
++	  verstab = map->l_versyms;
++
+ 	  sym = &symtab[symidx];
+ 
+ 	  assert (ELF_RTYPE_CLASS_PLT == 1);
+--- glibc-2.4/elf/dynamic-link.h
++++ glibc-2.4/elf/dynamic-link.h
+@@ -65,6 +65,10 @@ elf_machine_lazy_rel (struct link_map *m
+ #ifndef VERSYMIDX
+ # define VERSYMIDX(sym)	(DT_NUM + DT_THISPROCNUM + DT_VERSIONTAGIDX (sym))
+ #endif
++#ifndef SUSEIDX
++# define SUSEIDX(sym)	(DT_NUM + DT_THISPROCNUM + DT_VERSIONTAGNUM + \
++			 DT_EXTRANUM + DT_VALNUM + DT_ADDRNUM + DT_SUSE_TAGIDX (sym))
++#endif
+ 
+ 
+ /* Read the dynamic section at DYN and fill in INFO with indices DT_*.  */
+@@ -93,6 +97,9 @@ elf_get_dynamic_info (struct link_map *l
+       else if (dyn->d_tag >= DT_LOPROC &&
+ 	       dyn->d_tag < DT_LOPROC + DT_THISPROCNUM)
+ 	info[dyn->d_tag - DT_LOPROC + DT_NUM] = dyn;
++      else if (dyn->d_tag >= DT_SUSE_LO &&
++	       dyn->d_tag < DT_SUSE_LO + DT_SUSENUM)
++        info[SUSEIDX(dyn->d_tag)] = dyn;
+       else if ((Elf32_Word) DT_VERSIONTAGIDX (dyn->d_tag) < DT_VERSIONTAGNUM)
+ 	info[VERSYMIDX (dyn->d_tag)] = dyn;
+       else if ((Elf32_Word) DT_EXTRATAGIDX (dyn->d_tag) < DT_EXTRANUM)
+@@ -143,6 +150,8 @@ elf_get_dynamic_info (struct link_map *l
+ # endif
+       ADJUST_DYN_INFO (DT_JMPREL);
+       ADJUST_DYN_INFO (VERSYMIDX (DT_VERSYM));
++      ADJUST_DYN_INFO (SUSEIDX(DT_SUSE_HASHVALS));
++      ADJUST_DYN_INFO (SUSEIDX(DT_SUSE_DIRECT));
+ # undef ADJUST_DYN_INFO
+       assert (cnt <= DL_RO_DYN_TEMP_CNT);
+     }
+--- glibc-2.4/elf/elf.h
++++ glibc-2.4/elf/elf.h
+@@ -729,6 +729,14 @@ typedef struct
+ #define DT_VERSIONTAGIDX(tag)	(DT_VERNEEDNUM - (tag))	/* Reverse order! */
+ #define DT_VERSIONTAGNUM 16
+ 
++/* SUSE specific pieces - at a random OS specific address.  */
++#define DT_SUSE_LO 0x6cbdd030
++#define DT_SUSE_HASHVALS DT_SUSE_LO
++#define DT_SUSE_DIRECT   DT_SUSE_LO + 1
++#define DT_SUSE_HI 0x6cbdd040
++#define DT_SUSE_TAGIDX(tag) (tag - DT_SUSE_LO)
++#define DT_SUSENUM 2
++
+ /* Sun added these machine-independent extensions in the "processor-specific"
+    range.  Be compatible.  */
+ #define DT_AUXILIARY    0x7ffffffd      /* Shared object to load before self */
+--- glibc-2.4/include/link.h
++++ glibc-2.4/include/link.h
+@@ -120,7 +120,7 @@ struct link_map
+        are indexed by DT_ADDRTAGIDX(tagvalue), see <elf.h>.  */
+ 
+     ElfW(Dyn) *l_info[DT_NUM + DT_THISPROCNUM + DT_VERSIONTAGNUM
+-		     + DT_EXTRANUM + DT_VALNUM + DT_ADDRNUM];
++		     + DT_EXTRANUM + DT_VALNUM + DT_ADDRNUM + DT_SUSENUM];
+     const ElfW(Phdr) *l_phdr;	/* Pointer to program header table in core.  */
+     ElfW(Addr) l_entry;		/* Entry point location.  */
+     ElfW(Half) l_phnum;		/* Number of program header entries.  */
