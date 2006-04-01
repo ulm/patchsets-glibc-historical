@@ -1,0 +1,60 @@
+If the linker script and the target lib are being installed into the
+same path, don't have the linker script use absolute paths.
+
+--- Makerules
++++ Makerules
+@@ -972,6 +972,14 @@ ifndef subdir
+ # We need to use absolute paths since otherwise local copies (if they exist)
+ # of the files are taken by the linker.
+ install: $(inst_libdir)/libc.so
++
++ifeq ($(slibdir),$(libdir))
++ldscript_slibdir =
++ldscript_libdir =
++else
++ldscript_slibdir = $(slibdir)/
++ldscript_libdir = $(libdir)/
++endif
+ $(inst_libdir)/libc.so: $(common-objpfx)format.lds \
+ 			$(common-objpfx)libc.so$(libc.so-version) \
+ 			$(inst_libdir)/$(patsubst %,$(libtype.oS),\
+@@ -981,9 +989,9 @@ $(inst_libdir)/libc.so: $(common-objpfx)
+ 	 echo '   Use the shared library, but some functions are only in';\
+ 	 echo '   the static library, so try that secondarily.  */';\
+ 	 cat $<; \
+-	 echo 'GROUP ( $(slibdir)/libc.so$(libc.so-version)' \
+-	      '$(libdir)/$(patsubst %,$(libtype.oS),$(libprefix)$(libc-name))'\
+-	      ' AS_NEEDED (' $(slibdir)/$(rtld-installed-name) ') )' \
++	 echo 'GROUP ( $(ldscript_slibdir)libc.so$(libc.so-version)' \
++	      '$(ldscript_libdir)$(patsubst %,$(libtype.oS),$(libprefix)$(libc-name))'\
++	      ' AS_NEEDED (' $(ldscript_slibdir)$(rtld-installed-name) ') )' \
+ 	) > $@.new
+ 	mv -f $@.new $@
+ 
+--- nptl/Makefile
++++ nptl/Makefile
+@@ -368,6 +368,13 @@ lib-noranlib: $(addprefix $(objpfx),$(ex
+ # of the files are taken by the linker.
+ install: $(inst_libdir)/libpthread.so
+ 
++ifeq ($(slibdir),$(libdir))
++ldscript_slibdir =
++ldscript_libdir =
++else
++ldscript_slibdir = $(slibdir)/
++ldscript_libdir = $(libdir)/
++endif
+ $(inst_libdir)/libpthread.so: $(common-objpfx)format.lds \
+ 			      $(objpfx)libpthread.so$(libpthread.so-version) \
+ 			      $(inst_libdir)/$(patsubst %,$(libtype.oS),\
+@@ -377,8 +384,8 @@ $(inst_libdir)/libpthread.so: $(common-o
+ 	 echo '   Use the shared library, but some functions are only in';\
+ 	 echo '   the static library, so try that secondarily.  */';\
+ 	 cat $<; \
+-	 echo 'GROUP ( $(slibdir)/libpthread.so$(libpthread.so-version)' \
+-	      '$(libdir)/$(patsubst %,$(libtype.oS),$(libprefix)pthread)'\
++	 echo 'GROUP ( $(ldscript_slibdir)libpthread.so$(libpthread.so-version)' \
++	      '$(ldscript_libdir)$(patsubst %,$(libtype.oS),$(libprefix)pthread)'\
+ 	      ')' \
+ 	) > $@.new
+ 	mv -f $@.new $@
