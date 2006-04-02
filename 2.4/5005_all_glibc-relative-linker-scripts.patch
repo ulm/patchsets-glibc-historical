@@ -1,8 +1,13 @@
+2006-04-02  Mike Frysinger  <vapier@gentoo.org>
+
+	* Makerules ($(inst_libdir)/libc.so): Only use absolute paths necessary.
+	* nptl/Makerules ($(inst_libdir)/libpthread.so): Likewise.
+
 If the linker script and the target lib are being installed into the
 same path, don't have the linker script use absolute paths.
 
---- Makerules
-+++ Makerules
+--- libc/Makerules
++++ libc/Makerules
 @@ -972,6 +972,14 @@ ifndef subdir
  # We need to use absolute paths since otherwise local copies (if they exist)
  # of the files are taken by the linker.
@@ -31,8 +36,8 @@ same path, don't have the linker script use absolute paths.
  	) > $@.new
  	mv -f $@.new $@
  
---- nptl/Makefile
-+++ nptl/Makefile
+--- libc/nptl/Makefile
++++ libc/nptl/Makefile
 @@ -368,6 +368,13 @@ lib-noranlib: $(addprefix $(objpfx),$(ex
  # of the files are taken by the linker.
  install: $(inst_libdir)/libpthread.so
