@@ -1,0 +1,24 @@
+http://sourceware.org/ml/libc-alpha/2006-04/msg00035.html
+
+2006-04-08  Ulrich Drepper  <drepper@redhat.com>
+
+	* elf/rtld.c (process_envvars): Fix handling of LD_POINTER_GUARD.
+	Reported by genesh@comcast.net.
+
+Index: elf/rtld.c
+===================================================================
+RCS file: /cvs/glibc/libc/elf/rtld.c,v
+retrieving revision 1.361
+retrieving revision 1.362
+diff -u -p -r1.361 -r1.362
+--- elf/rtld.c	19 Mar 2006 07:47:53 -0000	1.361
++++ elf/rtld.c	8 Apr 2006 19:50:51 -0000	1.362
+@@ -2624,7 +2624,7 @@ process_envvars (enum mode *modep)
+ 	    }
+ 
+ 	  if (memcmp (envline, "POINTER_GUARD", 13) == 0)
+-	    GLRO(dl_pointer_guard) = envline[14] == '0';
++	    GLRO(dl_pointer_guard) = envline[14] != '0';
+ 	  break;
+ 
+ 	case 14:
