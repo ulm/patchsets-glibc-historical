@@ -17,11 +17,14 @@ rm -f glibc-${gver}-*.tar.bz2
 
 mkdir -p tmp/patches
 cp -r ${gver}/*.patch tmp/patches/ || exit 1
+cp -r extra tmp/patches/ || exit 1
 
 if [[ -d ${gver}/man ]] ; then
 	mkdir tmp/man
 	cp -r ${gver}/man/* tmp/man/ || exit 1
 fi
+
+find tmp -type d -name CVS -print0 | xargs -0 rm -r
 
 tar -jcf glibc-${gver}-patches-${pver}.tar.bz2 \
 	-C tmp patches || exit 1
