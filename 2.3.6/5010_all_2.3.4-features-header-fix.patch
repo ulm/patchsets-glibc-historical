@@ -1,5 +1,9 @@
---- glibc-2.3.4.orig/include/features.h	2004-10-17 21:17:16.000000000 -0700
-+++ glibc-2.3.4/include/features.h	2005-02-05 14:06:58.575066564 -0800
+	if __OPTIMIZE__ isnt defined, the comparison in this header fails
+
+	Already fixed in upstream cvs
+
+--- glibc-2.3.4/include/features.h
++++ glibc-2.3.4/include/features.h
 @@ -262,7 +262,7 @@
  # define __USE_REENTRANT	1
  #endif

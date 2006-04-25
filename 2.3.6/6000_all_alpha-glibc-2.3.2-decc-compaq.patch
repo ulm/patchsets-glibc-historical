@@ -1,6 +1,7 @@
-diff -ruN glibc-2.3.2.orig/include/features.h glibc-2.3.2/include/features.h
---- glibc-2.3.2.orig/include/features.h	2003-06-14 00:28:23.000000000 +0100
-+++ glibc-2.3.2/include/features.h	2003-06-14 00:58:57.000000000 +0100
+	Fix compatability with compaq compilers by ifdef'ing out some
+	2.3.2 additions - <taviso@gentoo.org> (14 Jun 2003).
+--- glibc-2.3.2/include/features.h
++++ glibc-2.3.2/include/features.h
 @@ -285,7 +285,8 @@
  #if defined __GNUC__ \
      || (defined __PGI && defined __i386__ ) \
@@ -11,9 +12,8 @@ diff -ruN glibc-2.3.2.orig/include/features.h glibc-2.3.2/include/features.h
  # define __GLIBC_HAVE_LONG_LONG	1
  #endif
  
-diff -ruN glibc-2.3.2.orig/linuxthreads/sysdeps/pthread/bits/pthreadtypes.h glibc-2.3.2/linuxthreads/sysdeps/pthread/bits/pthreadtypes.h
---- glibc-2.3.2.orig/linuxthreads/sysdeps/pthread/bits/pthreadtypes.h	2003-06-14 00:28:24.000000000 +0100
-+++ glibc-2.3.2/linuxthreads/sysdeps/pthread/bits/pthreadtypes.h	2003-06-14 00:57:16.000000000 +0100
+--- glibc-2.3.2/linuxthreads/sysdeps/pthread/bits/pthreadtypes.h
++++ glibc-2.3.2/linuxthreads/sysdeps/pthread/bits/pthreadtypes.h
 @@ -64,9 +64,11 @@
  {
    struct _pthread_fastlock __c_lock; /* Protect against concurrent access */

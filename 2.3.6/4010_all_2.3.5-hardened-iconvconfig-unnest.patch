@@ -1,5 +1,7 @@
 Move nested function to a static one so we avoid generating a trampoline
 
+http://bugs.gentoo.org/85718
+
 --- glibc-2.3.5/iconv/iconvconfig.c
 +++ glibc-2.3.5/iconv/iconvconfig.c
 @@ -1013,6 +1013,38 @@
