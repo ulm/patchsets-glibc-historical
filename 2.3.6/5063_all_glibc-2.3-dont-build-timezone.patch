@@ -1,0 +1,13 @@
+timezone data has been split into the package sys-libs/timezone-data
+
+--- glibc-2.3.6/Makeconfig
++++ glibc-2.3.6/Makeconfig
+@@ -893,7 +893,7 @@
+ 	      stdlib stdio-common libio malloc string wcsmbs time dirent \
+ 	      grp pwd posix io termios resource misc socket sysvipc gmon    \
+ 	      gnulib iconv iconvdata wctype manual shadow po argp	    \
+-	      crypt $(add-ons) nss localedata timezone rt conform debug	    \
++	      crypt $(add-ons) nss localedata rt conform debug	    \
+ 	      $(sysdep-subdirs) $(dlfcn) $(binfmt-subdir)
+ all-subdirs := $(filter-out $(sysdep-inhibit-subdirs),$(all-subdirs))
+ 
