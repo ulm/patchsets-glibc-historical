@@ -1,0 +1,17 @@
+2006-03-02  Daniel Jacobowitz  <dan@codesourcery.com>
+
+    * sysdeps/unix/sysv/linux/configure.in: Allow
+    libc_cv_slibdir et al. to be overridden.
+
+--- libc/sysdeps/unix/sysv/linux/configure
++++ libc/sysdeps/unix/sysv/linux/configure
+@@ -160,6 +160,9 @@
+ case "$prefix" in
+ /usr | /usr/)
+   # 64-bit libraries on bi-arch platforms go in /lib64 instead of /lib
++  # Allow earlier configure scripts to handle libc_cv_slibdir, libdir,
++  # and libc_cv_localedir.
++  test -n "$libc_cv_slibdir" || \
+   case $machine in
+   sparc/sparc64 | x86_64 | powerpc/powerpc64 | s390/s390-64 | \
+   mips/mips64/n64/* )
