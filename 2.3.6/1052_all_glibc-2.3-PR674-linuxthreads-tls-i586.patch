@@ -1,0 +1,43 @@
+The i686 pt-machine.h includes useldt.h so that USE_TLS/HAVE___THREAD are
+properly defined.  The generic i386 pt-machine.h header does not pull in
+useldt.h however, so when building linuxthreads with TLS support for i586,
+the final fails:
+...
+linuxthreads/libpthread_pic.a(pthread.os)(.text+0x161): In function `__pthread_initialize':
+: undefined reference to `_res'
+linuxthreads/libpthread_pic.a(pthread.os)(.text+0x107a): In function `__pthread_reset_main_thread':
+: undefined reference to `_h_errno'
+linuxthreads/libpthread_pic.a(pthread.os)(.text+0x1089): In function `__pthread_reset_main_thread':
+: undefined reference to `_errno'
+...
+
+So, to reiterate, this is due to some parts of linuxthreads being incorrectly
+built without the TLS defines.
+
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=674
+http://bugs.gentoo.org/90236
+
+2006-04-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/i386/pt-machine.h: Include kernel-features.h.
+	[__ASSUME_LDT_WORKS]: Include useldt.h.
+
+--- linuxthreads/sysdeps/i386/pt-machine.h
++++ linuxthreads/sysdeps/i386/pt-machine.h
+@@ -26,6 +26,7 @@
+ #ifndef PT_EI
+ # define PT_EI extern inline __attribute__ ((always_inline))
+ #endif
++#include "kernel-features.h"
+ 
+ extern long int testandset (int *spinlock);
+ extern int __compare_and_swap (long int *p, long int oldval, long int newval);
+@@ -105,4 +106,8 @@ compare_and_swap_is_available (void)
+ }
+ #endif /* __ASSEMBLER__ */
+ 
++#if __ASSUME_LDT_WORKS > 0
++#include "useldt.h"
++#endif
++
+ #endif /* pt-machine.h */
