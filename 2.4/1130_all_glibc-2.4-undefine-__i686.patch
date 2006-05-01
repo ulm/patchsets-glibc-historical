@@ -27,6 +27,8 @@ http://sourceware.org/ml/libc-alpha/2006-04/msg00090.html
  
  #ifdef	__ASSEMBLER__
 
+Note: this breaks mips so we wrap it in a hackish __i686__ for now ...
+
 2006-04-25  Mike Frysinger  <vapier@gentoo.org>
 
 	* sysdeps/pthread/pt-initfini.c: Include sysdep.h.
@@ -38,7 +40,7 @@ http://sourceware.org/ml/libc-alpha/2006-04/msg00090.html
  asm ("\n#include \"defs.h\"");
  
 +/* Embed an #include to pull in asm settings. */
-+asm ("\n#include <sysdep.h>");
++asm ("\n#ifdef __i686__\n#include <sysdep.h>\n#endif");
 +
  /* The initial common code ends here. */
  asm ("\n/*@HEADER_ENDS*/");
