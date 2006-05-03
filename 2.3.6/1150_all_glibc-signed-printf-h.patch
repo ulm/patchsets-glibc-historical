@@ -1,0 +1,44 @@
+http://bugs.gentoo.org/128622
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=2509
+
+2006-05-02  Ulrich Drepper  <drepper@redhat.com>
+
+	[BZ #2509]
+	* stdio-common/vfprintf.c (process_arg): Fix reading of signed
+	short and byte values from parameter list.
+
+Index: stdio-common/vfprintf.c
+===================================================================
+RCS file: /cvs/glibc/libc/stdio-common/vfprintf.c,v
+retrieving revision 1.133
+retrieving revision 1.134
+diff -u -p -r1.133 -r1.134
+--- stdio-common/vfprintf.c	14 Jan 2006 12:09:45 -0000	1.133
++++ stdio-common/vfprintf.c	2 May 2006 20:25:15 -0000	1.134
+@@ -530,14 +530,24 @@ vfprintf (FILE *s, const CHAR_T *format,
+ 	    {								      \
+ 	      if (is_long_num)						      \
+ 		signed_number = va_arg (ap, long int);			      \
+-	      else  /* `char' and `short int' will be promoted to `int'.  */  \
++	      else if (is_char)						      \
++	        signed_number = (signed char) va_arg (ap, unsigned int);      \
++	      else if (!is_short)					      \
+ 		signed_number = va_arg (ap, int);			      \
++	      else							      \
++		signed_number = (short int) va_arg (ap, unsigned int);	      \
+ 	    }								      \
+ 	  else								      \
+ 	    if (is_long_num)						      \
+ 	      signed_number = args_value[fspec->data_arg].pa_long_int;	      \
+-	    else  /* `char' and `short int' will be promoted to `int'.  */    \
++	    else if (is_char)						      \
++	      signed_number = (signed char)				      \
++		args_value[fspec->data_arg].pa_u_int;			      \
++	    else if (!is_short)						      \
+ 	      signed_number = args_value[fspec->data_arg].pa_int;	      \
++	    else							      \
++	      signed_number = (short int)				      \
++		args_value[fspec->data_arg].pa_u_int;			      \
+ 									      \
+ 	  is_negative = signed_number < 0;				      \
+ 	  number.word = is_negative ? (- signed_number) : signed_number;      \
