@@ -1,0 +1,35 @@
+http://sourceware.org/ml/libc-ports/2006-05/msg00005.html
+
+The MIPS <bits/mman.h> header is missing definitions of POSIX_MADV_* 
+(present on other targets), as shown up by Open POSIX testing.  (Examining 
+the other bits/mman.h headers shows that HPPA also seems to be missing 
+these definitions.)
+
+2006-04-20  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/mips/bits/mman.h (POSIX_MADV_NORMAL,
+	POSIX_MADV_RANDOM, POSIX_MADV_SEQUENTIAL, POSIX_MADV_WILLNEED,
+	POSIX_MADV_DONTNEED): Define.
+
+--- ports/sysdeps/unix/sysv/linux/mips/bits/mman.h
++++ ports/sysdeps/unix/sysv/linux/mips/bits/mman.h
+@@ -85,7 +85,18 @@
+ #define MADV_SEQUENTIAL	2		/* read-ahead aggressively */
+ #define MADV_WILLNEED	3		/* pre-fault pages */
+ #define MADV_DONTNEED	4		/* discard these pages */
+-#define MADV_REMOVE	5		/* remove these pages & resources */
++#define MADV_REMOVE	9		/* Remove these pages and resources */
++#define MADV_DONTFORK	10		/* Do not inherit across fork */
++#define MADV_DOFORK	11		/* Do inherit across fork */
++#endif
++
++/* The POSIX people had to invent similar names for the same things.  */
++#ifdef __USE_XOPEN2K
++# define POSIX_MADV_NORMAL	0 /* No further special treatment.  */
++# define POSIX_MADV_RANDOM	1 /* Expect random page references.  */
++# define POSIX_MADV_SEQUENTIAL	2 /* Expect sequential page references.  */
++# define POSIX_MADV_WILLNEED	3 /* Will need these pages.  */
++# define POSIX_MADV_DONTNEED	4 /* Don't need these pages.  */
+ #endif
+ 
+ /* Flags for `mremap'.  */
