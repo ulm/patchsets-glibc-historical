@@ -2,7 +2,6 @@
 
 	* sysdeps/mips/fpu/feholdexcpt.c: Add libm_hidden_def.
 	* sysdeps/mips/fpu/fesetround.c: Likewise.
-	* sysdeps/mips/fpu/feupdateenv.c: Likewise.
 
 --- ports/sysdeps/mips/fpu/feholdexcpt.c
 +++ ports/sysdeps/mips/fpu/feholdexcpt.c
@@ -18,10 +17,3 @@
    return 0;
  }
 +libm_hidden_def (fesetround)
---- ports/sysdeps/mips/fpu/feupdateenv.c
-+++ ports/sysdeps/mips/fpu/feupdateenv.c
-@@ -41,3 +41,4 @@ feupdateenv (const fenv_t *envp)
-   /* Success.  */
-   return 0;
- }
-+libm_hidden_def (feupdateenv)
