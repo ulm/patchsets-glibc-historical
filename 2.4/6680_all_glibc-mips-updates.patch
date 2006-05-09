@@ -1,0 +1,339 @@
+Date: Mon, 8 May 2006 15:23:56 -0400
+From: Daniel Jacobowitz <drow@false.org>
+To: libc-ports@sourceware.org
+Subject: MIPS build updates
+
+Richard Sandiford sent me two patches which fix the MIPS port build in
+HEAD: one to update for the changes to ldsodefs.h, and one to provide
+the newly mandatory fields in struct stat.  I've committed both of
+these.
+
+2006-05-08  Richard Sandiford  <richard@codesourcery.com>
+
+	* sysdeps/mips/ldsodefs.h: New file.
+	* sysdeps/mips/tst-audit.h: New file.
+
+--- /dev/null	2003-08-21 05:59:20.000000000 +0000
++++ libc/ports/sysdeps/mips/ldsodefs.h	2006-05-08 09:27:39.000000000 +0000
+@@ -0,0 +1,66 @@
++/* Run-time dynamic linker data structures for loaded ELF shared objects.
++   Copyright (C) 2006 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef __LDSODEFS_H \
++#define _MIPS_LDSODEFS_H 1
++
++#include <elf.h>
++
++struct La_mips_32_regs;
++struct La_mips_32_retval;
++struct La_mips_64_regs;
++struct La_mips_64_retval;
++
++#define ARCH_PLTENTER_MEMBERS						    \
++    Elf32_Addr (*mips_o32_gnu_pltenter) (Elf32_Sym *, unsigned int,	    \
++					 uintptr_t *, uintptr_t *,	    \
++					 const struct La_mips_32_regs *,    \
++					 unsigned int *, const char *name,  \
++					 long int *framesizep);		    \
++    Elf32_Addr (*mips_n32_gnu_pltenter) (Elf32_Sym *, unsigned int,	    \
++					 uintptr_t *, uintptr_t *,	    \
++					 const struct La_mips_64_regs *,    \
++					 unsigned int *, const char *name,  \
++					 long int *framesizep);		    \
++    Elf64_Addr (*mips_n64_gnu_pltenter) (Elf64_Sym *, unsigned int,	    \
++					 uintptr_t *, uintptr_t *,	    \
++					 const struct La_mips_64_regs *,    \
++					 unsigned int *, const char *name,  \
++					 long int *framesizep);
++
++#define ARCH_PLTEXIT_MEMBERS						    \
++    unsigned int (*mips_o32_gnu_pltexit) (Elf32_Sym *, unsigned int,	    \
++					  uintptr_t *, uintptr_t *,	    \
++					  const struct La_mips_32_regs *,   \
++					  struct La_mips_32_retval *,	    \
++					  const char *);		    \
++    unsigned int (*mips_n32_gnu_pltexit) (Elf32_Sym *, unsigned int,	    \
++					  uintptr_t *, uintptr_t *,	    \
++					  const struct La_mips_64_regs *,   \
++					  struct La_mips_64_retval *,	    \
++					  const char *);		    \
++    unsigned int (*mips_n64_gnu_pltexit) (Elf64_Sym *, unsigned int,	    \
++					  uintptr_t *, uintptr_t *,	    \
++					  const struct La_mips_64_regs *,   \
++					  struct La_mips_64_retval *,	    \
++					  const char *);
++
++#include_next <ldsodefs.h>
++
++#endif
+--- /dev/null	2003-08-21 05:59:20.000000000 +0000
++++ libc/ports/sysdeps/mips/tst-audit.h	2006-05-08 17:32:17.000000000 +0000
+@@ -0,0 +1,40 @@
++/* Definitions for testing PLT entry/exit auditing.  ARM version.
++
++   Copyright (C) 2005 Free Software Foundation, Inc.
++
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#include <sgidefs.h>
++
++#if _MIPS_SIM == _ABIO32
++#define pltenter la_mips_o32_gnu_pltenter
++#define pltexit la_mips_o32_gnu_pltexit
++#define La_regs La_mips_32_regs
++#define La_retval La_mips_32_retval
++#else
++#if _MIPS_SIM == _ABIN32
++#define pltenter la_mips_n32_gnu_pltenter
++#define pltexit la_mips_n32_gnu_pltexit
++#else
++#define pltenter la_mips_n64_gnu_pltenter
++#define pltexit la_mips_n64_gnu_pltexit
++#endif
++#define La_regs La_mips_64_regs
++#define La_retval La_mips_64_retval
++#endif
++#define int_retval lrv_v0
+
+
+2006-05-08  Richard Sandiford  <richard@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/mips/bits/stat.h (struct stat): Add
+	st_atim, st_mtim and st_ctim interface.
+	(struct stat64): Likewise.
+	* sysdeps/unix/sysv/linux/mips/kernel_stat.h (struct kernel_stat):
+	Replace st_atime and its padding field with st_atim.  Likewise
+	st_mtime/st_mtim and st_ctime/st_ctim.
+	* sysdeps/unix/sysv/linux/mips/xstatconv.c (__xstat_conv): Update
+	after above changes.
+	(__xstat64_conv): Likewise.
+
+Index: libc/ports/sysdeps/unix/sysv/linux/mips/bits/stat.h
+===================================================================
+RCS file: /cvs/glibc/ports/sysdeps/unix/sysv/linux/mips/bits/stat.h,v
+retrieving revision 1.15
+diff -u -p -r1.15 stat.h
+--- libc/ports/sysdeps/unix/sysv/linux/mips/bits/stat.h	24 Nov 2004 04:37:34 -0000	1.15
++++ libc/ports/sysdeps/unix/sysv/linux/mips/bits/stat.h	8 May 2006 16:42:26 -0000
+@@ -61,16 +61,27 @@ struct stat
+     long int st_pad2[3];
+     __off64_t st_size;		/* Size of file, in bytes.  */
+ #endif
+-    /*
+-     * Actually this should be timestruc_t st_atime, st_mtime and
+-     * st_ctime but we don't have it under Linux.
+-     */
++#ifdef __USE_MISC
++    /* Nanosecond resolution timestamps are stored in a format
++       equivalent to 'struct timespec'.  This is the type used
++       whenever possible but the Unix namespace rules do not allow the
++       identifier 'timespec' to appear in the <sys/stat.h> header.
++       Therefore we have to handle the use of this header in strictly
++       standard-compliant sources special.  */
++    struct timespec st_atim;            /* Time of last access.  */
++    struct timespec st_mtim;            /* Time of last modification.  */
++    struct timespec st_ctim;            /* Time of last status change.  */
++# define st_atime st_atim.tv_sec        /* Backward compatibility.  */
++# define st_mtime st_mtim.tv_sec
++# define st_ctime st_ctim.tv_sec
++#else
+     __time_t st_atime;		/* Time of last access.  */
+     long int __reserved0;
+     __time_t st_mtime;		/* Time of last modification.  */
+     long int __reserved1;
+     __time_t st_ctime;		/* Time of last status change.  */
+     long int __reserved2;
++#endif
+     __blksize_t st_blksize;	/* Optimal block size for I/O.  */
+ #ifndef __USE_FILE_OFFSET64
+     __blkcnt_t st_blocks;	/* Number of 512-byte blocks allocated.  */
+@@ -94,16 +105,24 @@ struct stat64
+     unsigned long int st_rdev;	/* Device number, if device.  */
+     long int st_pad2[3];
+     __off64_t st_size;		/* Size of file, in bytes.  */
+-    /*
+-     * Actually this should be timestruc_t st_atime, st_mtime and
+-     * st_ctime but we don't have it under Linux.
+-     */
++#ifdef __USE_MISC
++    /* Nanosecond resolution timestamps are stored in a format
++       equivalent to 'struct timespec'.  This is the type used
++       whenever possible but the Unix namespace rules do not allow the
++       identifier 'timespec' to appear in the <sys/stat.h> header.
++       Therefore we have to handle the use of this header in strictly
++       standard-compliant sources special.  */
++    struct timespec st_atim;            /* Time of last access.  */
++    struct timespec st_mtim;            /* Time of last modification.  */
++    struct timespec st_ctim;            /* Time of last status change.  */
++#else
+     __time_t st_atime;		/* Time of last access.  */
+     long int __reserved0;
+     __time_t st_mtime;		/* Time of last modification.  */
+     long int __reserved1;
+     __time_t st_ctime;		/* Time of last status change.  */
+     long int __reserved2;
++#endif
+     __blksize_t st_blksize;	/* Optimal block size for I/O.  */
+     long int st_pad3;
+     __blkcnt64_t st_blocks;	/* Number of 512-byte blocks allocated.  */
+@@ -133,12 +152,27 @@ struct stat
+     unsigned int st_pad2[3];	/* Reserved for st_rdev expansion  */
+     __off64_t st_size;
+ #endif
++#ifdef __USE_MISC
++    /* Nanosecond resolution timestamps are stored in a format
++       equivalent to 'struct timespec'.  This is the type used
++       whenever possible but the Unix namespace rules do not allow the
++       identifier 'timespec' to appear in the <sys/stat.h> header.
++       Therefore we have to handle the use of this header in strictly
++       standard-compliant sources special.  */
++    struct timespec st_atim;            /* Time of last access.  */
++    struct timespec st_mtim;            /* Time of last modification.  */
++    struct timespec st_ctim;            /* Time of last status change.  */
++# define st_atime st_atim.tv_sec        /* Backward compatibility.  */
++# define st_mtime st_mtim.tv_sec
++# define st_ctime st_ctim.tv_sec
++#else
+     __time_t st_atime;
+     int __reserved0;
+     __time_t st_mtime;
+     int __reserved1;
+     __time_t st_ctime;
+     int __reserved2;
++#endif
+     __blksize_t st_blksize;
+     unsigned int st_pad4;
+ #ifndef __USE_FILE_OFFSET64
+@@ -162,12 +196,24 @@ struct stat64
+     __dev_t st_rdev;
+     unsigned int st_pad2[3];	/* Reserved for st_rdev expansion  */
+     __off64_t st_size;
++#ifdef __USE_MISC
++    /* Nanosecond resolution timestamps are stored in a format
++       equivalent to 'struct timespec'.  This is the type used
++       whenever possible but the Unix namespace rules do not allow the
++       identifier 'timespec' to appear in the <sys/stat.h> header.
++       Therefore we have to handle the use of this header in strictly
++       standard-compliant sources special.  */
++    struct timespec st_atim;            /* Time of last access.  */
++    struct timespec st_mtim;            /* Time of last modification.  */
++    struct timespec st_ctim;            /* Time of last status change.  */
++#else
+     __time_t st_atime;
+     int __reserved0;
+     __time_t st_mtime;
+     int __reserved1;
+     __time_t st_ctime;
+     int __reserved2;
++#endif
+     __blksize_t st_blksize;
+     unsigned int st_pad3;
+     __blkcnt64_t st_blocks;
+Index: libc/ports/sysdeps/unix/sysv/linux/mips/kernel_stat.h
+===================================================================
+RCS file: /cvs/glibc/ports/sysdeps/unix/sysv/linux/mips/kernel_stat.h,v
+retrieving revision 1.6
+diff -u -p -r1.6 kernel_stat.h
+--- libc/ports/sysdeps/unix/sysv/linux/mips/kernel_stat.h	24 Nov 2004 04:37:35 -0000	1.6
++++ libc/ports/sysdeps/unix/sysv/linux/mips/kernel_stat.h	8 May 2006 16:42:26 -0000
+@@ -16,12 +16,9 @@ struct kernel_stat
+     unsigned int st_rdev;
+     unsigned int __pad2[3];
+     long long st_size;
+-    unsigned int st_atime;
+-    unsigned int __unused1;
+-    unsigned int st_mtime;
+-    unsigned int __unused2;
+-    unsigned int st_ctime;
+-    unsigned int __unused3;
++    struct timespec st_atim;
++    struct timespec st_mtim;
++    struct timespec st_ctim;
+     unsigned int st_blksize;
+     unsigned int __pad3;
+     unsigned long long st_blocks;
+@@ -40,12 +37,9 @@ struct kernel_stat
+     long int __pad2[2];
+     long int st_size;
+     long int __pad3;
+-    long int st_atime;
+-    long int __unused1;
+-    long int st_mtime;
+-    long int __unused2;
+-    long int st_ctime;
+-    long int __unused3;
++    struct timespec st_atim;
++    struct timespec st_mtim;
++    struct timespec st_ctim;
+     long int st_blksize;
+     long int st_blocks;
+     char st_fstype[16];			/* Filesystem type name, unsupported */
+Index: libc/ports/sysdeps/unix/sysv/linux/mips/xstatconv.c
+===================================================================
+RCS file: /cvs/glibc/ports/sysdeps/unix/sysv/linux/mips/xstatconv.c,v
+retrieving revision 1.4
+diff -u -p -r1.4 xstatconv.c
+--- libc/ports/sysdeps/unix/sysv/linux/mips/xstatconv.c	30 Jun 2003 09:33:13 -0000	1.4
++++ libc/ports/sysdeps/unix/sysv/linux/mips/xstatconv.c	8 May 2006 16:42:26 -0000
+@@ -62,9 +62,9 @@ __xstat_conv (int vers, struct kernel_st
+ 	buf->st_blksize = kbuf->st_blksize;
+ 	buf->st_blocks = kbuf->st_blocks;
+ 
+-	buf->st_atime = kbuf->st_atime; buf->__reserved0 = 0;
+-	buf->st_mtime = kbuf->st_mtime; buf->__reserved1 = 0;
+-	buf->st_ctime = kbuf->st_ctime; buf->__reserved2 = 0;
++	buf->st_atim = kbuf->st_atim;
++	buf->st_mtim = kbuf->st_mtim;
++	buf->st_ctim = kbuf->st_ctim;
+ 
+ 	buf->st_pad5[0] = 0; buf->st_pad5[1] = 0;
+ 	buf->st_pad5[2] = 0; buf->st_pad5[3] = 0;
+@@ -107,9 +107,9 @@ __xstat64_conv (int vers, struct kernel_
+ 	buf->st_blksize = kbuf->st_blksize;
+ 	buf->st_blocks = kbuf->st_blocks;
+ 
+-	buf->st_atime = kbuf->st_atime; buf->__reserved0 = 0;
+-	buf->st_mtime = kbuf->st_mtime; buf->__reserved1 = 0;
+-	buf->st_ctime = kbuf->st_ctime; buf->__reserved2 = 0;
++	buf->st_atim = kbuf->st_atim;
++	buf->st_mtim = kbuf->st_mtim;
++	buf->st_ctim = kbuf->st_ctim;
+ 
+ 	buf->st_pad4[0] = 0; buf->st_pad4[1] = 0;
+ 	buf->st_pad4[2] = 0; buf->st_pad4[3] = 0;
+
+-- 
+Daniel Jacobowitz
+CodeSourcery
+
