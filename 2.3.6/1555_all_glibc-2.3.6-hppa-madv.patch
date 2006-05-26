@@ -1,0 +1,20 @@
+Add the missing POSIX bits for memory advisory information and alignment control on hppa.
+
+Signed-off-by: Guy Martin <gmsoft@tuxicoman.be>
+
+diff -uNr glibc-2.3.6.orig/sysdeps/unix/sysv/linux/hppa/bits/mman.h glibc-2.3.6/sysdeps/unix/sysv/linux/hppa/bits/mman.h
+--- glibc-2.3.6.orig/sysdeps/unix/sysv/linux/hppa/bits/mman.h	2006-05-23 23:58:44.000000000 +0200
++++ glibc-2.3.6/sysdeps/unix/sysv/linux/hppa/bits/mman.h	2006-05-23 23:59:18.000000000 +0200
+@@ -81,3 +81,12 @@
+ #ifdef __USE_GNU
+ # define MREMAP_MAYMOVE 1
+ #endif
++
++/* The POSIX people had to invent similar names for the same things.  */
++#ifdef __USE_XOPEN2K
++# define POSIX_MADV_NORMAL	0 /* No further special treatment.  */
++# define POSIX_MADV_RANDOM	1 /* Expect random page references.  */
++# define POSIX_MADV_SEQUENTIAL	2 /* Expect sequential page references.  */
++# define POSIX_MADV_WILLNEED	3 /* Will need these pages.  */
++# define POSIX_MADV_DONTNEED	4 /* Don't need these pages.  */
++#endif
