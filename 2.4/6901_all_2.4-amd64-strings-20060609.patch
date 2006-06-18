@@ -238,7 +238,7 @@ http://bugs.gentoo.org/124682
  ifeq ($(subdir),gmon)
 --- glibc-head/libc/sysdeps/x86_64/memcmp.S
 +++ glibc-amd/libc/sysdeps/x86_64/memcmp.S
-@@ -0,0 +1,442 @@
+@@ -0,0 +1,328 @@
 +# (c) 2002 Advanced Micro Devices, Inc.
 +# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
 +# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
@@ -260,7 +260,7 @@ http://bugs.gentoo.org/124682
 +
 +ENTRY   (memcmp)                        # (const void *, const void*, size_t)
 +
-+L(try1):
++L(try1):				# up to 8B
 +        cmp     $8, %rdx
 +        jae     L(1after)
 +
@@ -290,11 +290,11 @@ http://bugs.gentoo.org/124682
 +
 +L(1after):
 +
-+L(8try):
++L(8try):			# up to 32B
 +        cmp     $32, %rdx
 +        jae     L(8after)
 +
-+L(8):                        # 8-byte
++L(8):                        	# 8-byte
 +        mov     %edx, %ecx
 +        shr     $3, %ecx
 +        jz      L(1)
@@ -325,11 +325,11 @@ http://bugs.gentoo.org/124682
 +
 +L(8after):
 +
-+L(32try):
++L(32try):			# up to 2KB
 +        cmp     $2048, %rdx
 +        ja      L(32after)
 +
-+L(32):                               # 32-byte
++L(32):                          # 32-byte
 +        mov     %edx, %ecx
 +        shr     $5, %ecx
 +        jz      L(8)
@@ -399,7 +399,7 @@ http://bugs.gentoo.org/124682
 +
 +L(srcafter):
 +
-+L(64try):
++L(64try):			# up to 1/2 L1
 +#ifdef PIC
 +# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL (%rip), %rcx
@@ -414,7 +414,7 @@ http://bugs.gentoo.org/124682
 +        cmp	%rdx, %rcx
 +        cmova   %rdx, %rcx
 +
-+L(64):                               # 64-byte
++L(64):                          # 64-byte
 +        shr     $6, %rcx
 +        jz      L(32)
 +
@@ -462,7 +462,7 @@ http://bugs.gentoo.org/124682
 +
 +L(64skip):
 +        cmp     $2048, %rdx
-+        ja     L(64after)
++        ja     	L(64after)
 +
 +        test    %edx, %edx
 +        jnz     L(32)
@@ -473,120 +473,6 @@ http://bugs.gentoo.org/124682
 +        .p2align 4
 +
 +L(64after):
-+
-+L(pretry):
-+
-+L(pre):                              # 64-byte prefetching
-+#ifdef PIC
-+# ifdef SHARED
-+        mov     _rtld_local_ro@GOTPCREL (%rip), %rcx
-+	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF (%rcx), %rcx
-+# else
-+        mov     _dl_cache2sizehalf (%rip), %rcx
-+	mov	(%rcx), %rcx
-+# endif
-+#else
-+        mov     _dl_cache2sizehalf, %rcx
-+#endif
-+        cmp	%rdx, %rcx
-+        cmova   %rdx, %rcx
-+
-+        shr     $6, %rcx
-+        jz      L(preskip)
-+
-+        prefetcht0 512 (%rsi)
-+        prefetcht0 512 (%rdi)
-+
-+        mov        (%rsi), %rax
-+        mov      8 (%rsi), %r9
-+        mov     16 (%rsi), %r10
-+        mov     24 (%rsi), %r11
-+        sub        (%rdi), %rax
-+        sub      8 (%rdi), %r9
-+        sub     16 (%rdi), %r10
-+        sub     24 (%rdi), %r11
-+
-+        or       %r9, %rax
-+        or      %r11, %r10
-+        or      %r10, %rax
-+        jnz     L(32)
-+
-+        mov     32 (%rsi), %rax
-+        mov     40 (%rsi), %r9
-+        mov     48 (%rsi), %r10
-+        mov     56 (%rsi), %r11
-+        sub     32 (%rdi), %rax
-+        sub     40 (%rdi), %r9
-+        sub     48 (%rdi), %r10
-+        sub     56 (%rdi), %r11
-+
-+        or       %r9, %rax
-+        or      %r11, %r10
-+        or      %r10, %rax
-+        jnz     L(32)
-+
-+        lea     64 (%rsi), %rsi
-+        lea     64 (%rdi), %rdi
-+
-+        sub     $64, %rdx
-+        dec     %rcx
-+
-+        .p2align 4
-+
-+L(preloop):
-+        prefetcht0 512 (%rsi)
-+        prefetcht0 512 (%rdi)
-+
-+        mov        (%rsi), %rax
-+        mov      8 (%rsi), %r9
-+        mov     16 (%rsi), %r10
-+        mov     24 (%rsi), %r11
-+        sub        (%rdi), %rax
-+        sub      8 (%rdi), %r9
-+        sub     16 (%rdi), %r10
-+        sub     24 (%rdi), %r11
-+
-+        or       %r9, %rax
-+        or      %r11, %r10
-+        or      %r10, %rax
-+        jnz     L(32)
-+
-+        mov     32 (%rsi), %rax
-+        mov     40 (%rsi), %r9
-+        mov     48 (%rsi), %r10
-+        mov     56 (%rsi), %r11
-+        sub     32 (%rdi), %rax
-+        sub     40 (%rdi), %r9
-+        sub     48 (%rdi), %r10
-+        sub     56 (%rdi), %r11
-+
-+        or       %r9, %rax
-+        or      %r11, %r10
-+        or      %r10, %rax
-+        jnz     L(32)
-+
-+        lea     64 (%rsi), %rsi
-+        lea     64 (%rdi), %rdi
-+
-+        sub     $64, %rdx
-+        dec     %rcx
-+        jnz     L(preloop)
-+
-+#       .p2align 4
-+
-+L(preskip):
-+        cmp     $2048, %rdx
-+        ja      L(preafter)
-+
-+        test    %edx, %edx
-+        jnz     L(32)
-+
-+        xor     %eax, %eax
-+        ret
-+
-+        .p2align 4
-+
-+L(preafter):
 +
 +L(128try):
 +
@@ -832,6 +718,33 @@ http://bugs.gentoo.org/124682
 +
 +L(8after):
 +
++L(aligntry):
++        mov     %edi, %r8d      	# align by destination
++
++        and	$7, %r8d
++        jz      L(alignafter)  		# not unaligned
++
++L(align):                      		# align
++        lea     -8 (%r8, %rdx), %rdx
++        sub     $8, %r8d
++
++        .p2align 4
++
++L(alignloop):
++        inc     %r8d
++
++        mov     (%rsi), %al
++        mov     %al, (%rdi)
++
++        lea     1 (%rsi), %rsi
++        lea     1 (%rdi), %rdi
++
++        jnz     L(alignloop)
++
++        .p2align 4
++
++L(alignafter):
++
 +L(32try):				# up to 1KB
 +        cmp     $1024, %rdx
 +        ja	L(32after)
@@ -860,26 +773,43 @@ http://bugs.gentoo.org/124682
 +        lea     32 (%rdi), %rdi
 +
 +        jz      L(32skip)
-+
+ 
+-	/* We need this in any case.  */
+-	cld
 +        dec     %ecx
-+
+ 
+-	jbe	1f
 +        mov        (%rsi), %rax
 +        mov      8 (%rsi), %r8
 +        mov     16 (%rsi), %r9
 +        mov     24 (%rsi), %r10
-+
+ 
+-	/* Align destination.  */
+-	movq	%rdi, %rax
+-	negq	%rax
+-	andq	$7, %rax
+-	subq	%rax, %rcx
+-	xchgq	%rax, %rcx
 +        mov     %rax,    (%rdi)
 +        mov      %r8,  8 (%rdi)
 +        mov      %r9, 16 (%rdi)
 +        mov     %r10, 24 (%rdi)
-+
+ 
+-	rep; movsb
 +        lea     32 (%rsi), %rsi
 +        lea     32 (%rdi), %rdi
-+
+ 
+-	movq	%rax, %rcx
+-	subq	$32, %rcx
+-	js	2f
 +        jnz     L(32loop)
-+
-+        .p2align 4
-+
+ 
+ 	.p2align 4
+-3:
+ 
+-	/* Now correct the loop counter.  Please note that in the following
+-	   code the flags are not changed anymore.  */
+-	subq	$32, %rcx
 +L(32skip):
 +        and     $31, %edx		# check for left overs
 +        jnz     L(8)
@@ -888,52 +818,8 @@ http://bugs.gentoo.org/124682
 +        ret
 +
 +        .p2align 4
- 
--	/* We need this in any case.  */
--	cld
++
 +L(32after):
- 
--	jbe	1f
-+L(aligntry):
-+        mov     %edi, %r8d      	# align by destination
- 
--	/* Align destination.  */
--	movq	%rdi, %rax
--	negq	%rax
--	andq	$7, %rax
--	subq	%rax, %rcx
--	xchgq	%rax, %rcx
-+        and	$7, %r8d
-+        jz      L(alignafter)  		# not unaligned
- 
--	rep; movsb
-+L(align):                      		# align
-+        lea     -8 (%r8, %rdx), %rdx
-+        sub     $8, %r8d
- 
--	movq	%rax, %rcx
--	subq	$32, %rcx
--	js	2f
-+        .p2align 4
-+
-+L(alignloop):
-+        inc     %r8d
-+
-+        mov     (%rsi), %al
-+        mov     %al, (%rdi)
-+
-+        lea     1 (%rsi), %rsi
-+        lea     1 (%rdi), %rdi
-+
-+        jnz     L(alignloop)
- 
- 	.p2align 4
--3:
- 
--	/* Now correct the loop counter.  Please note that in the following
--	   code the flags are not changed anymore.  */
--	subq	$32, %rcx
-+L(alignafter):
 +
 +L(fasttry):				# first 1/2 L1
 +#ifdef PIC
@@ -1133,6 +1019,9 @@ http://bugs.gentoo.org/124682
 +        mov     48 (%rsi), %r13
 +        mov     56 (%rsi), %r14
 +
++        prefetcht0 896 - 64 (%rdi)
++        prefetcht0 896 -  0 (%rdi)
++
 +        mov     %rax,    (%rdi)
 +        mov     %rbx,  8 (%rdi)
 +        mov      %r9, 16 (%rdi)
@@ -1141,9 +1030,6 @@ http://bugs.gentoo.org/124682
 +        mov     %r12, 40 (%rdi)
 +        mov     %r13, 48 (%rdi)
 +        mov     %r14, 56 (%rdi)
-+
-+        prefetcht0 896 - 64 (%rdi)
-+        prefetcht0 896 -  0 (%rdi)
 +
 +        lea     64 (%rsi), %rsi
 +        lea     64 (%rdi), %rdi
@@ -1262,7 +1148,7 @@ http://bugs.gentoo.org/124682
  #include <sysdeps/x86_64/memcpy.S>
 --- glibc-head/libc/sysdeps/x86_64/memset.S
 +++ glibc-amd/libc/sysdeps/x86_64/memset.S
-@@ -1,145 +1,325 @@
+@@ -1,145 +1,322 @@
 -/* memset/bzero -- set memory area to CH/0
 -   Optimized version for x86-64.
 -   Copyright (C) 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
@@ -1297,10 +1183,9 @@ http://bugs.gentoo.org/124682
 +# include <rtld-global-offsets.h>
 +#endif
  
- /* BEWARE: `#ifdef memset' means that memset is redefined as `bzero' */
+-/* BEWARE: `#ifdef memset' means that memset is redefined as `bzero' */
 -#define BZERO_P (defined memset)
-+#define USE_AS_BZERO (defined memset)
- 
+-
 -/* This is somehow experimental and could made dependend on the cache
 -   size.  */
 -#define LARGE $120000
@@ -1312,7 +1197,7 @@ http://bugs.gentoo.org/124682
  
          .text
 -#if !BZERO_P && defined PIC && !defined NOT_IN_libc
-+#if !USE_AS_BZERO && defined PIC && !defined NOT_IN_libc
++#if !defined USE_AS_BZERO && defined PIC && !defined NOT_IN_libc
  ENTRY (__memset_chk)
  	cmpq	%rdx, %rcx
  	jb	HIDDEN_JUMPTARGET (__chk_fail)
@@ -1331,71 +1216,10 @@ http://bugs.gentoo.org/124682
 -	mov	%rsi,%r8	/* Just copy 0.  */
 +ENTRY (memset)                		# (void *, const void*, size_t)
 +
-+#if USE_AS_BZERO
++#ifdef USE_AS_BZERO
 +        mov     %rsi, %rdx		# memset doubles as bzero
 +        xorl    %esi, %esi
- #else
--	/* Populate 8 bit data to full 64-bit.  */
--	movabs	$0x0101010101010101,%r8
--	movzbl	%sil,%eax
--	imul	%rax,%r8
--#endif
--	test	$0x7,%edi	/* Check for alignment.  */
--	je	2f
--
--	.p2align 4
--1:	/* Align ptr to 8 byte.  */
--	mov	%sil,(%rcx)
--	dec	%rdx
--	inc	%rcx
--	test	$0x7,%ecx
--	jne	1b
--
--2:	/* Check for really large regions.  */
--	mov	%rdx,%rax
--	shr	$0x6,%rax
--	je	4f
--	cmp	LARGE, %rdx
--	jae	11f
--
--	.p2align 4
--3:	/* Copy 64 bytes.  */
--	mov	%r8,(%rcx)
--	mov	%r8,0x8(%rcx)
--	mov	%r8,0x10(%rcx)
--	mov	%r8,0x18(%rcx)
--	mov	%r8,0x20(%rcx)
--	mov	%r8,0x28(%rcx)
--	mov	%r8,0x30(%rcx)
--	mov	%r8,0x38(%rcx)
--	add	$0x40,%rcx
--	dec	%rax
--	jne	3b
--
--4:	/* Copy final bytes.  */
--	and	$0x3f,%edx
--	mov	%rdx,%rax
--	shr	$0x3,%rax
--	je	6f
--
--5:	/* First in chunks of 8 bytes.  */
--	mov	%r8,(%rcx)
--	add	$0x8,%rcx
--	dec	%rax
--	jne	5b
--6:
--	and	$0x7,%edx
--7:
--	test	%rdx,%rdx
--	je	9f
--8:	/* And finally as bytes (up to 7).  */
--	mov	%sil,(%rcx)
--	inc	%rcx
--	dec	%rdx
--	jne	8b
--9:
--#if BZERO_P
--	nop
++#else
 +	mov	$0x0101010101010101, %rcx # memset is itself
 +        movzx   %sil, %rsi
 +        imul    %rcx, %rsi		# replicate 8 times
@@ -1541,7 +1365,68 @@ http://bugs.gentoo.org/124682
 +# ifdef SHARED
 +        mov     _rtld_local_ro@GOTPCREL (%rip), %r8
 +	mov	RTLD_GLOBAL_DL_CACHE2SIZEHALF (%r8), %r8
-+# else
+ #else
+-	/* Populate 8 bit data to full 64-bit.  */
+-	movabs	$0x0101010101010101,%r8
+-	movzbl	%sil,%eax
+-	imul	%rax,%r8
+-#endif
+-	test	$0x7,%edi	/* Check for alignment.  */
+-	je	2f
+-
+-	.p2align 4
+-1:	/* Align ptr to 8 byte.  */
+-	mov	%sil,(%rcx)
+-	dec	%rdx
+-	inc	%rcx
+-	test	$0x7,%ecx
+-	jne	1b
+-
+-2:	/* Check for really large regions.  */
+-	mov	%rdx,%rax
+-	shr	$0x6,%rax
+-	je	4f
+-	cmp	LARGE, %rdx
+-	jae	11f
+-
+-	.p2align 4
+-3:	/* Copy 64 bytes.  */
+-	mov	%r8,(%rcx)
+-	mov	%r8,0x8(%rcx)
+-	mov	%r8,0x10(%rcx)
+-	mov	%r8,0x18(%rcx)
+-	mov	%r8,0x20(%rcx)
+-	mov	%r8,0x28(%rcx)
+-	mov	%r8,0x30(%rcx)
+-	mov	%r8,0x38(%rcx)
+-	add	$0x40,%rcx
+-	dec	%rax
+-	jne	3b
+-
+-4:	/* Copy final bytes.  */
+-	and	$0x3f,%edx
+-	mov	%rdx,%rax
+-	shr	$0x3,%rax
+-	je	6f
+-
+-5:	/* First in chunks of 8 bytes.  */
+-	mov	%r8,(%rcx)
+-	add	$0x8,%rcx
+-	dec	%rax
+-	jne	5b
+-6:
+-	and	$0x7,%edx
+-7:
+-	test	%rdx,%rdx
+-	je	9f
+-8:	/* And finally as bytes (up to 7).  */
+-	mov	%sil,(%rcx)
+-	inc	%rcx
+-	dec	%rdx
+-	jne	8b
+-9:
+-#if BZERO_P
+-	nop
 +        mov     _dl_cache2sizehalf@GOTPCREL (%rip), %r8
 +	mov	(%r8), %r8
 +# endif
@@ -1578,8 +1463,23 @@ http://bugs.gentoo.org/124682
 +
 +	rep
 +	ret
-+
-+	.p2align 4
+ 
+ 	.p2align 4
+-11:	/* Copy 64 bytes without polluting the cache.  */
+-	/* We could use	movntdq    %xmm0,(%rcx) here to further
+-	   speed up for large cases but let's not use XMM registers.  */
+-	movnti	%r8,(%rcx)
+-	movnti  %r8,0x8(%rcx)
+-	movnti  %r8,0x10(%rcx)
+-	movnti  %r8,0x18(%rcx)
+-	movnti  %r8,0x20(%rcx)
+-	movnti  %r8,0x28(%rcx)
+-	movnti  %r8,0x30(%rcx)
+-	movnti  %r8,0x38(%rcx)
+-	add	$0x40,%rcx
+-	dec	%rax
+-	jne	11b
+-	jmp	4b
 +
 +L(fastafter):
 +
@@ -1602,23 +1502,8 @@ http://bugs.gentoo.org/124682
 +        mov     %rsi, 56 (%rdi)
 +
 +        lea     64 (%rdi), %rdi
- 
- 	.p2align 4
--11:	/* Copy 64 bytes without polluting the cache.  */
--	/* We could use	movntdq    %xmm0,(%rcx) here to further
--	   speed up for large cases but let's not use XMM registers.  */
--	movnti	%r8,(%rcx)
--	movnti  %r8,0x8(%rcx)
--	movnti  %r8,0x10(%rcx)
--	movnti  %r8,0x18(%rcx)
--	movnti  %r8,0x20(%rcx)
--	movnti  %r8,0x28(%rcx)
--	movnti  %r8,0x30(%rcx)
--	movnti  %r8,0x38(%rcx)
--	add	$0x40,%rcx
--	dec	%rax
--	jne	11b
--	jmp	4b
++
++        .p2align 4
 +
 +L(64loop):
 +        dec     %rcx
@@ -1695,12 +1580,12 @@ http://bugs.gentoo.org/124682
  END (memset)
 -#if !BZERO_P
 +
-+#if !USE_AS_BZERO
++#ifndef USE_AS_BZERO
  libc_hidden_builtin_def (memset)
  #endif
  
 -#if !BZERO_P && defined PIC && !defined NOT_IN_libc
-+#if !USE_AS_BZERO && defined PIC && !defined NOT_IN_libc
++#if !defined USE_AS_BZERO && defined PIC && !defined NOT_IN_libc
  strong_alias (__memset_chk, __memset_zero_constant_len_parameter)
  	.section .gnu.warning.__memset_zero_constant_len_parameter
  	.string "memset used with constant zero length parameter; this could be due to transposed parameters"
@@ -1725,502 +1610,6 @@ http://bugs.gentoo.org/124682
 +weak_alias (__stpncpy, stpncpy)
 +libc_hidden_def (__stpncpy)
 +libc_hidden_builtin_def (stpncpy)
---- glibc-head/libc/sysdeps/x86_64/strcmp.S
-+++ glibc-amd/libc/sysdeps/x86_64/strcmp.S
-@@ -1,45 +1,454 @@
--/* Highly optimized version for x86-64.
--   Copyright (C) 1999, 2000, 2002, 2003, 2005 Free Software Foundation, Inc.
--   This file is part of the GNU C Library.
--   Based on i686 version contributed by Ulrich Drepper
--   <drepper@cygnus.com>, 1999.
--
--   The GNU C Library is free software; you can redistribute it and/or
--   modify it under the terms of the GNU Lesser General Public
--   License as published by the Free Software Foundation; either
--   version 2.1 of the License, or (at your option) any later version.
--
--   The GNU C Library is distributed in the hope that it will be useful,
--   but WITHOUT ANY WARRANTY; without even the implied warranty of
--   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
--   Lesser General Public License for more details.
--
--   You should have received a copy of the GNU Lesser General Public
--   License along with the GNU C Library; if not, write to the Free
--   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
--   02111-1307 USA.  */
--
--#include <sysdep.h>
--#include "asm-syntax.h"
--#include "bp-sym.h"
--#include "bp-asm.h"
-+# (c) 2002 Advanced Micro Devices, Inc.
-+# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
-+# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
-+# LICENSE FOUND IN THE "README" FILE THAT IS
-+# INCLUDED WITH THIS FILE
-+
-+#include "sysdep.h"
- 
-         .text
--ENTRY (BP_SYM (strcmp))
--L(oop):	movb	(%rdi), %al
--	cmpb	(%rsi), %al
--	jne	L(neq)
--	incq	%rdi
--	incq	%rsi
--	testb	%al, %al
--	jnz	L(oop)
- 
--	xorl	%eax, %eax
--	ret
-+ENTRY   (strcmp)			# (const char *, const char *)
-+
-+#ifdef USE_AS_STRNCMP			// (const char *, const char *, size_t)
-+	test	%rdx, %rdx
-+	mov	%edx, %eax
-+	jz	L(exitz)		# early exit
-+
-+	mov	%rdx, %r9
-+#endif
-+
-+        xor     %ecx, %ecx
-+
-+L(align):
-+        mov     %rsi, %r8		# align by "source"
-+        and     $8 - 1, %r8		# 8-byte align
-+	jz 	L(alignafter)
-+
-+        sub     $8, %r8			# between 0 and 8 characters compared
-+
-+        .p2align 4
-+
-+L(alignloop):
-+        movzbl	(%rsi, %rcx), %eax
-+        movzbl	(%rdi, %rcx), %edx
-+
-+        cmp     %dl, %al		# check if same character
-+        jne     L(exitafter)
-+        test    %al, %al		# check if character a NUL
-+        jz      L(exitafter)
-+
-+        inc     %ecx
-+
-+#ifdef USE_AS_STRNCMP
-+	dec	%r9
-+	jz	L(exitafter)
-+#endif
-+
-+        inc     %r8
-+        jnz     L(alignloop)
-+
-+        .p2align 4,, 4
-+
-+L(alignafter):
-+
-+#ifdef USE_AS_STRNCMP
-+        mov	%r15,  -8 (%rsp)
-+	mov	%r9, %r15
-+#endif
-+
-+        mov	%rbx, -16 (%rsp)
-+        mov	%rbp, -24 (%rsp)
-+
-+L(64try):
-+        lea	(%rdi, %rcx), %ebp	# watch for end of page for "destination"
-+        and     $4096 - 1, %ebp		# page mask
-+        sub	$4096, %ebp		# remainder to end of page
-+
-+L(64):                              	# 64-byte loop
-+	mov     $0xfefefefefefefeff, %rbx # magic number
-+
-+        .p2align 4
-+
-+L(64loop):
-+	add	$64, %ebp		# check if "destination" crosses a page unevenly
-+	jle	L(64gobble)
-+
-+        sub	$4096 - 64, %ebp	# reset remainder to end of page
-+
-+        lea	64 (%rcx), %r8		# tip-toe for 64 bytes
-+
-+        .p2align 4
-+
-+L(64nibble):				# slow down near page boundaries
-+        movzbl	(%rsi, %rcx), %eax
-+        movzbl	(%rdi, %rcx), %edx
-+
-+        cmp     %dl, %al		# check if same character
-+        jne     L(exit)
-+        test    %al, %al		# check if character a NUL
-+        jz      L(exit)
-+
-+        inc	%rcx
-+
-+#ifdef USE_AS_STRNCMP
-+	dec	%r15
-+	jz	L(exit)
-+#endif
-+
-+        cmp	%rcx, %r8
-+        ja	L(64nibble)
-+
-+        .p2align 4
-+
-+L(64gobble):				# speed up away from page boundaries
-+#ifdef USE_AS_STRNCMP
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+#endif
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
- 
--L(neq):	movl	$1, %eax
--	movl	$-1, %ecx
--	cmovbl	%ecx, %eax
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+#ifdef USE_AS_STRNCMP
-+        add     $8, %rcx
-+
-+	sub	$8, %r15
-+	jbe	L(tailn)
-+
-+        mov     (%rsi, %rcx), %rax
-+        mov     (%rdi, %rcx), %rdx
-+#else
-+        mov     8 (%rsi, %rcx), %rax
-+        mov     8 (%rdi, %rcx), %rdx
-+        add     $8, %rcx
-+#endif
-+
-+        mov     %rbx, %r8
-+        add     %rax, %r8
-+        sbb     %r10, %r10
-+
-+        mov     %rbx, %r9
-+        add     %rdx, %r9
-+        sbb     %r11, %r11
-+
-+        xor     %rax, %r8
-+        or      %rbx, %r8
-+        sub     %r10, %r8
-+        jnz     L(tail)
-+
-+        xor     %rdx, %r9
-+        or      %rbx, %r9
-+        sub     %r11, %r9
-+        jnz     L(tail)
-+
-+        cmp     %rdx, %rax
-+        jne     L(tail)
-+
-+	prefetcht0 512 + 8 (%rsi, %rcx)
-+	prefetcht0 512 + 8 (%rdi, %rcx)
-+        add     $8, %rcx
-+
-+        jmp	L(64loop)
-+
-+        .p2align 4
-+
-+L(64after):
-+
-+#ifdef USE_AS_STRNCMP
-+L(tailn):				# byte tail loop when count reached
-+	add	$8, %r15
-+
-+L(tailnloop):
-+	cmovz	%edx, %eax
-+	jz	L(exit)
-+
-+        movzbl	(%rsi, %rcx), %eax
-+        movzbl	(%rdi, %rcx), %edx
-+
-+        cmp     %dl, %al		# check if same character
-+        jne     L(exit)
-+        test    %al, %al		# check if character a NUL
-+        jz      L(exit)
-+
-+	inc	%rcx
-+
-+	dec	%r15
-+	jmp	L(tailnloop)
-+
-+        .p2align 4
-+
-+L(tailnafter):
-+#endif
-+
-+L(tail):				# byte tail loop
-+
-+L(tailloop):
-+        cmp     %dl, %al		# check if same character
-+        jne     L(exit)
-+        test    %al, %al		# check if character a NUL
-+        jz      L(exit)
-+
-+        shr	$8, %rax
-+        shr	$8, %rdx
-+
-+	jmp	L(tailloop)
-+
-+        .p2align 4
-+
-+L(tailafter):
-+
-+L(exit):
-+	mov	-24 (%rsp), %rbp
-+        mov	-16 (%rsp), %rbx
-+#ifdef USE_AS_STRNCMP
-+	mov	 -8 (%rsp), %r15
-+#endif
-+
-+        .p2align 4,, 4
-+
-+L(exitafter):
-+	movzx	%al, %ecx
-+	movzx	%dl, %eax
-+	sub	%ecx, %eax
-+
-+#ifdef USE_AS_STRNCMP
-+L(exitz):
-+	rep
-+#endif
- 	ret
--END (BP_SYM (strcmp))
-+
-+END     (strcmp)
-+
- libc_hidden_builtin_def (strcmp)
 --- glibc-head/libc/sysdeps/x86_64/strcpy.S
 +++ glibc-amd/libc/sysdeps/x86_64/strcpy.S
 @@ -1,159 +1,1141 @@
@@ -2406,22 +1795,8 @@ http://bugs.gentoo.org/124682
 +        inc     %r8
 +        jnz     L(alignloop)
 +
- 	.p2align 4
--3:
--	/* Note that stpcpy needs to return with the value of the NUL
--	   byte.  */
--	movb	%al, (%rdx)	/* 1st byte.  */
--	testb	%al, %al	/* Is it NUL.  */
--	jz	4f		/* yes, finish.  */
--	incq	%rdx		/* Increment destination.  */
--	movb	%ah, (%rdx)	/* 2nd byte.  */
--	testb	%ah, %ah	/* Is it NUL?.  */
--	jz	4f		/* yes, finish.  */
--	incq	%rdx		/* Increment destination.  */
--	shrq	$16, %rax	/* Shift...  */
--	jmp	3b		/* and look at next two bytes in %rax.  */
- 
--4:
++	.p2align 4,, 7
++
 +L(alignafter):
 +
 +L(8try):				# up to 64 bytes
@@ -2439,11 +1814,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2462,11 +1837,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2485,11 +1860,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2508,11 +1883,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2531,11 +1906,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2554,11 +1929,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2577,11 +1952,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2600,11 +1975,11 @@ http://bugs.gentoo.org/124682
 +
 +        mov     %rcx, %r8
 +        add     %rax, %r8
-+        sbb     %r10, %r10
++        jnc	L(tail)			# sbb     %r10, %r10
 +
 +        xor     %rax, %r8
 +        or      %rcx, %r8
-+        sub     %r10, %r8
++        inc	%r8			# sub     %r10, %r8
 +        jnz     L(tail)
 +
 +        mov     %rax, (%rdi, %rdx)
@@ -2628,8 +2003,22 @@ http://bugs.gentoo.org/124682
 +
 +L(64):					# 64-byte loop
 +
-+        .p2align 4
-+
+ 	.p2align 4
+-3:
+-	/* Note that stpcpy needs to return with the value of the NUL
+-	   byte.  */
+-	movb	%al, (%rdx)	/* 1st byte.  */
+-	testb	%al, %al	/* Is it NUL.  */
+-	jz	4f		/* yes, finish.  */
+-	incq	%rdx		/* Increment destination.  */
+-	movb	%ah, (%rdx)	/* 2nd byte.  */
+-	testb	%ah, %ah	/* Is it NUL?.  */
+-	jz	4f		/* yes, finish.  */
+-	incq	%rdx		/* Increment destination.  */
+-	shrq	$16, %rax	/* Shift...  */
+-	jmp	3b		/* and look at next two bytes in %rax.  */
+ 
+-4:
 +L(64loop):
 +#ifdef USE_AS_STRNCPY
 +	sub	$8, %r11
@@ -3511,471 +2900,6 @@ http://bugs.gentoo.org/124682
 +#if !defined USE_AS_STPCPY && !defined USE_AS_STRNCPY
  libc_hidden_builtin_def (strcpy)
  #endif
---- glibc-head/libc/sysdeps/x86_64/strlen.S
-+++ glibc-amd/libc/sysdeps/x86_64/strlen.S
-@@ -1,139 +1,317 @@
--/* strlen(str) -- determine the length of the string STR.
--   Copyright (C) 2002, 2003 Free Software Foundation, Inc.
--   Based on i486 version contributed by Ulrich Drepper <drepper@redhat.com>.
--   This file is part of the GNU C Library.
--
--   The GNU C Library is free software; you can redistribute it and/or
--   modify it under the terms of the GNU Lesser General Public
--   License as published by the Free Software Foundation; either
--   version 2.1 of the License, or (at your option) any later version.
--
--   The GNU C Library is distributed in the hope that it will be useful,
--   but WITHOUT ANY WARRANTY; without even the implied warranty of
--   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
--   Lesser General Public License for more details.
--
--   You should have received a copy of the GNU Lesser General Public
--   License along with the GNU C Library; if not, write to the Free
--   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
--   02111-1307 USA.  */
--
--#include <sysdep.h>
--#include "asm-syntax.h"
--#include "bp-sym.h"
--#include "bp-asm.h"
-+# (c) 2002 Advanced Micro Devices, Inc.
-+# YOUR USE OF THIS CODE IS SUBJECT TO THE TERMS
-+# AND CONDITIONS OF THE GNU LESSER GENERAL PUBLIC
-+# LICENSE FOUND IN THE "README" FILE THAT IS
-+# INCLUDED WITH THIS FILE
-+
-+#include "sysdep.h"
-+#if defined PIC && defined SHARED
-+# include <rtld-global-offsets.h>
-+#endif
-+
-+#if defined PIC && defined SHARED
-+	.globl _rtld_local_ro
-+        .hidden _rtld_local_ro
-+        .set    _rtld_local_ro,_rtld_global_ro
-+#endif
-+        .text
- 
-+ENTRY   (strlen)                	# (const char *s)
- 
--	.text
--ENTRY (strlen)
--	movq %rdi, %rcx		/* Duplicate source pointer. */
--	andl $7, %ecx		/* mask alignment bits */
--	movq %rdi, %rax		/* duplicate destination.  */
--	jz 1f			/* aligned => start loop */
--
--	neg %ecx		/* We need to align to 8 bytes.  */
--	addl $8,%ecx
--	/* Search the first bytes directly.  */
--0:	cmpb $0x0,(%rax)	/* is byte NUL? */
--	je 2f			/* yes => return */
--	incq %rax		/* increment pointer */
--	decl %ecx
--	jnz 0b
--
--1:	movq $0xfefefefefefefeff,%r8 /* Save magic.  */
--
--	.p2align 4		/* Align loop.  */
--4:	/* Main Loop is unrolled 4 times.  */
--	/* First unroll.  */
--	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
--	addq $8,%rax		/* adjust pointer for next word */
--	movq %r8, %rdx		/* magic value */
--	addq %rcx, %rdx		/* add the magic value to the word.  We get
--				   carry bits reported for each byte which
--				   is *not* 0 */
--	jnc 3f			/* highest byte is NUL => return pointer */
--	xorq %rcx, %rdx		/* (word+magic)^word */
--	orq %r8, %rdx		/* set all non-carry bits */
--	incq %rdx		/* add 1: if one carry bit was *not* set
--				   the addition will not result in 0.  */
--	jnz 3f			/* found NUL => return pointer */
--
--	/* Second unroll.  */
--	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
--	addq $8,%rax		/* adjust pointer for next word */
--	movq %r8, %rdx		/* magic value */
--	addq %rcx, %rdx		/* add the magic value to the word.  We get
--				   carry bits reported for each byte which
--				   is *not* 0 */
--	jnc 3f			/* highest byte is NUL => return pointer */
--	xorq %rcx, %rdx		/* (word+magic)^word */
--	orq %r8, %rdx		/* set all non-carry bits */
--	incq %rdx		/* add 1: if one carry bit was *not* set
--				   the addition will not result in 0.  */
--	jnz 3f			/* found NUL => return pointer */
--
--	/* Third unroll.  */
--	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
--	addq $8,%rax		/* adjust pointer for next word */
--	movq %r8, %rdx		/* magic value */
--	addq %rcx, %rdx		/* add the magic value to the word.  We get
--				   carry bits reported for each byte which
--				   is *not* 0 */
--	jnc 3f			/* highest byte is NUL => return pointer */
--	xorq %rcx, %rdx		/* (word+magic)^word */
--	orq %r8, %rdx		/* set all non-carry bits */
--	incq %rdx		/* add 1: if one carry bit was *not* set
--				   the addition will not result in 0.  */
--	jnz 3f			/* found NUL => return pointer */
--
--	/* Fourth unroll.  */
--	movq (%rax), %rcx	/* get double word (= 8 bytes) in question */
--	addq $8,%rax		/* adjust pointer for next word */
--	movq %r8, %rdx		/* magic value */
--	addq %rcx, %rdx		/* add the magic value to the word.  We get
--				   carry bits reported for each byte which
--				   is *not* 0 */
--	jnc 3f			/* highest byte is NUL => return pointer */
--	xorq %rcx, %rdx		/* (word+magic)^word */
--	orq %r8, %rdx		/* set all non-carry bits */
--	incq %rdx		/* add 1: if one carry bit was *not* set
--				   the addition will not result in 0.  */
--	jz 4b			/* no NUL found => continue loop */
--
--	.p2align 4		/* Align, it's a jump target.  */
--3:	subq $8,%rax		/* correct pointer increment.  */
--
--	testb %cl, %cl		/* is first byte NUL? */
--	jz 2f			/* yes => return */
--	incq %rax		/* increment pointer */
--
--	testb %ch, %ch		/* is second byte NUL? */
--	jz 2f			/* yes => return */
--	incq %rax		/* increment pointer */
--
--	testl $0x00ff0000, %ecx /* is third byte NUL? */
--	jz 2f			/* yes => return pointer */
--	incq %rax		/* increment pointer */
--
--	testl $0xff000000, %ecx /* is fourth byte NUL? */
--	jz 2f			/* yes => return pointer */
--	incq %rax		/* increment pointer */
--
--	shrq $32, %rcx		/* look at other half.  */
--
--	testb %cl, %cl		/* is first byte NUL? */
--	jz 2f			/* yes => return */
--	incq %rax		/* increment pointer */
--
--	testb %ch, %ch		/* is second byte NUL? */
--	jz 2f			/* yes => return */
--	incq %rax		/* increment pointer */
--
--	testl $0xff0000, %ecx	/* is third byte NUL? */
--	jz 2f			/* yes => return pointer */
--	incq %rax		/* increment pointer */
--2:
--	subq %rdi, %rax		/* compute difference to string start */
-+        mov     %rdi, %rsi
-+        neg     %rdi
-+
-+L(aligntry):				# from 0 to 8B
-+        mov     %rsi , %r8
-+        and     $7, %r8d
-+	jz	L(alignafter)
-+
-+L(align):                            	# 8-byte align
-+        sub     $8, %r8
-+
-+        .p2align 4
-+
-+L(alignloop):
-+        cmpb    $0, (%rsi)
-+        je      L(exit)
-+
-+        inc     %rsi
-+        inc     %r8
-+        jnz     L(alignloop)
-+
-+        .p2align 4
-+
-+L(alignafter):
-+
-+L(64try):				# up to L1
-+        mov     $0xfefefefefefefeff, %rcx
-+
-+L(64):                               	# 64-byte loop
-+#ifdef PIC
-+# ifdef SHARED
-+        mov     _rtld_local_ro@GOTPCREL (%rip), %r9
-+	mov	RTLD_GLOBAL_DL_CACHE1SIZE (%r9), %r9
-+# else
-+        mov     _dl_cache1size@GOTPCREL (%rip), %r9
-+	mov	(%r9), %r9
-+# endif
-+#else
-+        mov     _dl_cache1size, %r9
-+#endif
-+        mov     (%rsi), %rax
-+
-+        .p2align 4
-+
-+L(64loop):
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        sub     $64, %r9
-+
-+        mov     8 (%rsi), %rax
-+        lea     8 (%rsi), %rsi
-+
-+        ja	L(64loop)
-+
-+L(64after):
-+
-+L(pretry):
-+
-+L(pre):                              # 64-byte loop with prefetch
-+
-+        .p2align 4
-+
-+L(preloop):
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        mov     %rcx, %r8
-+        add     %rax, %r8
-+        sbb     %rdx, %rdx
-+
-+        xor     %rax, %r8
-+        or      %rcx, %r8
-+        sub     %rdx, %r8
-+        jnz     L(tail)
-+
-+        prefetchnta 512 (%rsi)
-+
-+        mov     8 (%rsi), %rax
-+        add     $8, %rsi
-+
-+        jmp     L(preloop)
-+
-+        .p2align 4
-+
-+L(preafter):
-+
-+L(tailtry):
-+
-+L(tail):                             # 4-byte tail loop
-+
-+L(tailloop):
-+        test    %al, %al
-+        jz      L(exit)
-+
-+        inc     %rsi
-+
-+        test    %ah, %ah
-+        jz      L(exit)
-+
-+        inc     %rsi
-+
-+        test    $0x00ff0000, %eax
-+        jz      L(exit)
-+
-+        inc     %rsi
-+
-+        test    $0xff000000, %eax
-+        jz      L(exit)
-+
-+        inc     %rsi
-+
-+        shr     $32, %rax
-+        jmp     L(tailloop)
-+
-+L(tailafter):
-+
-+        .p2align 4
-+
-+L(exit):
-+        lea     (%rdi, %rsi), %rax
- 	ret
-+
- END (strlen)
-+
- libc_hidden_builtin_def (strlen)
---- glibc-head/libc/sysdeps/x86_64/strncmp.S
-+++ glibc-amd/libc/sysdeps/x86_64/strncmp.S
-@@ -0,0 +1,8 @@
-+#define USE_AS_STRNCMP
-+#define strcmp __strncmp
-+
-+#include <sysdeps/x86_64/strcmp.S>
-+
-+weak_alias (__strncmp, strncmp)
-+libc_hidden_def (__strncmp)
-+libc_hidden_builtin_def (strncmp)
 --- glibc-head/libc/sysdeps/x86_64/strncpy.S
 +++ glibc-amd/libc/sysdeps/x86_64/strncpy.S
 @@ -0,0 +1,8 @@
