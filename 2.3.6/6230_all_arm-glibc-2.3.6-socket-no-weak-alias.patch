@@ -1,0 +1,26 @@
+2005-10-27  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/arm/socket.S: Honor NO_WEAK_ALIAS.
+
+--- ports/sysdeps/unix/sysv/linux/arm/socket.S
++++ ports/sysdeps/unix/sysv/linux/arm/socket.S
+@@ -32,7 +34,11 @@
+    The .S files for the other calls just #define socket and #include this.  */
+ 
+ #ifndef __socket
+-#define __socket P(__,socket)
++# ifndef NO_WEAK_ALIAS
++#  define __socket P(__,socket)
++# else
++#  define __socket socket
++# endif
+ #endif
+ 
+ #define PUSHARGS_1	str a1, [sp, $-4]!
+@@ -120,4 +122,6 @@
+ 
+ PSEUDO_END (__socket)
+ 
++#ifndef NO_WEAK_ALIAS
+ weak_alias (__socket, socket)
++#endif
