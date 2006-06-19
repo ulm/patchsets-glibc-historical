@@ -1,0 +1,20 @@
+Taken from debian cvs/svn:
+Use larger of PATH_MAX and page size when allocating buffer.
+See BZ2418
+Note: CVS 1.24 does not build, MAX macro is undefined
+
+
+diff -Naurp glibc-2.3.6.orig/sysdeps/unix/sysv/linux/getcwd.c glibc-2.3.6/sysdeps/unix/sysv/linux/getcwd.c
+--- glibc-2.3.6.orig/sysdeps/unix/sysv/linux/getcwd.c	2006-06-18 16:12:16.000000000 -0400
++++ glibc-2.3.6/sysdeps/unix/sysv/linux/getcwd.c	2006-06-18 16:14:39.000000000 -0400
+@@ -87,7 +87,9 @@ __getcwd (char *buf, size_t size)
+ 	  return NULL;
+ 	}
+ 
+-      alloc_size = MAX (PATH_MAX, __getpagesize ());
++      alloc_size = __getpagesize ();
++      if (alloc_size < PATH_MAX)
++        alloc_size = PATH_MAX;
+     }
+ 
+   if (buf == NULL)
