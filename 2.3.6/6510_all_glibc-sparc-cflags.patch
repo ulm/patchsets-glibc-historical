@@ -1,0 +1,22 @@
+2005-06-27  Jakub Jelinek  <jj@ultra.linux.cz>
+
+	[BZ #1037]
+	* sysdeps/unix/sysv/linux/sparc/sparc32/Makefile: -mv8 is deprecated,
+	use -mcpu=v8.
+
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/sparc/sparc32/Makefile,v
+retrieving revision 1.11
+retrieving revision 1.12
+diff -u -r1.11 -r1.12
+--- libc/sysdeps/unix/sysv/linux/sparc/sparc32/Makefile	2003/08/31 17:22:46	1.11
++++ libc/sysdeps/unix/sysv/linux/sparc/sparc32/Makefile	2005/07/02 22:40:34	1.12
+@@ -4,7 +4,7 @@
+ 
+ # When I get this to work, this is the right thing
+ ifeq ($(subdir),elf)
+-CFLAGS-rtld.c += -mv8
++CFLAGS-rtld.c += -mcpu=v8
+ #rtld-routines += dl-sysdepsparc
+ sysdep-others += lddlibc4
+ install-bin += lddlibc4
