@@ -6,7 +6,7 @@ http://bugs.gentoo.org/60132
 
 --- libc/manual/Makefile
 +++ libc/manual/Makefile
-@@ -104,9 +104,13 @@
+@@ -104,9 +104,14 @@
  libm-err.texi: stamp-libm-err
  stamp-libm-err: libm-err-tab.pl $(wildcard $(foreach dir,$(sysdirs),\
  						     $(dir)/libm-test-ulps))
@@ -16,6 +16,7 @@ http://bugs.gentoo.org/60132
  	$(move-if-change) libm-err-tmp libm-err.texi
 +else
 +	echo "Unable to rebuild math docs, no perl installed"
++	touch libm-err.texi
 +endif
  	touch $@
  
