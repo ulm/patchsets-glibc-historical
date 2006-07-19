@@ -1,0 +1,197 @@
+http://bugs.gentoo.org/140730
+
+From: Jakub Jelinek <jakub at redhat dot com>
+To: Ulrich Drepper <drepper at redhat dot com>, Roland McGrath <roland at redhat dot com>
+Cc: Glibc hackers <libc-hacker at sources dot redhat dot com>
+Date: Fri, 24 Mar 2006 22:38:57 +0100
+Subject: [PATCH] Fix NIS+
+
+Hi!
+
+We really should be checking the return value of malloc, otherwise all
+_nss_*create_tablename functions always fail and set *errnop to some random
+errno value inherited from the application.  They first check
+if (tablename_val == NULL)
+  {
+    prepare...;
+    char *p = malloc (...);
+    if (tablename_val == NULL)
+      {
+        *errnop = errno;
+        return NSS_STATUS_TRYAGAIN;
+      }
+  }
+and prepare... doesn't touch tablename_val, so it always fails.
+
+2006-03-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* nis/nss_nisplus/nisplus-proto.c (_nss_create_tablename): Check the
+	return value of malloc rather than the static var again.
+	* nis/nss_nisplus/nisplus-grp.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-network.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-ethers.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-rpc.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-service.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-hosts.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-alias.c (_nss_create_tablename): Likewise.
+	* nis/nss_nisplus/nisplus-pwd.c (_nss_pwd_create_tablename): Likewise.
+
+--- libc/nis/nss_nisplus/nisplus-proto.c.jj	2005-12-06 11:22:03.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-proto.c	2006-03-24 22:16:00.000000000 +0100
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1997,1998,2001,2002,2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997, 1998, 2001, 2002, 2003, 2005, 2006
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@vt.uni-paderborn.de>, 1997.
+ 
+@@ -147,7 +148,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "protocols.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-grp.c.jj	2005-12-06 11:22:02.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-grp.c	2006-03-24 22:13:33.000000000 +0100
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1997, 2001, 2002, 2003, 2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997, 2001, 2002, 2003, 2005, 2006
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@vt.uni-paderborn.de>, 1997.
+ 
+@@ -47,7 +48,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "group.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-network.c.jj	2005-12-06 11:22:03.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-network.c	2006-03-24 22:15:05.000000000 +0100
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1997,1998,2000-2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997,1998,2000-2003,2005,2006 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@vt.uni-paderborn.de>, 1997.
+ 
+@@ -148,7 +148,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "networks.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-pwd.c.jj	2005-12-06 11:22:03.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-pwd.c	2006-03-24 22:17:43.000000000 +0100
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1997,1999,2001,2002,2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997, 1999, 2001, 2002, 2003, 2005, 2006
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@vt.uni-paderborn.de>, 1997.
+ 
+@@ -44,7 +45,7 @@ _nss_pwd_create_tablename (int *errnop)
+       static const char prefix[] = "passwd.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (pwd_tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-ethers.c.jj	2005-12-06 11:22:02.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-ethers.c	2006-03-24 22:12:44.000000000 +0100
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1997,1998,2000-2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997,1998,2000-2003,2005,2006 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@suse.de>, 1997.
+ 
+@@ -94,7 +94,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "ethers.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-rpc.c.jj	2005-12-06 11:22:03.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-rpc.c	2006-03-24 22:18:24.000000000 +0100
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1997,1998,2001,2002,2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997, 1998, 2001, 2002, 2003, 2005, 2006
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@vt.uni-paderborn.de>, 1997.
+ 
+@@ -144,7 +145,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "rpc.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-service.c.jj	2005-12-06 11:22:03.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-service.c	2006-03-24 22:19:02.000000000 +0100
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1997-1999,2001,2002,2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997, 1998, 1999, 2001, 2002, 2003, 2005, 2006
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@suse.de>, 1997.
+ 
+@@ -151,7 +152,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "services.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-hosts.c.jj	2005-12-06 11:22:02.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-hosts.c	2006-03-24 22:14:03.000000000 +0100
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1997-2002, 2003, 2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997-2002, 2003, 2005, 2006 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@suse.de>, 1997.
+ 
+@@ -186,7 +186,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "hosts.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
+--- libc/nis/nss_nisplus/nisplus-alias.c.jj	2005-12-06 11:22:02.000000000 +0100
++++ libc/nis/nss_nisplus/nisplus-alias.c	2006-03-24 22:12:16.000000000 +0100
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1997,1998,2001,2002,2003,2005 Free Software Foundation, Inc.
++/* Copyright (C) 1997, 1998, 2001, 2002, 2003, 2005, 2006
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Thorsten Kukuk <kukuk@vt.uni-paderborn.de>, 1997.
+ 
+@@ -51,7 +52,7 @@ _nss_create_tablename (int *errnop)
+       static const char prefix[] = "mail_aliases.org_dir.";
+ 
+       char *p = malloc (sizeof (prefix) + local_dir_len);
+-      if (tablename_val == NULL)
++      if (p == NULL)
+ 	{
+ 	  *errnop = errno;
+ 	  return NSS_STATUS_TRYAGAIN;
