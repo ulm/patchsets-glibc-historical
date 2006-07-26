@@ -8,7 +8,7 @@ gver=$1
 pver=$2
 
 if [[ ! -d ./${gver} ]] ; then
-	echo "Error: ${gver} is not a valid binutils ver"
+	echo "Error: ${gver} is not a valid glibc ver"
 	exit 1
 fi
 
