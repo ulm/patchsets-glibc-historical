@@ -1,0 +1,36 @@
+http://bugs.gentoo.org/138905
+
+2006-08-21  Ulrich Drepper  <drepper@redhat.com>
+
+	[BZ #3040]
+	* sysdeps/unix/sysv/linux/openat.c: Fix compilation if
+	__ASSUME_ATFCTS is defined.
+
+Index: sysdeps/unix/sysv/linux/openat.c
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/openat.c,v
+retrieving revision 1.8
+retrieving revision 1.9
+diff -u -p -r1.8 -r1.9
+--- sysdeps/unix/sysv/linux/openat.c	1 Mar 2006 05:32:42 -0000	1.8
++++ sysdeps/unix/sysv/linux/openat.c	21 Aug 2006 19:43:24 -0000	1.9
+@@ -28,9 +28,10 @@
+ #include <not-cancel.h>
+ 
+ 
+-#if !defined OPENAT && !defined __ASSUME_ATFCTS
++#ifndef OPENAT
+ # define OPENAT openat
+ 
++# ifndef __ASSUME_ATFCTS
+ /* Set errno after a failed call.  If BUF is not null,
+    it is a /proc/self/fd/ path name we just tried to use.  */
+ void
+@@ -61,6 +62,7 @@ __atfct_seterrno (int errval, int fd, co
+ }
+ 
+ int __have_atfcts;
++# endif
+ #endif
+ 
+ 
