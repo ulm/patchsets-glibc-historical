@@ -1,0 +1,63 @@
+http://bugs.gentoo.org/148542
+
+Index: sysdeps/unix/sysv/linux/powerpc/powerpc32/socket.S
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/powerpc/powerpc32/socket.S,v
+retrieving revision 1.4
+retrieving revision 1.5
+diff -u -p -r1.4 -r1.5
+--- sysdeps/unix/sysv/linux/powerpc/powerpc32/socket.S	17 Jun 2005 23:10:50 -0000	1.4
++++ sysdeps/unix/sysv/linux/powerpc/powerpc32/socket.S	18 Nov 2005 22:48:08 -0000	1.5
+@@ -44,7 +44,11 @@
+ #define stackblock 20
+ 
+ #ifndef __socket
+-#define __socket P(__,socket)
++# ifndef NO_WEAK_ALIAS
++#  define __socket P(__,socket)
++# else
++#  define __socket socket
++# endif
+ #endif
+ 
+ 	.text
+@@ -114,4 +118,6 @@ ENTRY(__socket)
+ 
+ PSEUDO_END (__socket)
+ 
++#ifndef NO_WEAK_ALIAS
+ weak_alias (__socket, socket)
++#endif
+Index: sysdeps/unix/sysv/linux/powerpc/powerpc64/socket.S
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/powerpc/powerpc64/socket.S,v
+retrieving revision 1.5
+retrieving revision 1.6
+diff -u -p -r1.5 -r1.6
+--- sysdeps/unix/sysv/linux/powerpc/powerpc64/socket.S	14 Dec 2004 21:24:08 -0000	1.5
++++ sysdeps/unix/sysv/linux/powerpc/powerpc64/socket.S	18 Nov 2005 22:48:08 -0000	1.6
+@@ -41,12 +41,12 @@
+ 
+ #define stackblock 80 /* offset to socket parm area.  */
+ 
+-#ifndef socket
+-/* If this is just socket.S leave it alone! */
+-#else
+ #ifndef __socket
+-#define __socket P(__,socket)
+-#endif
++# ifndef NO_WEAK_ALIAS
++#  define __socket P(__,socket)
++# else
++#  define __socket socket
++# endif
+ #endif
+ 
+ 	.text
+@@ -120,4 +120,6 @@ ENTRY(__socket)
+ 	cfi_endproc
+ PSEUDO_END (__socket)
+ 
++#ifndef NO_WEAK_ALIAS
+ weak_alias (__socket, socket)
++#endif
