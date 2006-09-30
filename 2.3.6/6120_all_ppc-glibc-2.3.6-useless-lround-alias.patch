@@ -1,0 +1,19 @@
+2005-11-18  Andreas Schwab  <schwab@suse.de>
+
+	* sysdeps/powerpc/powerpc32/fpu/s_lround.S: Remove useless alias.
+
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/powerpc/powerpc32/fpu/s_lround.S,v
+retrieving revision 1.4
+retrieving revision 1.5
+diff -u -r1.4 -r1.5
+--- libc/sysdeps/powerpc/powerpc32/fpu/s_lround.S	2005/06/17 23:09:36	1.4
++++ libc/sysdeps/powerpc/powerpc32/fpu/s_lround.S	2005/11/18 22:48:11	1.5
+@@ -79,7 +79,6 @@
+ 	b	.L9
+ 	END (__lround)
+ 
+-strong_alias (__lround, __lround)
+ weak_alias (__lround, lround)
+ 
+ strong_alias (__lround, __lroundf)
