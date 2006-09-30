@@ -1,0 +1,12 @@
+http://sourceware.org/ml/libc-alpha/2006-06/msg00068.html
+
+--- libc/sysdeps/unix/sysv/linux/getcwd.c
++++ libc/sysdeps/unix/sysv/linux/getcwd.c
+@@ -24,6 +24,7 @@
+ #include <limits.h>
+ #include <stdlib.h>
+ #include <unistd.h>
++#include <sys/param.h>
+ 
+ #include <sysdep.h>
+ #include <sys/syscall.h>
