@@ -1,0 +1,21 @@
+2006-10-06  Andreas Jaeger  <aj@suse.de>
+
+	* include/features.h (__GLIBC_MINOR__): It's glibc 2.5 now.
+
+Index: include/features.h
+===================================================================
+RCS file: /cvs/glibc/libc/include/features.h,v
+retrieving revision 1.43
+retrieving revision 1.44
+diff -u -p -r1.43 -r1.44
+--- include/features.h	25 Apr 2006 20:34:32 -0000	1.43
++++ include/features.h	6 Oct 2006 15:38:14 -0000	1.44
+@@ -304,7 +304,7 @@
+ /* Major and minor version number of the GNU C library package.  Use
+    these macros to test for features in specific releases.  */
+ #define	__GLIBC__	2
+-#define	__GLIBC_MINOR__	4
++#define	__GLIBC_MINOR__	5
+ 
+ #define __GLIBC_PREREQ(maj, min) \
+ 	((__GLIBC__ << 16) + __GLIBC_MINOR__ >= ((maj) << 16) + (min))
