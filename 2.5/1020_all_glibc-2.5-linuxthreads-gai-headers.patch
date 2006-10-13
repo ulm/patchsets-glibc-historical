@@ -1,0 +1,17 @@
+http://bugs.gentoo.org/150884
+http://sourceware.org/ml/libc-ports/2006-10/msg00016.html
+
+2006-10-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/pthread/gai_misc.h: Include pthread.h.
+
+--- linuxthreads/sysdeps/pthread/gai_misc.h
++++ linuxthreads/sysdeps/pthread/gai_misc.h
+@@ -23,6 +23,7 @@
+ 
+ #include <assert.h>
+ #include <signal.h>
++#include <pthread.h>
+ 
+ #undef DONT_NEED_GAI_MISC_COND
+ 
