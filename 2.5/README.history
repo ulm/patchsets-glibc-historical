@@ -1,0 +1,27 @@
+1.1
+	+ 1010_all_glibc-cvs-update-MINOR.patch
+	+ 1020_all_glibc-2.5-linuxthreads-gai-headers.patch
+
+1.0
+	+ 0010_all_glibc-ssp-compat.patch
+	+ 1030_all_glibc-manual-no-perl.patch
+	+ 1040_all_2.3.3-localedef-fix-trampoline.patch
+	+ 1060_all_glibc-cvs-getcwd-path-max.patch
+	+ 1075_all_glibc-section-comments.patch
+	+ 1090_all_glibc-2.3.6-fix-pr631.patch
+	+ 1100_all_glibc-2.3.3-china.patch
+	+ 1130_all_glibc-2.4-undefine-__i686.patch
+	+ 3000_all_2.3.6-dl_execstack-PaX-support.patch
+	+ 3010_all_2.3.3_pre20040117-pt_pax.patch
+	+ 4010_all_2.3.5-hardened-iconvconfig-unnest.patch
+	+ 5021_all_2.3.6-fnmatch.patch
+	+ 5063_all_glibc-dont-build-timezone.patch
+	+ 5070_all_cross-compile-nptl.patch
+	+ 6001_all_alpha-glibc-2.4-xstat.patch
+	+ 6220_all_glibc-2.4-arm-cirrus-ep93xx-maverick-crunch-fpu.patch
+	+ 6400_all_sh-glibc-2.3.2-fpscr_values.patch
+	+ 6600_mips_librt-mips.patch
+	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
+	+ 6645_mips_shn_undef-hack.patch
+	+ 6901_all_2.4-amd64-strings-20060609.patch
+	+ 6901_all_2.4-new-libm-20060321.patch
