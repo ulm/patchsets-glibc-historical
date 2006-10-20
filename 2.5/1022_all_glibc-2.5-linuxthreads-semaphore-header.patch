@@ -1,0 +1,11 @@
+http://bugs.gentoo.org/151816
+http://sourceware.org/ml/libc-ports/2006-10/msg00032.html
+
+Need to delete linuxthreads/sysdeps/pthread/semaphore.h as the new
+implicit header install rules will favor that over the proper file
+linuxthreads/semaphore.h.
+
+--- linuxthreads/sysdeps/pthread/semaphore.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <linuxthreads/semaphore.h>
