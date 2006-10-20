@@ -1,3 +1,5 @@
+http://sourceware.org/ml/libc-ports/2006-10/msg00028.html
+
 2006-10-19  Mike Frysinger  <vapier@gentoo.org>
 
 	* sysdeps/ia64/tcb-offsets.sym (MULTIPLE_THREADS_OFFSET):
