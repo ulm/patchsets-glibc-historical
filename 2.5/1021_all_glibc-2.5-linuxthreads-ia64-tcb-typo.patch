@@ -1,0 +1,16 @@
+2006-10-19  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/ia64/tcb-offsets.sym (MULTIPLE_THREADS_OFFSET):
+	Fix typo TLS_PRE_TCB_SIZE.
+
+--- linuxthreads/sysdeps/ia64/tcb-offsets.sym
++++ linuxthreads/sysdeps/ia64/tcb-offsets.sym
+@@ -3,7 +3,7 @@
+ 
+ --
+ #ifdef USE_TLS
+-MULTIPLE_THREADS_OFFSET offsetof (struct _pthread_descr_struct, p_multiple_threads) - TCB_PRE_SIZE
++MULTIPLE_THREADS_OFFSET offsetof (struct _pthread_descr_struct, p_multiple_threads) - TLS_PRE_TCB_SIZE
+ #else
+ MULTIPLE_THREADS_OFFSET offsetof (tcbhead_t, multiple_threads)
+ #endif
