@@ -1,0 +1,20 @@
+http://sourceware.org/ml/libc-alpha/2006-10/msg00071.html
+
+need this so long as we support i386 :(
+
+libmemusage (memusage.c) requires atomic operations that are not supported
+on i386 as they use asm instructions introduced with the i486+
+
+--- glibc-2.5/malloc/Makefile
++++ glibc-2.5/malloc/Makefile
+@@ -57,6 +57,10 @@
+ 
+ include ../Makeconfig
+ 
++ifeq ($(config-machine),i386)
++extra-libs =
++endif
++
+ CPPFLAGS-memusagestat = -DNOT_IN_libc
+ 
+ # The Perl script to analyze the output of the mtrace functions.
