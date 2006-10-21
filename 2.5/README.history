@@ -1,3 +1,11 @@
+1.2
+	+ 1021_all_glibc-2.5-linuxthreads-ia64-tcb-typo.patch
+	+ 1022_all_glibc-2.5-linuxthreads-semaphore-header.patch
+	+ 1140_all_glibc-2.5-no-tls-support.patch
+	+ 1150_all_glibc-2.5-i386-no-libmemusage.patch
+	+ 6005_all_alpha-glibc-2.5-at-register.patch
+	+ 6010_all_alpha-glibc-2.5-sigsuspend-nocancel.patch
+
 1.1
 	+ 1010_all_glibc-cvs-update-MINOR.patch
 	+ 1020_all_glibc-2.5-linuxthreads-gai-headers.patch
