@@ -1,0 +1,25 @@
+http://sourceware.org/ml/libc-alpha/2006-10/msg00069.html
+
+assume alpha always has/wants cancellation support until this
+can be fixed properly
+
+--- libc/sysdeps/unix/sysv/linux/alpha/sigsuspend_nocancel.S
++++ libc/sysdeps/unix/sysv/linux/alpha/sigsuspend_nocancel.S
+@@ -0,0 +1,4 @@
++#include <sysdep.h>
++PSEUDO(__sigsuspend_nocancel, sigsuspend, 1)
++	ret
++PSEUDO_END(__sigsuspend_nocancel)
+--- libc/sysdeps/unix/sysv/linux/alpha/Makefile
++++ libc/sysdeps/unix/sysv/linux/alpha/Makefile
+@@ -27,6 +27,10 @@
+ sysdep_routines += rt_sigaction
+ endif
+ 
++ifeq ($(subdir),nptl)
++libpthread-routines += sigsuspend_nocancel
++endif
++
+ ifeq ($(subdir),math)
+ # These 2 routines are normally in libgcc{.a,_s.so.1}.
+ # However, alpha -mlong-double-128 libgcc relies on

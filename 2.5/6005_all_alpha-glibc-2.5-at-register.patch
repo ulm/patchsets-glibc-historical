@@ -1,0 +1,32 @@
+ugly, but simple, hack to work around a problem introduced by gcc4.  the
+problem is that the glibc alpha port includes asm() code that is optimized for
+ev6+ cpu's and uses instructions that are not found on older cpu's.  this is
+fine because at runtime, the code will detect which code path to take.  but
+newer gcc's have started to output '.arch ev#' which the assembler uses to
+validate that all instructions given it are valid for the specified cpu.  in
+the past, glibc would simply add -Wa,-mev6 to ASFLAGS so that the assembler
+knew which cpu to work with.  however, since '.arch' directives have priority
+over gas command line options, this no longer works and we end up with the
+ugly error from gas:
+Error: macro requires $at register while noat in effect
+
+http://gcc.gnu.org/ml/gcc/2005-07/msg00371.html
+http://gcc.gnu.org/ml/gcc/2006-07/msg00346.html
+
+to summarize:
+	- gcc-4.x started outputting '.arch' directive in asm
+	- gas respects '.arch' over cmdline -mev6
+	- glibc's ioperm.c includes ev6+ on purpose but will not execute it
+	  on ev4/ev5 cpu's via runtime cpu detection
+
+so our lame fix is to insert '.arch ev6' into the code until the alpha
+maintainers can figure out how they want to resolve this (change gcc behavior,
+change gas behavior, tweak asm code in glibc/kernel/etc...)
+
+--- libc/sysdeps/unix/sysv/linux/alpha/ioperm.c
++++ libc/sysdeps/unix/sysv/linux/alpha/ioperm.c
+@@ -1,3 +1,4 @@
++asm(".arch ev6;");
+ /* Copyright (C) 1992, 1996-1999, 2000 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by David Mosberger.
