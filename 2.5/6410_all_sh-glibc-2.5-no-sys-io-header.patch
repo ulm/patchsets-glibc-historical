@@ -52,3 +52,16 @@ http://sourceware.org/ml/libc-alpha/2006-12/msg00005.html
 -__END_DECLS
 -
 -#endif /* _SYS_IO_H */
+--- glibc-2.5/sysdeps/unix/sysv/linux/sh/Makefile
++++ glibc-2.5/sysdeps/unix/sysv/linux/sh/Makefile
+@@ -2,10 +2,6 @@ ifeq ($(subdir),io)
+ sysdep_routines += pipe
+ endif
+ 
+-ifeq ($(subdir),misc)
+-sysdep_headers += sys/io.h
+-endif
+-
+ ifeq ($(subdir),stdlib)
+ gen-as-const-headers += ucontext_i.sym
+ endif
