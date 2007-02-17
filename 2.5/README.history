@@ -1,6 +1,7 @@
 1.4 [pending]
 	+ 1015_all_glibc-2.5-realloc-assert.patch
 	+ 1120_all_glibc-2.5-strict-aliasing.patch
+	+ 6223_all_arm-glibc-2.5-eabi-no-asm-procinfo.patch
 	+ 6410_all_sh-glibc-2.5-no-sys-io-header.patch
 
 1.3
