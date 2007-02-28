@@ -1,0 +1,33 @@
+diff -uNr glibc-2.5.orig/misc/sys/ustat.h glibc-2.5/misc/sys/ustat.h
+--- glibc-2.5.orig/misc/sys/ustat.h	2001-07-06 04:55:36.000000000 +0000
++++ glibc-2.5/misc/sys/ustat.h	2007-01-30 13:52:14.000000000 +0000
+@@ -27,7 +27,7 @@
+ #include <features.h>
+ 
+ #include <sys/types.h>
+-#include <bits/ustat.h>
++//#include <bits/ustat.h>
+ 
+ __BEGIN_DECLS
+ 
+diff -uNr glibc-2.5.orig/nptl/pthread_mutex_trylock.c glibc-2.5/nptl/pthread_mutex_trylock.c
+--- glibc-2.5.orig/nptl/pthread_mutex_trylock.c	2006-08-14 23:01:26.000000000 +0000
++++ glibc-2.5/nptl/pthread_mutex_trylock.c	2007-01-30 13:02:05.000000000 +0000
+@@ -20,6 +20,7 @@
+ #include <assert.h>
+ #include <errno.h>
+ #include <stdlib.h>
++#include <pthread.h>
+ #include "pthreadP.h"
+ #include <lowlevellock.h>
+ 
+diff -uNr glibc-2.5.orig/ports/sysdeps/hppa/dl-trampoline.S glibc-2.5/ports/sysdeps/hppa/dl-trampoline.S
+--- glibc-2.5.orig/ports/sysdeps/hppa/dl-trampoline.S	2006-09-07 16:34:43.000000000 +0000
++++ glibc-2.5/ports/sysdeps/hppa/dl-trampoline.S	2007-01-30 15:15:58.000000000 +0000
+@@ -284,5 +284,6 @@
+ 	bv,n	0(%r2)
+         .EXIT
+         .PROCEND
++	cfi_endproc
+ 	.size   _dl_runtime_profile, . - _dl_runtime_profile
+ 
