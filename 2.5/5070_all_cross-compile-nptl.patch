@@ -1,4 +1,6 @@
-A little hack for cross-compiling NPTL w/out linuxthreads.
+A little hack for cross-compiling NPTL
+
+http://sourceware.org/ml/libc-alpha/2005-02/msg00043.html
 
 --- libc/nptl/sysdeps/pthread/configure.in
 +++ libc/nptl/sysdeps/pthread/configure.in
