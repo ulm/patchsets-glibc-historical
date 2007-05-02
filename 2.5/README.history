@@ -1,3 +1,14 @@
+1.5
+	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
+	+ 1050_all_glibc-fix-printf-overflow-with-large-precisions.patch
+	U 1507_hppa_various-fixes.patch
+	+ 1510_all_glibc-hppa-no-asm-elf-header.patch
+	+ 1530_all_glibc-m68k-sys-user.patch
+	+ 6015_all_alpha-glibc-2.5-no-page-header.patch
+	+ 6230_all_arm-glibc-2.5-no-page-header.patch
+	+ 6415_all_sh-glibc-2.5-no-asm-user-header.patch
+	+ 6416_all_sh-glibc-2.5-no-asm-elf-header.patch
+
 1.4
 	+ 1015_all_glibc-2.5-realloc-assert.patch
 	+ 1035_all_glibc-cvs-fix-fork-handler-refcount-in-child.patch
