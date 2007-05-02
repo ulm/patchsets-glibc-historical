@@ -1,15 +1,3 @@
-diff -uNr glibc-2.5.orig/misc/sys/ustat.h glibc-2.5/misc/sys/ustat.h
---- glibc-2.5.orig/misc/sys/ustat.h	2001-07-06 04:55:36.000000000 +0000
-+++ glibc-2.5/misc/sys/ustat.h	2007-01-30 13:52:14.000000000 +0000
-@@ -27,7 +27,7 @@
- #include <features.h>
- 
- #include <sys/types.h>
--#include <bits/ustat.h>
-+//#include <bits/ustat.h>
- 
- __BEGIN_DECLS
- 
 diff -uNr glibc-2.5.orig/nptl/pthread_mutex_trylock.c glibc-2.5/nptl/pthread_mutex_trylock.c
 --- glibc-2.5.orig/nptl/pthread_mutex_trylock.c	2006-08-14 23:01:26.000000000 +0000
 +++ glibc-2.5/nptl/pthread_mutex_trylock.c	2007-01-30 13:02:05.000000000 +0000
