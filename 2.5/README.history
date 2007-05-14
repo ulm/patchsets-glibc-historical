@@ -1,3 +1,9 @@
+1.6 [pending]
+	U 6005_all_alpha-glibc-2.5-at-register.patch
+	U 6010_all_alpha-glibc-2.5-sigsuspend-nocancel.patch
+	+ 6016_all_alpha-glibc-2.5-no-asm-elf-header.patch
+	+ 6020_all_alpha-glibc-2.5-nptl-cfi-statements.patch
+
 1.5
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 1050_all_glibc-fix-printf-overflow-with-large-precisions.patch
