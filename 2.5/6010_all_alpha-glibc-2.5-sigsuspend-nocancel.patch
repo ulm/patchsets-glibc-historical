@@ -1,29 +1,33 @@
-http://sourceware.org/ml/libc-alpha/2006-10/msg00069.html
+2007-03-13  Richard Henderson  <rth@redhat.com>
 
-assume alpha always has/wants cancellation support until this
-can be fixed properly
+	* sysdeps/unix/sysv/linux/alpha/sigsuspend.S: Add support for
+	__sigsuspend_nocancel.
 
---- libc/sysdeps/unix/sysv/linux/alpha/sigsuspend_nocancel.S
-+++ libc/sysdeps/unix/sysv/linux/alpha/sigsuspend_nocancel.S
-@@ -0,0 +1,4 @@
+Index: sysdeps/unix/sysv/linux/alpha/sigsuspend.S
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/alpha/sigsuspend.S,v
+retrieving revision 1.13
+retrieving revision 1.14
+diff -u -p -r1.13 -r1.14
+--- sysdeps/unix/sysv/linux/alpha/sigsuspend.S	26 May 2005 14:30:46 -0000	1.13
++++ sysdeps/unix/sysv/linux/alpha/sigsuspend.S	13 Mar 2007 16:05:44 -0000	1.14
+@@ -20,6 +20,19 @@
+ /* sigsuspend is a special syscall since it needs to dereference the
+    sigset.  This will have to change when we have more than 64 signals.  */
+ 
++#ifndef NO_CANCELLATION
 +#include <sysdep.h>
++
++#undef PSEUDO_PREPARE_ARGS
++#define PSEUDO_PREPARE_ARGS	ldq	a0, 0(a0);
++
 +PSEUDO(__sigsuspend_nocancel, sigsuspend, 1)
 +	ret
-+PSEUDO_END(__sigsuspend_nocancel)
---- libc/sysdeps/unix/sysv/linux/alpha/Makefile
-+++ libc/sysdeps/unix/sysv/linux/alpha/Makefile
-@@ -27,9 +27,13 @@
- endif
- 
- ifeq ($(subdir),signal)
--sysdep_routines += rt_sigaction
-+sysdep_routines += rt_sigaction sigsuspend_nocancel
- endif
- 
-+ifeq ($(subdir),nptl)
-+libpthread-routines += sigsuspend_nocancel
-+endif
++/* Use END, not PSEUDO_END, so that we don't issue two $syscall_error
++   symbols; we'll jump into __sigsuspend for the error case.  */
++END(__sigsuspend_nocancel)
++#endif /* NO_CANCELLATION */
 +
- ifeq ($(subdir),math)
- # These 2 routines are normally in libgcc{.a,_s.so.1}.
- # However, alpha -mlong-double-128 libgcc relies on
+ #include <sysdep-cancel.h>
+ 
+ #undef PSEUDO_PREPARE_ARGS

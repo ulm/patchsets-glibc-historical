@@ -23,10 +23,29 @@ so our lame fix is to insert '.arch ev6' into the code until the alpha
 maintainers can figure out how they want to resolve this (change gcc behavior,
 change gas behavior, tweak asm code in glibc/kernel/etc...)
 
---- libc/sysdeps/unix/sysv/linux/alpha/ioperm.c
-+++ libc/sysdeps/unix/sysv/linux/alpha/ioperm.c
-@@ -1,3 +1,4 @@
-+asm(".arch ev6;");
- /* Copyright (C) 1992, 1996-1999, 2000 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by David Mosberger.
+looks like upstream has taken this approach ;)
+2007-05-07  Richard Henderson  <rth@redhat.com>
+
+	* sysdeps/unix/sysv/linux/alpha/ioperm.c: If BWX insns not
+	available in the compiler, add .arch directive to the assembly.
+
+Index: sysdeps/unix/sysv/linux/alpha/ioperm.c
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/alpha/ioperm.c,v
+retrieving revision 1.22
+retrieving revision 1.23
+diff -u -p -r1.22 -r1.23
+--- sysdeps/unix/sysv/linux/alpha/ioperm.c	6 Jul 2001 04:56:13 -0000	1.22
++++ sysdeps/unix/sysv/linux/alpha/ioperm.c	7 May 2007 22:57:20 -0000	1.23
+@@ -32,6 +32,11 @@
+    sparse address space would work (e.g., the Low Cost Alpha chip has an
+    I/O address space that's 512MB large!).  */
+ 
++/* Make sure the ldbu/stb asms below are not expaneded to macros.  */
++#ifndef __alpha_bwx__
++asm(".arch ev56");
++#endif
++
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdio.h>
