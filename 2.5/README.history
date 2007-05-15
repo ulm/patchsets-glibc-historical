@@ -1,4 +1,7 @@
-1.6 [pending]
+1.7 [pending]
+	+ 1160_all_glibc-2.5-filter-files-for-headers-test.patch
+
+1.6
 	U 6005_all_alpha-glibc-2.5-at-register.patch
 	U 6010_all_alpha-glibc-2.5-sigsuspend-nocancel.patch
 	+ 6016_all_alpha-glibc-2.5-no-asm-elf-header.patch
