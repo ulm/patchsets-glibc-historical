@@ -1,3 +1,11 @@
+1.1		23.05.2007
+	+ 1510_all_glibc-hppa-no-asm-elf-header.patch
+	+ 1530_all_glibc-m68k-sys-user.patch
+	+ 6220_all_glibc-2.4-arm-cirrus-ep93xx-maverick-crunch-fpu.patch
+	+ 6230_all_arm-glibc-2.5-no-page-header.patch
+	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
+	+ 6645_all_glibc-mips_shn_undef-hack.patch
+
 1.0		19.05.2007
 	+ 0010_all_glibc-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
