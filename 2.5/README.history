@@ -1,5 +1,7 @@
-1.7 [pending]
+1.7
 	+ 1025_all_glibc-2.5-getusershell-fixes.patch
+	U 1050_all_glibc-fix-printf-overflow-with-large-precisions.patch
+	+ 1055_all_glibc-resolv-dynamic.patch
 	+ 1160_all_glibc-2.5-filter-files-for-headers-test.patch
 
 1.6
