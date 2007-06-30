@@ -1,3 +1,7 @@
+1.2		30.06.2007
+	+ 0050_all_glibc-2.6-malloc.patch
+	+ 1055_all_glibc-resolv-dynamic.patch
+
 1.1		23.05.2007
 	+ 1510_all_glibc-hppa-no-asm-elf-header.patch
 	+ 1530_all_glibc-m68k-sys-user.patch
