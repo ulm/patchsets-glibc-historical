@@ -1,0 +1,24 @@
+diff -ruNp elf/rtld.c elf/rtld.c
+--- elf/rtld.c	2007-07-01 16:21:55.000000000 +0100
++++ elf/rtld.c	2007-07-01 16:20:38.000000000 +0100
+@@ -2587,7 +2587,8 @@ process_envvars (enum mode *modep)
+ 
+ 	case 10:
+ 	  /* Mask for the important hardware capabilities.  */
+-	  if (memcmp (envline, "HWCAP_MASK", 10) == 0)
++	  if (!INTUSE(__libc_enable_secure)
++          && memcmp (envline, "HWCAP_MASK", 10) == 0)
+ 	    GLRO(dl_hwcap_mask) = __strtoul_internal (&envline[11], NULL,
+ 						      0, 0);
+ 	  break;
+diff -ruNp sysdeps/generic/unsecvars.h sysdeps/generic/unsecvars.h
+--- sysdeps/generic/unsecvars.h	2005-01-06 22:40:19.000000000 +0000
++++ sysdeps/generic/unsecvars.h	2007-07-01 16:21:21.000000000 +0100
+@@ -9,6 +9,7 @@
+   "LD_DEBUG\0"								      \
+   "LD_DEBUG_OUTPUT\0"							      \
+   "LD_DYNAMIC_WEAK\0"							      \
++  "LD_HWCAP_MASK\0"                               \
+   "LD_LIBRARY_PATH\0"							      \
+   "LD_ORIGIN_PATH\0"							      \
+   "LD_PRELOAD\0"							      \
