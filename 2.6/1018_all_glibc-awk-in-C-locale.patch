@@ -1,0 +1,17 @@
+http://bugs.gentoo.org/184281
+
+2007-07-05  Mike Frysinger  <vapier@gentoo.org>
+
+	* Makeconfig (gnu/lib-names.h): Use LC_ALL=C when running awk script.
+
+--- libc/Makeconfig
++++ libc/Makeconfig
+@@ -856,7 +857,7 @@ $(common-objpfx)gnu/lib-names.stmp: $(..
+ 				    $(common-objpfx)soversions.i
+ 	$(make-target-directory)
+ 	@rm -f ${@:stmp=T} $@
+-	$(AWK) -f $^ > ${@:stmp=T}
++	LC_ALL=C $(AWK) -f $^ > ${@:stmp=T}
+ 	$(move-if-change) ${@:stmp=T} ${@:stmp=h}
+ 	touch $@
+ endif

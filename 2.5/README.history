@@ -1,3 +1,9 @@
+1.9	[pending]
+	+ 1018_all_glibc-awk-in-C-locale.patch
+
+1.8
+	+ 1600_all_glibc-hwcap-mask-secure.patch
+
 1.7
 	+ 1025_all_glibc-2.5-getusershell-fixes.patch
 	U 1050_all_glibc-fix-printf-overflow-with-large-precisions.patch
