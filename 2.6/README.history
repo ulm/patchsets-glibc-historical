@@ -1,5 +1,7 @@
-1.4		[pending]
+1.4		14.07.2007
 	+ 1065_all_glibc-handle-LD-int-overflows.patch
+	+ 1045_all_glibc-handle-long-kernel-versions.patch
+	+ 1103_all_glibc-new-valencian-locale.patch
 	- 1600_all_glibc-hwcap-mask-secure.patch
 
 1.3		05.07.2007
