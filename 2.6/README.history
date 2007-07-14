@@ -1,3 +1,6 @@
+1.5		[pending]
+	+ 1025_all_glibc-gcc-4.3-include-fixed.patch
+
 1.4		14.07.2007
 	+ 1065_all_glibc-handle-LD-int-overflows.patch
 	+ 1045_all_glibc-handle-long-kernel-versions.patch
