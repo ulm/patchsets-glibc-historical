@@ -1,4 +1,4 @@
-1.5		[pending]
+1.5		25.07.2007
 	+ 1025_all_glibc-gcc-4.3-include-fixed.patch
 	+ 1035_all_glibc-respect-build-programs.patch
 
