@@ -1,0 +1,20 @@
+fix from upstream
+
+Index: sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h
+===================================================================
+RCS file: /cvs/glibc/ports/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h,v
+retrieving revision 1.1
+retrieving revision 1.2
+diff -u -p -r1.1 -r1.2
+--- ports/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h	16 Nov 2005 19:22:59 -0000	1.1
++++ ports/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h	6 Jun 2007 17:27:04 -0000	1.2
+@@ -126,3 +126,9 @@ extern int __local_multiple_threads attr
+ # define NO_CANCELLATION 1
+ 
+ #endif
++
++#ifndef __ASSEMBLER__
++# define RTLD_SINGLE_THREAD_P \
++  __builtin_expect (THREAD_GETMEM (THREAD_SELF, \
++				   header.multiple_threads) == 0, 1)
++#endif
