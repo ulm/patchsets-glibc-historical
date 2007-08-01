@@ -1,0 +1,26 @@
+2007-03-13  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/unix/sysv/linux/alpha/sys/user.h: Include unistd.h rather
+	than asm/page.h.
+	(NBPG): Define to getpagesize().
+
+--- sysdeps/unix/sysv/linux/alpha/sys/user.h
++++ sysdeps/unix/sysv/linux/alpha/sys/user.h
+@@ -23,7 +23,7 @@
+    only. Don't read too much into it. Don't use it for anything other
+    than gdb/strace unless you know what you are doing. */
+ 
+-#include <asm/page.h>
++#include <unistd.h>
+ #include <asm/reg.h>
+ 
+ struct user
+@@ -41,7 +41,7 @@ struct user
+   char u_comm[32];				/* user command name */
+ };
+ 
+-#define NBPG			PAGE_SIZE
++#define NBPG			getpagesize()
+ #define UPAGES			1
+ #define HOST_TEXT_START_ADDR	(u.start_code)
+ #define HOST_DATA_START_ADDR	(u.start_data)

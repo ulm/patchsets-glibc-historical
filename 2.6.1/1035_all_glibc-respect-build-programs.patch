@@ -1,0 +1,122 @@
+http://sourceware.org/ml/libc-alpha/2007-07/msg00093.html
+
+2007-07-24  Roland McGrath  <roland@redhat.com>
+
+	* Makerules (install-others-programs-nosubdir): New target.
+	(install-no-libc.a-nosubdir): Depend on it.
+
+	* iconv/Makefile (install-others-programs): Set this instead of
+	install-others.
+	* login/Makefile (install-others-programs): Likewise.
+	* posix/Makefile (install-others-programs): Likewise.
+
+	* Makerules (install-no-libc.a-nosubdir): Clean up conditional
+	dependencies.
+
+===================================================================
+RCS file: /cvs/glibc/libc/Makerules,v
+retrieving revision 1.448
+retrieving revision 1.449
+diff -u -r1.448 -r1.449
+--- libc/Makerules	2007/05/24 23:44:21	1.448
++++ libc/Makerules	2007/07/24 23:09:38	1.449
+@@ -834,12 +834,13 @@
+ 
+ # $(install-lib) are installed from the object directory into $(libdir);
+ # files in $(install-lib) matching `lib%.a' are ranlib'd after installation
+-# unless they also appear in $(non-lib.a).  $(install-data) are installed
+-# as they are into $(datadir).  $(headers) are installed as they are in
++# unless they also appear in $(non-lib.a).  $(install-data) are installed as
++# they are into $(datadir).  $(headers) are installed as they are in
+ # $(includedir).  $(install-bin), $(install-bin-script) and $(install-sbin)
+ # are installed from the object directory into $(bindir), $(bindir) and
+-# $(sbindir), respectively.  $(install-others) are absolute path names of
+-# files to install; rules to install them are defined elsewhere.
++# $(sbindir), respectively.  $(install-others) and $(install-others-programs)
++# are absolute path names of files to install; rules to install them are
++# defined elsewhere.
+ 
+ # The simple library name to install libc.a under.
+ # This could be defined by a sysdep Makefile.
+@@ -1144,6 +1145,7 @@
+ install-data-nosubdir: $(addprefix $(inst_datadir)/,$(install-data))
+ install-headers-nosubdir: $(addprefix $(inst_includedir)/,$(headers))
+ install-others-nosubdir: $(install-others)
++install-others-programs-nosubdir: $(install-others-programs)
+ 
+ # We need all the `-nosubdir' targets so that `install' in the parent
+ # doesn't depend on several things which each iterate over the subdirs.
+@@ -1152,14 +1154,12 @@
+ install-%:: install-%-nosubdir ;
+ 
+ .PHONY: install install-no-libc.a-nosubdir
+-ifeq ($(build-programs),yes)
+-install-no-libc.a-nosubdir: install-headers-nosubdir install-data-nosubdir\
+-			    install-bin-nosubdir install-bin-script-nosubdir \
+-			    install-lib-nosubdir install-others-nosubdir \
+-			    install-rootsbin-nosubdir install-sbin-nosubdir
+-else
+-install-no-libc.a-nosubdir: install-headers-nosubdir install-data-nosubdir\
++install-no-libc.a-nosubdir: install-headers-nosubdir install-data-nosubdir \
+ 			    install-lib-nosubdir install-others-nosubdir
++ifeq ($(build-programs),yes)
++install-no-libc.a-nosubdir: install-bin-nosubdir install-bin-script-nosubdir \
++			    install-rootsbin-nosubdir install-sbin-nosubdir \
++			    install-others-programs-nosubdir
+ endif
+ install: install-no-libc.a-nosubdir
+ 
+===================================================================
+RCS file: /cvs/glibc/libc/iconv/Makefile,v
+retrieving revision 1.36
+retrieving revision 1.37
+diff -u -r1.36 -r1.37
+--- libc/iconv/Makefile	2004/12/19 23:43:41	1.36
++++ libc/iconv/Makefile	2007/07/24 23:09:35	1.37
+@@ -56,7 +56,7 @@
+ 		  iconvconfig.h
+ 
+ others		= iconv_prog iconvconfig
+-install-others	= $(inst_bindir)/iconv
++install-others-programs	= $(inst_bindir)/iconv
+ install-sbin	= iconvconfig
+ 
+ CFLAGS-gconv_cache.c += -DGCONV_DIR='"$(gconvdir)"'
+===================================================================
+RCS file: /cvs/glibc/libc/login/Makefile,v
+retrieving revision 1.36
+retrieving revision 1.37
+diff -u -r1.36 -r1.37
+--- libc/login/Makefile	2003/09/02 04:42:29	1.36
++++ libc/login/Makefile	2007/07/24 23:09:36	1.37
+@@ -1,4 +1,4 @@
+-# Copyright (C) 1996-1998,2000-2002,2003 Free Software Foundation, Inc.
++# Copyright (C) 1996-1998,2000-2002,2003,2007 Free Software Foundation, Inc.
+ # This file is part of the GNU C Library.
+ 
+ # The GNU C Library is free software; you can redistribute it and/or
+@@ -30,7 +30,7 @@
+ CFLAGS-grantpt.c = -DLIBEXECDIR='"$(libexecdir)"'
+ 
+ others = utmpdump pt_chown
+-install-others = $(inst_libexecdir)/pt_chown
++install-others-programs = $(inst_libexecdir)/pt_chown
+ 
+ distribute := utmp-private.h utmp-equal.h pty-private.h
+ 
+===================================================================
+RCS file: /cvs/glibc/libc/posix/Makefile,v
+retrieving revision 1.197
+retrieving revision 1.198
+diff -u -r1.197 -r1.198
+--- libc/posix/Makefile	2007/04/03 23:28:20	1.197
++++ libc/posix/Makefile	2007/07/24 23:09:36	1.198
+@@ -98,7 +98,7 @@
+ endif
+ others		:= getconf
+ install-bin	:= getconf
+-install-others	:= $(inst_libexecdir)/getconf
++install-others-programs	:= $(inst_libexecdir)/getconf
+ 
+ before-compile	:= testcases.h ptestcases.h
+ 
