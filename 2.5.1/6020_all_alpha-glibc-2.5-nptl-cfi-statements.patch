@@ -1,0 +1,38 @@
+http://bugs.gentoo.org/178202
+
+2007-03-13  Richard Henderson  <rth@redhat.com>
+
+	* sysdeps/unix/sysv/linux/alpha/sysdep-cancel.h (PSEUDO): Use two
+	separate cfi regions for the two subsections.
+
+Index: nptl/sysdeps/unix/sysv/linux/alpha/sysdep-cancel.h
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/sysdeps/unix/sysv/linux/alpha/sysdep-cancel.h,v
+retrieving revision 1.6
+retrieving revision 1.7
+diff -u -p -r1.6 -r1.7
+--- nptl/sysdeps/unix/sysv/linux/alpha/sysdep-cancel.h	29 Oct 2006 21:48:06 -0000	1.6
++++ nptl/sysdeps/unix/sysv/linux/alpha/sysdep-cancel.h	13 Mar 2007 21:28:03 -0000	1.7
+@@ -55,6 +55,7 @@ __LABEL(name)							\
+ 	bne	a3, SYSCALL_ERROR_LABEL;			\
+ __LABEL($pseudo_ret)						\
+ 	.subsection 2;						\
++	cfi_startproc;						\
+ __LABEL($pseudo_cancel)						\
+ 	subq	sp, 64, sp;					\
+ 	cfi_def_cfa_offset(64);					\
+@@ -90,12 +91,13 @@ __LABEL($multi_error)						\
+ 	cfi_def_cfa_offset(0);					\
+ __LABEL($syscall_error)						\
+ 	SYSCALL_ERROR_HANDLER;					\
++	cfi_endproc;						\
+ 	.previous
+ 
+ # undef PSEUDO_END
+ # define PSEUDO_END(sym)					\
+-	.subsection 2;						\
+ 	cfi_endproc;						\
++	.subsection 2;						\
+ 	.size sym, .-sym
+ 
+ # define SAVE_ARGS_0	/* Nothing.  */

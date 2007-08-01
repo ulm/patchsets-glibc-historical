@@ -1,0 +1,439 @@
+Index: elf/elf.h
+===================================================================
+RCS file: /cvs/glibc/libc/elf/elf.h,v
+retrieving revision 1.156
+diff -u -p -r1.156 elf.h
+--- elf/elf.h	8 Jan 2007 13:09:54 -0000	1.156
++++ elf/elf.h	5 Feb 2007 23:25:06 -0000
+@@ -1709,6 +1709,8 @@ typedef Elf32_Addr Elf32_Conflict;
+ #define R_PARISC_LTOFF_FPTR14R	62	/* LT-rel. fct ptr, right 14 bits. */
+ #define R_PARISC_FPTR64		64	/* 64 bits function address.  */
+ #define R_PARISC_PLABEL32	65	/* 32 bits function address.  */
++#define R_PARISC_PLABEL21L	66	/* Left 21 bits of fdesc address */
++#define R_PARISC_PLABEL14R	70	/* Right 14 bits of fdesc address */
+ #define R_PARISC_PCREL64	72	/* 64 bits PC-rel. address.  */
+ #define R_PARISC_PCREL22F	74	/* 22 bits PC-rel. address.  */
+ #define R_PARISC_PCREL14WR	75	/* PC-rel. address, right 14 bits.  */
+@@ -1769,6 +1771,29 @@ typedef Elf32_Addr Elf32_Conflict;
+ #define R_PARISC_LTOFF_TP16F	229	/* 16 bits LT-TP-rel. address.  */
+ #define R_PARISC_LTOFF_TP16WF	230	/* 16 bits LT-TP-rel. address.  */
+ #define R_PARISC_LTOFF_TP16DF	231	/* 16 bits LT-TP-rel. address.  */
++
++#define R_PARISC_GNU_VTENTRY    232
++#define R_PARISC_GNU_VTINHERIT  233
++#define R_PARISC_TLS_GD21L      234	/* GD 21-bit left */
++#define R_PARISC_TLS_GD14R      235	/* GD 14-bit right */
++#define R_PARISC_TLS_GDCALL     236	/* GD call to __t_g_a */
++#define R_PARISC_TLS_LDM21L     237	/* LD module 21-bit left */
++#define R_PARISC_TLS_LDM14R     238	/* LD module 14-bit right */
++#define R_PARISC_TLS_LDMCALL    239	/* LD module call to __t_g_a */
++#define R_PARISC_TLS_LDO21L     240	/* LD offset 21-bit left */
++#define R_PARISC_TLS_LDO14R     241	/* LD offset 14-bit right */
++#define R_PARISC_TLS_DTPMOD32   242	/* DTP module 32-bit */
++#define R_PARISC_TLS_DTPMOD64   243	/* DTP module 64-bit */
++#define R_PARISC_TLS_DTPOFF32   244	/* DTP offset 32-bit */
++#define R_PARISC_TLS_DTPOFF64   245	/* DTP offset 32-bit */
++
++#define R_PARISC_TLS_LE21L      R_PARISC_TPREL21L
++#define R_PARISC_TLS_LE14R      R_PARISC_TPREL14R
++#define R_PARISC_TLS_IE21L      R_PARISC_LTOFF_TP21L
++#define R_PARISC_TLS_IE14R      R_PARISC_LTOFF_TP14R
++#define R_PARISC_TLS_TPREL32    R_PARISC_TPREL32
++#define R_PARISC_TLS_TPREL64    R_PARISC_TPREL64
++
+ #define R_PARISC_HIRESERVE	255
+ 
+ /* Legal values for p_type field of Elf32_Phdr/Elf64_Phdr.  */
+Index: elf/rtld.c
+===================================================================
+RCS file: /cvs/glibc/libc/elf/rtld.c,v
+retrieving revision 1.369
+diff -u -p -r1.369 rtld.c
+--- elf/rtld.c	28 Oct 2006 06:44:04 -0000	1.369
++++ elf/rtld.c	5 Feb 2007 23:25:07 -0000
+@@ -378,14 +378,14 @@ _dl_start (void *arg)
+      know it is available.  We do not have to clear the memory if we
+      do not have to use the temporary bootstrap_map.  Global variables
+      are initialized to zero by default.  */
+-#ifndef DONT_USE_BOOTSTRAP_MAP
++#if !defined DONT_USE_BOOTSTRAP_MAP
+ # ifdef HAVE_BUILTIN_MEMSET
+   __builtin_memset (bootstrap_map.l_info, '\0', sizeof (bootstrap_map.l_info));
+ # else
+-  for (size_t cnt = 0;
+-       cnt < sizeof (bootstrap_map.l_info) / sizeof (bootstrap_map.l_info[0]);
+-       ++cnt)
+-    bootstrap_map.l_info[cnt] = 0;
++  /* Clear the whole bootstrap_map structure */
++  for (char *cnt = (char *)&(bootstrap_map);
++       cnt < ((char *)&(bootstrap_map) + sizeof (bootstrap_map));
++       *cnt++ = '\0');
+ # endif
+ # if USE___THREAD
+   bootstrap_map.l_tls_modid = 0;
+
+Index: include/atomic.h
+===================================================================
+RCS file: /cvs/glibc/libc/include/atomic.h,v
+retrieving revision 1.21
+diff -u -p -r1.21 atomic.h
+--- include/atomic.h	21 Dec 2006 21:44:00 -0000	1.21
++++ include/atomic.h	5 Feb 2007 23:25:07 -0000
+@@ -174,7 +174,7 @@
+      __typeof (*(mem)) __atg5_value = (newvalue);			      \
+ 									      \
+      do									      \
+-       __atg5_oldval = *__atg5_memp;					      \
++       __atg5_oldval = *(volatile __typeof (mem))__atg5_memp;		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg5_memp, __atg5_value, \
+ 						   __atg5_oldval), 0));	      \
+@@ -195,7 +195,7 @@
+      __typeof (*(mem)) __atg6_value = (value);				      \
+ 									      \
+      do									      \
+-       __atg6_oldval = *__atg6_memp;					      \
++       __atg6_oldval = *(volatile __typeof (mem))__atg6_memp;		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg6_memp,		      \
+ 						   __atg6_oldval	      \
+@@ -213,7 +213,7 @@
+      __typeof (*(mem)) __atg7_value = (value);				      \
+ 									      \
+      do									      \
+-       __atg7_oldv = *__atg7_memp;					      \
++       __atg7_oldv = *(volatile __typeof (mem))__atg7_memp;		      \
+      while (__builtin_expect						      \
+ 	    (catomic_compare_and_exchange_bool_acq (__atg7_memp,	      \
+ 						    __atg7_oldv		      \
+@@ -231,7 +231,7 @@
+     __typeof (mem) __atg8_memp = (mem);					      \
+     __typeof (*(mem)) __atg8_value = (value);				      \
+     do {								      \
+-      __atg8_oldval = *__atg8_memp;					      \
++      __atg8_oldval = *(volatile __typeof (mem))__atg8_memp;		      \
+       if (__atg8_oldval >= __atg8_value)				      \
+ 	break;								      \
+     } while (__builtin_expect						      \
+@@ -248,7 +248,7 @@
+     __typeof (mem) __atg9_memp = (mem);					      \
+     __typeof (*(mem)) __atg9_value = (value);				      \
+     do {								      \
+-      __atg9_oldv = *__atg9_memp;					      \
++      __atg9_oldv = *(volatile __typeof (mem))__atg9_memp;		      \
+       if (__atg9_oldv >= __atg9_value)					      \
+ 	break;								      \
+     } while (__builtin_expect						      \
+@@ -266,7 +266,7 @@
+     __typeof (mem) __atg10_memp = (mem);				      \
+     __typeof (*(mem)) __atg10_value = (value);				      \
+     do {								      \
+-      __atg10_oldval = *__atg10_memp;					      \
++      __atg10_oldval = *(volatile __typeof (mem))__atg10_memp;		      \
+       if (__atg10_oldval <= __atg10_value)				      \
+ 	break;								      \
+     } while (__builtin_expect						      \
+@@ -350,7 +350,7 @@
+ 									      \
+      do									      \
+        {								      \
+-	 __atg11_oldval = *__atg11_memp;				      \
++	 __atg11_oldval = *(volatile __typeof (mem))__atg11_memp;	      \
+ 	 if (__builtin_expect (__atg11_oldval <= 0, 0))			      \
+ 	   break;							      \
+        }								      \
+@@ -389,7 +389,7 @@
+      __typeof (*(mem)) __atg14_mask = ((__typeof (*(mem))) 1 << (bit));	      \
+ 									      \
+      do									      \
+-       __atg14_old = (*__atg14_memp);					      \
++       __atg14_old = (*(volatile __typeof (mem))__atg14_memp);		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg14_memp,	      \
+ 						   __atg14_old | __atg14_mask,\
+@@ -407,7 +407,7 @@
+     __typeof (*(mem)) __atg15_mask = (mask);				      \
+ 									      \
+     do									      \
+-      __atg15_old = (*__atg15_memp);					      \
++      __atg15_old = (*(volatile __typeof (mem))__atg15_memp);		      \
+     while (__builtin_expect						      \
+ 	   (atomic_compare_and_exchange_bool_acq (__atg15_memp,		      \
+ 						  __atg15_old & __atg15_mask, \
+@@ -423,7 +423,7 @@
+      __typeof (*(mem)) __atg16_mask = (mask);				      \
+ 									      \
+      do									      \
+-       __atg16_old = (*__atg16_memp);					      \
++       __atg16_old = (*(volatile __typeof (mem))__atg16_memp);		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg16_memp,	      \
+ 						   __atg16_old & __atg16_mask,\
+@@ -441,7 +441,7 @@
+     __typeof (*(mem)) __atg17_mask = (mask);				      \
+ 									      \
+     do									      \
+-      __atg17_old = (*__atg17_memp);					      \
++      __atg17_old = (*(volatile __typeof (mem))__atg17_memp);		      \
+     while (__builtin_expect						      \
+ 	   (atomic_compare_and_exchange_bool_acq (__atg17_memp,		      \
+ 						  __atg17_old | __atg17_mask, \
+@@ -457,7 +457,7 @@
+     __typeof (*(mem)) __atg18_mask = (mask);				      \
+ 									      \
+     do									      \
+-      __atg18_old = (*__atg18_memp);					      \
++      __atg18_old = (*(volatile __typeof (mem))__atg18_memp);		      \
+     while (__builtin_expect						      \
+ 	   (catomic_compare_and_exchange_bool_acq (__atg18_memp,	      \
+ 						   __atg18_old | __atg18_mask,\
+@@ -473,7 +473,7 @@
+      __typeof (*(mem)) __atg19_mask = (mask);				      \
+ 									      \
+      do									      \
+-       __atg19_old = (*__atg19_memp);					      \
++       __atg19_old = (*(volatile __typeof (mem))__atg19_memp);		      \
+      while (__builtin_expect						      \
+ 	    (atomic_compare_and_exchange_bool_acq (__atg19_memp,	      \
+ 						   __atg19_old | __atg19_mask,\
+Index: nptl/Makefile
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/Makefile,v
+retrieving revision 1.188
+diff -u -p -r1.188 Makefile
+--- nptl/Makefile	8 Sep 2006 10:40:49 -0000	1.188
++++ nptl/Makefile	5 Feb 2007 23:25:09 -0000
+@@ -424,6 +424,35 @@ CFLAGS-tst-cleanupx3.c += -fexceptions
+ CFLAGS-tst-cleanupx4.c += -fexceptions
+ CFLAGS-tst-oncex3.c += -fexceptions
+ CFLAGS-tst-oncex4.c += -fexceptions
++
++ldflags-libgcc_s = --as-needed -lgcc_s --no-as-needed
++LDFLAGS-tst-cancelx2 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx3 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx4 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx5 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx6 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx7 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx8 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx9 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx10 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx11 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx12 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx13 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx14 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx15 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx16 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx17 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx18 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx20 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cancelx21 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx0 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx1 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx2 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx3 += $(ldflags-libgcc_s)
++LDFLAGS-tst-cleanupx4 += $(ldflags-libgcc_s)
++LDFLAGS-tst-oncex3 += $(ldflags-libgcc_s)
++LDFLAGS-tst-oncex4 += $(ldflags-libgcc_s)
++
+ CFLAGS-tst-align.c += $(stack-align-test-flags)
+ CFLAGS-tst-align3.c += $(stack-align-test-flags)
+ CFLAGS-tst-initializers1.c = -W -Wall -Werror
+Index: nptl/allocatestack.c
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/allocatestack.c,v
+retrieving revision 1.64
+diff -u -p -r1.64 allocatestack.c
+--- nptl/allocatestack.c	23 Aug 2006 17:39:47 -0000	1.64
++++ nptl/allocatestack.c	5 Feb 2007 23:25:09 -0000
+@@ -289,8 +289,15 @@ change_stack_perm (struct pthread *pd
+ 		      & pagemask) + pd->guardsize) & pagemask));
+   size_t len = pd->stackblock + pd->stackblock_size - stack;
+ #else
++# if _STACK_GROWS_DOWN
+   void *stack = pd->stackblock + pd->guardsize;
+   size_t len = pd->stackblock_size - pd->guardsize;
++# elif _STACK_GROWS_UP
++  void *stack = pd->stackblock;
++  size_t len = (size_t)pd - pd->guardsize - (size_t)pd->stackblock;
++# else
++# error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
++# endif
+ #endif
+   if (mprotect (stack, len, PROT_READ | PROT_WRITE | PROT_EXEC) != 0)
+     return errno;
+@@ -571,7 +578,13 @@ allocate_stack (const struct pthread_att
+ #ifdef NEED_SEPARATE_REGISTER_STACK
+ 	  char *guard = mem + (((size - guardsize) / 2) & ~pagesize_m1);
+ #else
++# if _STACK_GROWS_DOWN
+ 	  char *guard = mem;
++# elif _STACK_GROWS_UP
++	  char *guard = (char *)(((size_t)pd - guardsize) & ~pagesize_m1);
++# else
++# error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
++# endif
+ #endif
+ 	  if (mprotect (guard, guardsize, PROT_NONE) != 0)
+ 	    {
+@@ -619,9 +632,17 @@ allocate_stack (const struct pthread_att
+ 			prot) != 0)
+ 	    goto mprot_error;
+ #else
++# if _STACK_GROWS_DOWN
+ 	  if (mprotect ((char *) mem + guardsize, pd->guardsize - guardsize,
+ 			prot) != 0)
+ 	    goto mprot_error;
++# elif _STACK_GROWS_UP
++	  if (mprotect ((char *) pd - pd->guardsize, 
++			pd->guardsize - guardsize, prot) != 0)
++	    goto mprot_error;
++# else
++# error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
++# endif
+ #endif
+ 
+ 	  pd->guardsize = guardsize;
+@@ -662,7 +683,13 @@ allocate_stack (const struct pthread_att
+   *stack = pd->stackblock;
+   *stacksize = stacktop - *stack;
+ #else
++# if _STACK_GROWS_DOWN
+   *stack = stacktop;
++# elif _STACK_GROWS_UP
++  *stack = pd->stackblock;
++# else
++# error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
++# endif
+ #endif
+ 
+   return 0;
+Index: nptl/pthread_barrier_wait.c
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/pthread_barrier_wait.c,v
+retrieving revision 1.1
+diff -u -p -r1.1 pthread_barrier_wait.c
+--- nptl/pthread_barrier_wait.c	28 Oct 2006 05:06:42 -0000	1.1
++++ nptl/pthread_barrier_wait.c	5 Feb 2007 23:25:09 -0000
+@@ -62,7 +62,7 @@ pthread_barrier_wait (barrier)
+       /* Wait for the event counter of the barrier to change.  */
+       do
+ 	lll_futex_wait (&ibarrier->curr_event, event);
+-      while (event == ibarrier->curr_event);
++      while (event == *(volatile unsigned int *)&ibarrier->curr_event);
+     }
+ 
+   /* Make sure the init_count is stored locally or in a register.  */
+Index: nptl/tst-align2.c
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/tst-align2.c,v
+retrieving revision 1.1
+diff -u -p -r1.1 tst-align2.c
+--- nptl/tst-align2.c	22 Dec 2004 20:06:24 -0000	1.1
++++ nptl/tst-align2.c	5 Feb 2007 23:25:09 -0000
+@@ -25,6 +25,8 @@
+ #include <unistd.h>
+ #include <tst-stack-align.h>
+ 
++#include <stackinfo.h>
++
+ static int
+ f (void *arg)
+ {
+@@ -53,8 +55,15 @@ do_test (void)
+   char st[256 * 1024];
+   pid_t p = __clone2 (f, st, sizeof (st), 0, 0);
+ #else
++# if _STACK_GROWS_DOWN
+   char st[128 * 1024];
+   pid_t p = clone (f, st + sizeof (st), 0, 0);
++# elif _STACK_GROWS_UP
++  char st[128 * 1024] __attribute__ ((aligned));
++  pid_t p = clone (f, st, 0, 0);
++# else
++# error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
++# endif
+ #endif
+   if (p == -1)
+     {
+Index: nptl/tst-getpid1.c
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/tst-getpid1.c,v
+retrieving revision 1.4
+diff -u -p -r1.4 tst-getpid1.c
+--- nptl/tst-getpid1.c	13 Mar 2005 03:28:47 -0000	1.4
++++ nptl/tst-getpid1.c	5 Feb 2007 23:25:09 -0000
+@@ -6,6 +6,8 @@
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ 
++#include <stackinfo.h>
++
+ #ifndef TEST_CLONE_FLAGS
+ #define TEST_CLONE_FLAGS 0
+ #endif
+@@ -47,8 +49,15 @@ do_test (void)
+   char st[256 * 1024] __attribute__ ((aligned));
+   pid_t p = __clone2 (f, st, sizeof (st), TEST_CLONE_FLAGS, 0);
+ #else
++# if _STACK_GROWS_DOWN
+   char st[128 * 1024] __attribute__ ((aligned));
+   pid_t p = clone (f, st + sizeof (st), TEST_CLONE_FLAGS, 0);
++# elif _STACK_GROWS_UP
++  char st[128 * 1024] __attribute__ ((aligned));
++  pid_t p = clone (f, st, TEST_CLONE_FLAGS, 0);
++# else
++# error "Define either _STACK_GROWS_DOWN or _STACK_GROWS_UP"
++# endif
+ #endif
+   if (p == -1)
+     {
+Index: nptl/sysdeps/pthread/Makefile
+===================================================================
+RCS file: /cvs/glibc/libc/nptl/sysdeps/pthread/Makefile,v
+retrieving revision 1.8
+diff -u -p -r1.8 Makefile
+--- nptl/sysdeps/pthread/Makefile	28 Feb 2006 07:09:41 -0000	1.8
++++ nptl/sysdeps/pthread/Makefile	5 Feb 2007 23:25:09 -0000
+@@ -41,7 +41,9 @@ endif
+ 
+ ifeq ($(have-forced-unwind),yes)
+ tests += tst-mqueue8x
++ldflags-libgcc_s = --as-needed -lgcc_s --no-as-needed
+ CFLAGS-tst-mqueue8x.c += -fexceptions
++LDFLAGS-tst-mqueue8x += $(ldflags-libgcc_s) 
+ endif
+ endif
+ 
+Index: stdio-common/Makefile
+===================================================================
+RCS file: /cvs/glibc/libc/stdio-common/Makefile,v
+retrieving revision 1.99
+diff -u -p -r1.99 Makefile
+--- stdio-common/Makefile	22 Jan 2007 16:17:13 -0000	1.99
++++ stdio-common/Makefile	5 Feb 2007 23:25:09 -0000
+@@ -76,7 +76,7 @@ $(objpfx)tst-printf.out: $(objpfx)tst-pr
+ 	$(SHELL) -e tst-printf.sh $(common-objpfx) '$(run-program-prefix)'
+ endif
+ 
+-CFLAGS-vfprintf.c = -Wno-uninitialized
++CFLAGS-vfprintf.c = -Wno-uninitialized -fno-delayed-branch
+ CFLAGS-tst-printf.c = -Wno-format
+ CFLAGS-tstdiomisc.c = -Wno-format
+ CFLAGS-scanf4.c = -Wno-format
+Index: sunrpc/clnt_udp.c
+===================================================================
+RCS file: /cvs/glibc/libc/sunrpc/clnt_udp.c,v
+retrieving revision 1.33
+diff -u -p -r1.33 clnt_udp.c
+--- sunrpc/clnt_udp.c	20 Dec 2005 22:38:40 -0000	1.33
++++ sunrpc/clnt_udp.c	5 Feb 2007 23:25:09 -0000
+@@ -419,7 +419,7 @@ send_again:
+       while (inlen < 0 && errno == EINTR);
+       if (inlen < 0)
+ 	{
+-	  if (errno == EWOULDBLOCK)
++	  if (errno == EWOULDBLOCK || errno == EAGAIN)
+ 	    continue;
+ 	  cu->cu_error.re_errno = errno;
+ 	  return (cu->cu_error.re_status = RPC_CANTRECV);

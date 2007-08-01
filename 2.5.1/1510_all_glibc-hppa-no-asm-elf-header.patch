@@ -1,0 +1,35 @@
+--- ports/sysdeps/unix/sysv/linux/hppa/sys/procfs.h
++++ ports/sysdeps/unix/sysv/linux/hppa/sys/procfs.h
+@@ -33,7 +33,6 @@
+ #include <sys/types.h>
+ #include <sys/ucontext.h>
+ #include <sys/user.h>
+-#include <asm/elf.h>
+ 
+ __BEGIN_DECLS
+ 
+@@ -52,6 +50,16 @@
+    but more Linuxy, with things that Linux does not support and which
+    GDB doesn't really use excluded.  */
+ 
++
++#define ELF_NGREG 80    /* We only need 64 at present, but leave space
++				for expansion. */
++typedef unsigned long elf_greg_t;
++typedef elf_greg_t elf_gregset_t[ELF_NGREG];
++
++#define ELF_NFPREG 32
++typedef double elf_fpreg_t;
++typedef elf_fpreg_t elf_fpregset_t[ELF_NFPREG];
++
+ struct elf_prstatus
+   {
+     struct elf_siginfo pr_info;		/* Info associated with signal.  */
+--- ports/sysdeps/unix/sysv/linux/hppa/sys/user.h
++++ ports/sysdeps/unix/sysv/linux/hppa/sys/user.h
+@@ -0,0 +1,5 @@
++/* This file should not exist, but lots of generic code still includes
++   it. It's a hangover from old a.out days and the traditional core
++   dump format.  We are ELF-only, and so are our core dumps.  If we
++   need to support HP/UX core format then we'll do it here
++   eventually. */
