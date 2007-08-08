@@ -1,3 +1,6 @@
+1.1		[pending]
+	+ 1020_all_glibc-inet-headers.patch
+
 1.0		01.08.2007
 	+ 0010_all_glibc-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch

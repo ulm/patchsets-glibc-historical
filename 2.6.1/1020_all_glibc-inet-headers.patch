@@ -1,0 +1,20 @@
+This file uses alloca() and free() but fails to pull in the appropriate
+headers (causing build failure on some like SuperH) since there is no
+such function, but a macro to a real function.
+
+sh4-unknown-linux-gnu-gcc -shared ...... -o .../libc.so ......
+.../libc_pic.os: In function `make_request':
+check_pf.c:(.text+0xde930): undefined reference to `__libc_use_alloca'
+collect2: ld returned 1 exit status
+
+--- libc/sysdeps/unix/sysv/linux/check_pf.c
++++ libc/sysdeps/unix/sysv/linux/check_pf.c
+@@ -26,6 +26,8 @@
+ #include <time.h>
+ #include <unistd.h>
+ #include <sys/socket.h>
++#include <alloca.h>
++#include <stdlib.h>
+ 
+ #include <asm/types.h>
+ #include <linux/netlink.h>
