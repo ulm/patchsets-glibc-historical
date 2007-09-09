@@ -1,5 +1,7 @@
 1.1		[pending]
 	+ 1020_all_glibc-inet-headers.patch
+	+ 6600_mips_librt-mips.patch
+	+ 6650_all_glibc-mips_gnu-hash_support.patch
 
 1.0		01.08.2007
 	+ 0010_all_glibc-ssp-compat.patch
