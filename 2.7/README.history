@@ -1,3 +1,7 @@
+1.1		24.07.2007
+	+ 1080_all_glibc-no-inline-gmon.patch
+	+ 1510_all_glibc-hppa-no-asm-elf-header.patch
+
 1.0		22.07.2007
 	+ 0010_all_glibc-2.7-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
