@@ -1,8 +1,11 @@
-1.1		24.07.2007
+1.2		04.11.2007
+	+ 6417_all_sh-glibc-2.7-broken-nptl-lock-macros.patch
+
+1.1		24.10.2007
 	+ 1080_all_glibc-no-inline-gmon.patch
 	+ 1510_all_glibc-hppa-no-asm-elf-header.patch
 
-1.0		22.07.2007
+1.0		22.10.2007
 	+ 0010_all_glibc-2.7-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 1025_all_glibc-gcc-4.3-include-fixed.patch
