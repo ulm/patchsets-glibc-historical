@@ -1,0 +1,32 @@
+http://bugs.gentoo.org/200790
+
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=5439
+
+--- libc/sysdeps/unix/sysv/linux/sys/signalfd.h
++++ libc/sysdeps/unix/sysv/linux/sys/signalfd.h
+@@ -51,7 +51,7 @@ __BEGIN_DECLS
+ /* Request notification for delivery of signals in MASK to be
+    performed using descriptor FD.*/
+ extern int signalfd (int __fd, const sigset_t *__mask, int __flags)
+-  __nonnull (2) __THROW;
++  __nonnull ((2)) __THROW;
+ 
+ __END_DECLS
+ 
+Index: sysdeps/unix/sysv/linux/Makefile
+===================================================================
+RCS file: /cvs/glibc/libc/sysdeps/unix/sysv/linux/Makefile,v
+retrieving revision 1.156
+retrieving revision 1.157
+diff -u -p -r1.156 -r1.157
+--- libc/sysdeps/unix/sysv/linux/Makefile	10 Nov 2007 19:35:50 -0000	1.156
++++ libc/sysdeps/unix/sysv/linux/Makefile	17 Nov 2007 08:49:32 -0000	1.157
+@@ -25,7 +25,7 @@ sysdep_headers += sys/mount.h sys/acct.h
+ 		  sys/quota.h sys/fsuid.h \
+ 		  scsi/sg.h scsi/scsi.h scsi/scsi_ioctl.h sys/pci.h \
+ 		  sys/ultrasound.h sys/raw.h sys/personality.h sys/epoll.h \
+-		  bits/a.out.h sys/inotify.h
++		  bits/a.out.h sys/inotify.h sys/signalfd.h sys/eventfd.h
+ 
+ install-others += $(inst_includedir)/bits/syscall.h
+ 
