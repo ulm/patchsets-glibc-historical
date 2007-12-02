@@ -1,0 +1,20 @@
+2007-12-01  Jim Meyering  <meyering@redhat.com>
+
+	Fix a bug that inhibited much of the utf8-optimization in regcomp.c.
+	* lib/regcomp.c (optimize_utf8): Fix a typo, s/idx/ctx_type/,
+	that would inhibit utf8-optimization of a regexp containing line-
+	or buffer-anchors, e.g., `^', `$'.
+
+diff --git a/lib/regcomp.c b/lib/regcomp.c
+index fe4d243..a02418d 100644
+--- a/posix/regcomp.c
++++ b/posix/regcomp.c
+@@ -1049,7 +1049,7 @@ optimize_utf8 (re_dfa_t *dfa)
+ 	  mb_chars = true;
+ 	break;
+       case ANCHOR:
+-	switch (dfa->nodes[node].opr.idx)
++	switch (dfa->nodes[node].opr.ctx_type)
+ 	  {
+ 	  case LINE_FIRST:
+ 	  case LINE_LAST:
