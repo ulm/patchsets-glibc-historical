@@ -1,6 +1,11 @@
-1.3		[pending]
+1.3		09.12.2007
+	+ 0040_all_glibc-i586-chk.patch
+	+ 0050_all_glibc-2.7-sscanf-as-BZ5441.patch
+	+ 0060_all_glibc-2.7-i386-makecontext-align-BZ5435.patch
 	+ 1060_all_glibc-signal-timer-fd.patch
 	+ 1065_all_glibc-2.7-nscd-paranoia-segv.patch
+	+ 1085_all_glibc-omitfp-memmove.patch
+	+ 1515_all_glibc-hppa-tls-lock-build-fix.patch
 
 1.2		04.11.2007
 	+ 6417_all_sh-glibc-2.7-broken-nptl-lock-macros.patch
