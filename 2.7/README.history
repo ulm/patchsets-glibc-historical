@@ -1,3 +1,6 @@
+1.5		12.24.2007
+	+ 1050_all_glibc-posix-awk.patch
+
 1.4		10.12.2007
 	+ 6018_all_glibc-ptr-mangling.patch
 
