@@ -1,3 +1,9 @@
+1.6		12.29.2007
+	+ 1501_hppa_glibc-2.7-hppa-atomic_h.patch
+	+ 1502_hppa_glibc-2.7-hppa-fadvise64_64.patch
+	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
+	+ 1504_hppa_glibc-2.7-hppa-pie.patch
+
 1.5		12.24.2007
 	+ 1050_all_glibc-posix-awk.patch
 
