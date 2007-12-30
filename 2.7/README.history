@@ -15,7 +15,7 @@
 	+ 0050_all_glibc-2.7-sscanf-as-BZ5441.patch
 	+ 0060_all_glibc-2.7-i386-makecontext-align-BZ5435.patch
 	+ 1060_all_glibc-signal-timer-fd.patch
-	+ 1065_all_glibc-2.7-nscd-paranoia-segv.patch
+	+ 1065_all_glibc-x86_64-libpthread-no-vdso.patch
 	+ 1085_all_glibc-omitfp-memmove.patch
 	+ 1515_all_glibc-hppa-tls-lock-build-fix.patch
 
