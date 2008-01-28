@@ -1,3 +1,10 @@
+1.7		[pending]
+	+ 0070_all_glibc-i386-x86_64-revert-clone-cfi.patch
+	+ 0080_all_glibc-nscd-overflow-BZ5382.patch
+	+ 0085_all_glibc-resolv-locking-BZ5375.patch
+	+ 6224_all_glibc-2.7-lowlevellock-includes.patch
+	+ 6225_all_glibc-2.7-cargs6.patch
+
 1.6		12.29.2007
 	+ 1501_hppa_glibc-2.7-hppa-atomic_h.patch
 	+ 1502_hppa_glibc-2.7-hppa-fadvise64_64.patch
