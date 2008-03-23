@@ -1,0 +1,28 @@
+http://bugs.gentoo.org/213829
+
+2008-03-28 Guy Martin <gmsoft@tuxicoman.be>
+
+	* sysdeps/unix/sysv/linux/hppa/nptl/lowlevellock.h (lll_wait_tid):
+	Use shared futex.
+
+--- ports/sysdeps/unix/sysv/linux/hppa/nptl/lowlevellock.h
++++ ports/sysdeps/unix/sysv/linux/hppa/nptl/lowlevellock.h
+@@ -325,12 +325,12 @@
+    thread ID while the clone is running and is reset to zero
+    afterwards.	*/
+ #define lll_wait_tid(tid) \
+-  do						\
+-    {						\
+-      __typeof (tid) __tid;			\
+-      while ((__tid = (tid)) != 0)		\
+-        lll_futex_wait (&(tid), __tid, 0);	\
+-    }						\
++  do							\
++    {							\
++      __typeof (tid) __tid;				\
++      while ((__tid = (tid)) != 0)			\
++        lll_futex_wait (&(tid), __tid, LLL_SHARED);	\
++    }							\
+   while (0)
+ 
+ extern int __lll_timedwait_tid (int *, const struct timespec *)
