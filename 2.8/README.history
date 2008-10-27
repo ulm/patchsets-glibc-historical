@@ -1,3 +1,6 @@
+3		26.10.2008
+	+ 6240_all_glibc-2.8-nptl-lowlevellock.patch
+
 2		16.07.2008
 	+ 6017_all_alpha-glibc-2.8-creat.patch
 	+ 6018_all_alpha-glibc-2.8-cache-shape.patch
