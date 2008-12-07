@@ -1,0 +1,473 @@
+http://bugs.gentoo.org/245914
+
+From ef4f0c542c94e8e979297375ea042adaa92922e5 Mon Sep 17 00:00:00 2001
+From: Jakub Jelinek <jakub@redhat.com>
+Date: Sat, 24 May 2008 18:14:36 +0000
+Subject: [PATCH] 	* libio/stdio.h (vscanf): Fix -std=c99 redirect.
+ 	* stdio-common/Makefile (tests): Add scanf16 and scanf17.
+ 	(CFLAGS-scanf17.c): New.
+ 	* stdio-common/scanf14.c (main): Add fscanf and scanf tests.
+ 	* stdio-common/scanf15.c (main): Likewise.
+ 	* stdio-common/scanf16.c: New test.
+ 	* stdio-common/scanf17.c: New test.
+
+---
+ ChangeLog              |   10 +++
+ libio/stdio.h          |    2 +-
+ stdio-common/Makefile  |    7 ++-
+ stdio-common/scanf14.c |   53 +++++++++++++++++
+ stdio-common/scanf15.c |   43 ++++++++++++++
+ stdio-common/scanf16.c |  147 ++++++++++++++++++++++++++++++++++++++++++++++++
+ stdio-common/scanf17.c |  128 +++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 387 insertions(+), 3 deletions(-)
+ create mode 100644 stdio-common/scanf16.c
+ create mode 100644 stdio-common/scanf17.c
+
+diff --git a/libio/stdio.h b/libio/stdio.h
+index 1cbe920..9dacbe2 100644
+--- a/libio/stdio.h
++++ b/libio/stdio.h
+@@ -475,7 +475,7 @@ extern int __REDIRECT (vfscanf,
+ 		       __isoc99_vfscanf)
+      __attribute__ ((__format__ (__scanf__, 2, 0))) __wur;
+ extern int __REDIRECT (vscanf, (__const char *__restrict __format,
+-				_G_va_list __arg), __isoc99_vfscanf)
++				_G_va_list __arg), __isoc99_vscanf)
+      __attribute__ ((__format__ (__scanf__, 1, 0))) __wur;
+ extern int __REDIRECT (vsscanf,
+ 		       (__const char *__restrict __s,
+diff --git a/stdio-common/Makefile b/stdio-common/Makefile
+index f9fc9da..f8ae6f2 100644
+--- a/stdio-common/Makefile
++++ b/stdio-common/Makefile
+@@ -57,7 +57,8 @@ tests := tstscanf test_rdwr test-popen tstgetln test-fseek \
+ 	 tst-perror tst-sprintf tst-rndseek tst-fdopen tst-fphex bug14 bug15 \
+ 	 tst-popen tst-unlockedio tst-fmemopen2 tst-put-error tst-fgets \
+ 	 tst-fwrite bug16 bug17 tst-swscanf tst-sprintf2 bug18 bug18a \
+-	 bug19 bug19a tst-popen2 scanf13 scanf14 scanf15 bug20 bug21 bug22
++	 bug19 bug19a tst-popen2 scanf13 scanf14 scanf15 bug20 bug21 bug22 \
++	 scanf16 scanf17
+ 
+ test-srcs = tst-unbputc tst-printf
+ 
+@@ -109,11 +110,13 @@ CFLAGS-isoc99_scanf.c += $(exceptions)
+ CFLAGS-errlist.c = $(fno-unit-at-a-time)
+ CFLAGS-siglist.c = $(fno-unit-at-a-time)
+ 
+-# The following is a hack since we must compile scanf15.c without any
++# The following is a hack since we must compile scanf1{5,7}.c without any
+ # GNU extension.  The latter are needed, though, when internal headers
+ # are used.  So made sure we see the installed headers first.
+ CFLAGS-scanf15.c = -I../libio -I../stdlib -I../wcsmbs -I../time -I../string \
+ 		   -I../wctype
++CFLAGS-scanf17.c = -I../libio -I../stdlib -I../wcsmbs -I../time -I../string \
++		   -I../wctype
+ 
+ # We know the test has a format string problem.
+ CFLAGS-tst-sprintf.c = -Wno-format
+diff --git a/stdio-common/scanf14.c b/stdio-common/scanf14.c
+index 387ceba..6ca5c7c 100644
+--- a/stdio-common/scanf14.c
++++ b/stdio-common/scanf14.c
+@@ -59,5 +59,58 @@ main (void)
+   else if (d != 5.25 || memcmp (c, " x", 2) != 0)
+     FAIL ();
+ 
++  const char *tmpdir = getenv ("TMPDIR");
++  if (tmpdir == NULL || tmpdir[0] == '\0')
++    tmpdir = "/tmp";
++
++  char fname[strlen (tmpdir) + sizeof "/tst-scanf14.XXXXXX"];
++  sprintf (fname, "%s/tst-scanf14.XXXXXX", tmpdir);
++  if (fname == NULL)
++    FAIL ();
++
++  /* Create a temporary file.   */
++  int fd = mkstemp (fname);
++  if (fd == -1)
++    FAIL ();
++
++  FILE *fp = fdopen (fd, "w+");
++  if (fp == NULL)
++    FAIL ();
++  else
++    {
++      if (fputs (" 1.25s x", fp) == EOF)
++	FAIL ();
++      if (fseek (fp, 0, SEEK_SET) != 0)
++	FAIL ();
++      if (fscanf (fp, "%as%2c", &sp, c) != 2)
++	FAIL ();
++      else
++	{
++	  if (strcmp (sp, "1.25s") != 0 || memcmp (c, " x", 2) != 0)
++	    FAIL ();
++	  memset (sp, 'x', sizeof "1.25s");
++	  free (sp);
++	}
++
++      if (freopen (fname, "r", stdin) == NULL)
++	FAIL ();
++      else
++	{
++	  if (scanf ("%as%2c", &sp, c) != 2)
++	    FAIL ();
++	  else
++	    {
++	      if (strcmp (sp, "1.25s") != 0 || memcmp (c, " x", 2) != 0)
++		FAIL ();
++	      memset (sp, 'x', sizeof "1.25s");
++	      free (sp);
++	    }
++	}
++
++      fclose (fp);
++    }
++
++  remove (fname);
++
+   return result;
+ }
+diff --git a/stdio-common/scanf15.c b/stdio-common/scanf15.c
+index cc8aa2e..c56715c 100644
+--- a/stdio-common/scanf15.c
++++ b/stdio-common/scanf15.c
+@@ -50,5 +50,48 @@ main (void)
+   else if (d != 5.25 || memcmp (c, " x", 2) != 0)
+     FAIL ();
+ 
++  const char *tmpdir = getenv ("TMPDIR");
++  if (tmpdir == NULL || tmpdir[0] == '\0')
++    tmpdir = "/tmp";
++
++  char fname[strlen (tmpdir) + sizeof "/tst-scanf15.XXXXXX"];
++  sprintf (fname, "%s/tst-scanf15.XXXXXX", tmpdir);
++  if (fname == NULL)
++    FAIL ();
++
++  /* Create a temporary file.   */
++  int fd = mkstemp (fname);
++  if (fd == -1)
++    FAIL ();
++
++  FILE *fp = fdopen (fd, "w+");
++  if (fp == NULL)
++    FAIL ();
++  else
++    {
++      if (fputs (" 1.25s x", fp) == EOF)
++	FAIL ();
++      if (fseek (fp, 0, SEEK_SET) != 0)
++	FAIL ();
++      if (fscanf (fp, "%as%2c", &f, c) != 2)
++	FAIL ();
++      else if (f != 1.25 || memcmp (c, " x", 2) != 0)
++	FAIL ();
++
++      if (freopen (fname, "r", stdin) == NULL)
++	FAIL ();
++      else
++	{
++	  if (scanf ("%as%2c", &f, c) != 2)
++	    FAIL ();
++	  else if (f != 1.25 || memcmp (c, " x", 2) != 0)
++	    FAIL ();
++	}
++
++      fclose (fp);
++    }
++
++  remove (fname);
++
+   return result;
+ }
+diff --git a/stdio-common/scanf16.c b/stdio-common/scanf16.c
+new file mode 100644
+index 0000000..3e3cb41
+--- /dev/null
++++ b/stdio-common/scanf16.c
+@@ -0,0 +1,147 @@
++#include <stdarg.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <wchar.h>
++
++#define FAIL() \
++  do {							\
++    result = 1;						\
++    printf ("test at line %d failed\n", __LINE__);	\
++  } while (0)
++
++static int
++xsscanf (const char *str, const char *fmt, ...)
++{
++  va_list ap;
++  va_start (ap, fmt);
++  int ret = vsscanf (str, fmt, ap);
++  va_end (ap);
++  return ret;
++}
++
++static int
++xscanf (const char *fmt, ...)
++{
++  va_list ap;
++  va_start (ap, fmt);
++  int ret = vscanf (fmt, ap);
++  va_end (ap);
++  return ret;
++}
++
++static int
++xfscanf (FILE *f, const char *fmt, ...)
++{
++  va_list ap;
++  va_start (ap, fmt);
++  int ret = vfscanf (f, fmt, ap);
++  va_end (ap);
++  return ret;
++}
++
++int
++main (void)
++{
++  wchar_t *lsp;
++  char *sp;
++  float f;
++  double d;
++  char c[8];
++  int result = 0;
++
++  if (xsscanf (" 0.25s x", "%e%3c", &f, c) != 2)
++    FAIL ();
++  else if (f != 0.25 || memcmp (c, "s x", 3) != 0)
++    FAIL ();
++  if (xsscanf (" 1.25s x", "%as%2c", &sp, c) != 2)
++    FAIL ();
++  else
++    {
++      if (strcmp (sp, "1.25s") != 0 || memcmp (c, " x", 2) != 0)
++	FAIL ();
++      memset (sp, 'x', sizeof "1.25s");
++      free (sp);
++    }
++  if (xsscanf (" 2.25s x", "%las%2c", &d, c) != 2)
++    FAIL ();
++  else if (d != 2.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++  if (xsscanf (" 3.25S x", "%4aS%3c", &lsp, c) != 2)
++    FAIL ();
++  else
++    {
++      if (wcscmp (lsp, L"3.25") != 0 || memcmp (c, "S x", 3) != 0)
++	FAIL ();
++      memset (lsp, 'x', sizeof L"3.25");
++      free (lsp);
++    }
++  if (xsscanf ("4.25[0-9.] x", "%a[0-9.]%8c", &sp, c) != 2)
++    FAIL ();
++  else
++    {
++      if (strcmp (sp, "4.25") != 0 || memcmp (c, "[0-9.] x", 8) != 0)
++	FAIL ();
++      memset (sp, 'x', sizeof "4.25");
++      free (sp);
++    }
++  if (xsscanf ("5.25[0-9.] x", "%la[0-9.]%2c", &d, c) != 2)
++    FAIL ();
++  else if (d != 5.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++
++  const char *tmpdir = getenv ("TMPDIR");
++  if (tmpdir == NULL || tmpdir[0] == '\0')
++    tmpdir = "/tmp";
++
++  char fname[strlen (tmpdir) + sizeof "/tst-scanf16.XXXXXX"];
++  sprintf (fname, "%s/tst-scanf16.XXXXXX", tmpdir);
++  if (fname == NULL)
++    FAIL ();
++
++  /* Create a temporary file.   */
++  int fd = mkstemp (fname);
++  if (fd == -1)
++    FAIL ();
++
++  FILE *fp = fdopen (fd, "w+");
++  if (fp == NULL)
++    FAIL ();
++  else
++    {
++      if (fputs (" 1.25s x", fp) == EOF)
++	FAIL ();
++      if (fseek (fp, 0, SEEK_SET) != 0)
++	FAIL ();
++      if (xfscanf (fp, "%as%2c", &sp, c) != 2)
++	FAIL ();
++      else
++	{
++	  if (strcmp (sp, "1.25s") != 0 || memcmp (c, " x", 2) != 0)
++	    FAIL ();
++	  memset (sp, 'x', sizeof "1.25s");
++	  free (sp);
++	}
++
++      if (freopen (fname, "r", stdin) == NULL)
++	FAIL ();
++      else
++	{
++	  if (xscanf ("%as%2c", &sp, c) != 2)
++	    FAIL ();
++	  else
++	    {
++	      if (strcmp (sp, "1.25s") != 0 || memcmp (c, " x", 2) != 0)
++		FAIL ();
++	      memset (sp, 'x', sizeof "1.25s");
++	      free (sp);
++	    }
++	}
++
++      fclose (fp);
++    }
++
++  remove (fname);
++
++  return result;
++}
+diff --git a/stdio-common/scanf17.c b/stdio-common/scanf17.c
+new file mode 100644
+index 0000000..ee9024f
+--- /dev/null
++++ b/stdio-common/scanf17.c
+@@ -0,0 +1,128 @@
++#undef _GNU_SOURCE
++#define _XOPEN_SOURCE 600
++/* The following macro definitions are a hack.  They word around disabling
++   the GNU extension while still using a few internal headers.  */
++#define u_char unsigned char
++#define u_short unsigned short
++#define u_int unsigned int
++#define u_long unsigned long
++#include <stdarg.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <wchar.h>
++
++#define FAIL() \
++  do {							\
++    result = 1;						\
++    printf ("test at line %d failed\n", __LINE__);	\
++  } while (0)
++
++static int
++xsscanf (const char *str, const char *fmt, ...)
++{
++  va_list ap;
++  va_start (ap, fmt);
++  int ret = vsscanf (str, fmt, ap);
++  va_end (ap);
++  return ret;
++}
++
++static int
++xscanf (const char *fmt, ...)
++{
++  va_list ap;
++  va_start (ap, fmt);
++  int ret = vscanf (fmt, ap);
++  va_end (ap);
++  return ret;
++}
++
++static int
++xfscanf (FILE *f, const char *fmt, ...)
++{
++  va_list ap;
++  va_start (ap, fmt);
++  int ret = vfscanf (f, fmt, ap);
++  va_end (ap);
++  return ret;
++}
++
++int
++main (void)
++{
++  float f;
++  double d;
++  char c[8];
++  int result = 0;
++
++  if (xsscanf (" 0.25s x", "%e%3c", &f, c) != 2)
++    FAIL ();
++  else if (f != 0.25 || memcmp (c, "s x", 3) != 0)
++    FAIL ();
++  if (xsscanf (" 1.25s x", "%as%2c", &f, c) != 2)
++    FAIL ();
++  else if (f != 1.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++  if (xsscanf (" 2.25s x", "%las%2c", &d, c) != 2)
++    FAIL ();
++  else if (d != 2.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++  if (xsscanf (" 3.25S x", "%4aS%2c", &f, c) != 2)
++    FAIL ();
++  else if (f != 3.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++  if (xsscanf (" 4.25[0-9.] x", "%a[0-9.]%2c", &f, c) != 2)
++    FAIL ();
++  else if (f != 4.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++  if (xsscanf (" 5.25[0-9.] x", "%la[0-9.]%2c", &d, c) != 2)
++    FAIL ();
++  else if (d != 5.25 || memcmp (c, " x", 2) != 0)
++    FAIL ();
++
++  const char *tmpdir = getenv ("TMPDIR");
++  if (tmpdir == NULL || tmpdir[0] == '\0')
++    tmpdir = "/tmp";
++
++  char fname[strlen (tmpdir) + sizeof "/tst-scanf17.XXXXXX"];
++  sprintf (fname, "%s/tst-scanf17.XXXXXX", tmpdir);
++  if (fname == NULL)
++    FAIL ();
++
++  /* Create a temporary file.   */
++  int fd = mkstemp (fname);
++  if (fd == -1)
++    FAIL ();
++
++  FILE *fp = fdopen (fd, "w+");
++  if (fp == NULL)
++    FAIL ();
++  else
++    {
++      if (fputs (" 1.25s x", fp) == EOF)
++	FAIL ();
++      if (fseek (fp, 0, SEEK_SET) != 0)
++	FAIL ();
++      if (xfscanf (fp, "%as%2c", &f, c) != 2)
++	FAIL ();
++      else if (f != 1.25 || memcmp (c, " x", 2) != 0)
++	FAIL ();
++
++      if (freopen (fname, "r", stdin) == NULL)
++	FAIL ();
++      else
++	{
++	  if (xscanf ("%as%2c", &f, c) != 2)
++	    FAIL ();
++	  else if (f != 1.25 || memcmp (c, " x", 2) != 0)
++	    FAIL ();
++	}
++
++      fclose (fp);
++    }
++
++  remove (fname);
++
++  return result;
++}
+-- 
+1.6.0.4
+
