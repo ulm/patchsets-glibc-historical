@@ -1,0 +1,28 @@
+From 233937c45996ee8969de5b0dfc285045f921cc7c Mon Sep 17 00:00:00 2001
+From: Jakub Jelinek <jakub@redhat.com>
+Date: Tue, 3 Jun 2008 10:22:51 +0000
+Subject: [PATCH] 	* nscd/nscd_getserv_r.c (__nscd_getservbyport_r): Pass cp
+ 	instead of portstr to nscd_getserv_r.  Patch by
+ 	Roman Kagan <rkagan@mail.ru>.
+
+---
+ ChangeLog             |    6 ++++++
+ nscd/nscd_getserv_r.c |    2 +-
+ 2 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/nscd/nscd_getserv_r.c b/nscd/nscd_getserv_r.c
+index 3cd5a24..b1ad7e2 100644
+--- a/nscd/nscd_getserv_r.c
++++ b/nscd/nscd_getserv_r.c
+@@ -53,7 +53,7 @@ __nscd_getservbyport_r (int port, const char *proto,
+   portstr[sizeof (portstr) - 1] = '\0';
+   char *cp = _itoa_word (port, portstr + sizeof (portstr) - 1, 10, 0);
+ 
+-  return nscd_getserv_r (portstr, portstr + sizeof (portstr) - cp, proto,
++  return nscd_getserv_r (cp, portstr + sizeof (portstr) - cp, proto,
+ 			 GETSERVBYPORT, result_buf, buf, buflen, result);
+ }
+ 
+-- 
+1.6.0.4
+

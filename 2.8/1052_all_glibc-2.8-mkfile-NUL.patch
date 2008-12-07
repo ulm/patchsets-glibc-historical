@@ -1,0 +1,30 @@
+From 62e5cc185ab4de84ff35ab6845b1310b8bc23aef Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Mon, 3 Nov 2008 07:47:39 +0000
+Subject: [PATCH] (mkfile_output): Properly handle filename without dot.  Properly terminate
+ the string with a null byte.
+
+---
+ sunrpc/rpc_main.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/sunrpc/rpc_main.c b/sunrpc/rpc_main.c
+index bda432d..a3d227e 100644
+--- a/sunrpc/rpc_main.c
++++ b/sunrpc/rpc_main.c
+@@ -995,7 +995,11 @@ mkfile_output (struct commandline *cmd)
+ 	abort ();
+       temp = rindex (cmd->infile, '.');
+       cp = stpcpy (mkfilename, "Makefile.");
+-      strncpy (cp, cmd->infile, (temp - cmd->infile));
++      if (temp != NULL)
++	*((char *) stpncpy (cp, cmd->infile, temp - cmd->infile)) = '\0';
++      else
++	stpcpy (cp, cmd->infile);
++
+     }
+   else
+     mkfilename = (char *) cmd->outfile;
+-- 
+1.6.0.4
+

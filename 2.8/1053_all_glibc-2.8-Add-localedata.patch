@@ -1,0 +1,19 @@
+From c8e05b927f405ca9b30148d3e2c70b9c81bb3156 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Wed, 21 May 2008 22:45:28 +0000
+Subject: [PATCH] Add localedata.
+
+---
+ iconvdata/Depend |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/iconvdata/Depend b/iconvdata/Depend
+index 401deb5..38c28d0 100644
+--- a/iconvdata/Depend
++++ b/iconvdata/Depend
+@@ -1 +1,2 @@
+ iconv
++localedata
+-- 
+1.6.0.4
+

@@ -1,0 +1,26 @@
+From bbb9ad2da37f33fa787d13c1278e120add7ea026 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Thu, 15 May 2008 01:54:31 +0000
+Subject: [PATCH] (bug-iconv6-ENV, tst-iconv7-ENV): Define.
+
+---
+ iconvdata/Makefile |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/iconvdata/Makefile b/iconvdata/Makefile
+index 1a46a64..e93de56 100644
+--- a/iconvdata/Makefile
++++ b/iconvdata/Makefile
+@@ -73,6 +73,9 @@ tests += bug-iconv3
+ endif
+ 
+ test-srcs := tst-table-from tst-table-to
++
++bug-iconv6-ENV = LOCPATH=$(common-objpfx)localedata
++tst-iconv7-ENV = LOCPATH=$(common-objpfx)localedata
+ endif
+ 
+ # No code here is in libc.so.
+-- 
+1.6.0.4
+

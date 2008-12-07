@@ -1,0 +1,38 @@
+From 487c714075fa3d4bec062be276a1c4e9fb52029b Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Thu, 15 May 2008 03:07:35 +0000
+Subject: [PATCH] (create_cd_newstate): Don't look at create_cd_newstate.
+
+---
+ posix/regex_internal.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
+
+diff --git a/posix/regex_internal.c b/posix/regex_internal.c
+index 66154e0..01a432e 100644
+--- a/posix/regex_internal.c
++++ b/posix/regex_internal.c
+@@ -1665,11 +1665,9 @@ create_cd_newstate (const re_dfa_t *dfa, const re_node_set *nodes,
+ 
+   for (i = 0 ; i < nodes->nelem ; i++)
+     {
+-      unsigned int constraint = 0;
+       re_token_t *node = dfa->nodes + nodes->elems[i];
+       re_token_type_t type = node->type;
+-      if (node->constraint)
+-	constraint = node->constraint;
++      unsigned int constraint = node->constraint;
+ 
+       if (type == CHARACTER && !constraint)
+ 	continue;
+@@ -1682,8 +1680,6 @@ create_cd_newstate (const re_dfa_t *dfa, const re_node_set *nodes,
+ 	newstate->halt = 1;
+       else if (type == OP_BACK_REF)
+ 	newstate->has_backref = 1;
+-      else if (type == ANCHOR)
+-	constraint = node->opr.ctx_type;
+ 
+       if (constraint)
+ 	{
+-- 
+1.6.0.4
+
