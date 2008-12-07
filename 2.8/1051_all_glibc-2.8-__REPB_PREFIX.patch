@@ -1,0 +1,61 @@
+http://bugs.gentoo.org/237179
+
+From 4965fa9ac2d758b65498c9d04b2f4b3bd5ccb71c Mon Sep 17 00:00:00 2001
+From: Jakub Jelinek <jakub@redhat.com>
+Date: Fri, 6 Jun 2008 19:23:39 +0000
+Subject: [PATCH] 	* misc/regexp.h (compile): Use __REPB_PREFIX macro.
+ 	Avoid segfault if first GETC returns eof/'\0'/'\n'.
+
+---
+ ChangeLog     |    5 +++++
+ misc/regexp.h |   16 +++++++++++-----
+ 2 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/misc/regexp.h b/misc/regexp.h
+index b7b50b7..0e979d2 100644
+--- a/misc/regexp.h
++++ b/misc/regexp.h
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 1996, 1997, 1998, 1999, 2004 Free Software Foundation, Inc.
++/* Copyright (C) 1996, 1997, 1998, 1999, 2004, 2008
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Ulrich Drepper <drepper@cygnus.com>, 1996.
+ 
+@@ -129,8 +130,9 @@ compile (char *__restrict instring, char *__restrict expbuf,
+   __expr_ptr = (regex_t *) expbuf;
+   /* The remaining space in the buffer can be used for the compiled
+      pattern.  */
+-  __expr_ptr->buffer = expbuf + sizeof (regex_t);
+-  __expr_ptr->allocated = endbuf -  (char *) __expr_ptr->buffer;
++  __expr_ptr->__REPB_PREFIX (buffer) = expbuf + sizeof (regex_t);
++  __expr_ptr->__REPB_PREFIX (allocated)
++    = endbuf - (char *) __expr_ptr->__REPB_PREFIX (buffer);
+ 
+   while ((__ch = (GETC ())) != eof)
+     {
+@@ -162,7 +164,10 @@ compile (char *__restrict instring, char *__restrict expbuf,
+ 	}
+       __input_buffer[__current_size++] = __ch;
+     }
+-  __input_buffer[__current_size++] = '\0';
++  if (__current_size)
++    __input_buffer[__current_size++] = '\0';
++  else
++    __input_buffer = "";
+ 
+   /* Now compile the pattern.  */
+   __error = regcomp (__expr_ptr, __input_buffer, REG_NEWLINE);
+@@ -198,7 +203,8 @@ compile (char *__restrict instring, char *__restrict expbuf,
+       }
+ 
+   /* Everything is ok.  */
+-  RETURN ((char *) (__expr_ptr->buffer + __expr_ptr->used));
++  RETURN ((char *) (__expr_ptr->__REPB_PREFIX (buffer)
++		    + __expr_ptr->__REPB_PREFIX (used)));
+ }
+ #endif
+ 
+-- 
+1.6.0.4
+
