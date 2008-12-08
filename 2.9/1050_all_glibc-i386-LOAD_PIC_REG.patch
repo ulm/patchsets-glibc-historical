@@ -1,0 +1,26 @@
+From e41177ea18a77a7f62328293b4fd49ae17482e77 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Sat, 6 Dec 2008 00:15:17 +0000
+Subject: [PATCH] (_dl_tlsdesc_dynamic): Use LOAD_PIC_REG instead of doing things manually.
+
+---
+ sysdeps/i386/dl-tlsdesc.S |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/sysdeps/i386/dl-tlsdesc.S b/sysdeps/i386/dl-tlsdesc.S
+index db5005d..4d17e59 100644
+--- a/sysdeps/i386/dl-tlsdesc.S
++++ b/sysdeps/i386/dl-tlsdesc.S
+@@ -128,8 +128,7 @@ _dl_tlsdesc_dynamic:
+ .Lslow:
+ 	cfi_adjust_cfa_offset (28)
+ 	movl	%ebx, 16(%esp)
+-	call	__i686.get_pc_thunk.bx
+-	addl	$_GLOBAL_OFFSET_TABLE_, %ebx
++	LOAD_PIC_REG (bx)
+ 	call	___tls_get_addr@PLT
+ 	movl	16(%esp), %ebx
+ 	jmp	.Lret
+-- 
+1.6.0.4
+
