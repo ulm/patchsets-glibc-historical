@@ -1,3 +1,6 @@
+5		24.12.2008
+	+ 6700_s390_glibc-2.8-utmp-compat.patch
+
 4		07.12.2008
 	+ 1050_all_glibc-2.8-stdio-redirect.patch
 	+ 1051_all_glibc-2.8-__REPB_PREFIX.patch

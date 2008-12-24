@@ -1,0 +1,1583 @@
+http://www.ibm.com/developerworks/linux/linux390/toolchain.html#glibc28
+
+Index: Versions.def
+===================================================================
+*** Versions.def.orig	2008-07-21 08:57:13.000000000 +0200
+--- Versions.def	2008-07-21 09:43:55.000000000 +0200
+*************** libc {
+*** 25,30 ****
+--- 25,31 ----
+    GLIBC_2.6
+    GLIBC_2.7
+    GLIBC_2.8
++   GLIBC_2.9
+  %ifdef USE_IN_LIBIO
+    HURD_CTHREADS_0.3
+  %endif
+*************** librt {
+*** 105,110 ****
+--- 106,112 ----
+  }
+  libutil {
+    GLIBC_2.0
++   GLIBC_2.9
+  }
+  ld {
+    GLIBC_2.0
+Index: sysdeps/unix/sysv/linux/s390/bits/utmp.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/bits/utmp.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,125 ----
++ /* The `struct utmp' type, describing entries in the utmp file.  GNU version.
++    Copyright (C) 1993, 1996, 1997, 1998, 1999, 2002, 2008
++    Free Software Foundation, Inc.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #ifndef _UTMP_H
++ # error "Never include <bits/utmp.h> directly; use <utmp.h> instead."
++ #endif
++ 
++ #include <paths.h>
++ #include <sys/time.h>
++ #include <sys/types.h>
++ #include <bits/wordsize.h>
++ 
++ 
++ #define UT_LINESIZE	32
++ #define UT_NAMESIZE	32
++ #define UT_HOSTSIZE	256
++ 
++ 
++ /* The structure describing an entry in the database of
++    previous logins.  */
++ struct lastlog
++   {
++ #if __WORDSIZE == 32
++     int64_t ll_time;
++ #else
++     __time_t ll_time;
++ #endif
++     char ll_line[UT_LINESIZE];
++     char ll_host[UT_HOSTSIZE];
++   };
++ 
++ 
++ /* The structure describing the status of a terminated process.  This
++    type is used in `struct utmp' below.  */
++ struct exit_status
++   {
++     short int e_termination;	/* Process termination status.  */
++     short int e_exit;		/* Process exit status.  */
++   };
++ 
++ 
++ /* The structure describing an entry in the user accounting database.  */
++ struct utmp
++ {
++   short int ut_type;		/* Type of login.  */
++   pid_t ut_pid;			/* Process ID of login process.  */
++   char ut_line[UT_LINESIZE];	/* Devicename.  */
++   char ut_id[4];		/* Inittab ID.  */
++   char ut_user[UT_NAMESIZE];	/* Username.  */
++   char ut_host[UT_HOSTSIZE];	/* Hostname for remote login.  */
++   struct exit_status ut_exit;	/* Exit status of a process marked
++ 				   as DEAD_PROCESS.  */
++ /* The ut_session and ut_tv fields must be the same size when compiled
++    32- and 64-bit.  This allows data files and shared memory to be
++    shared between 32- and 64-bit applications.  */
++ #if __WORDSIZE == 32
++   int64_t ut_session;		/* Session ID, used for windowing.  */
++   struct
++   {
++     int64_t tv_sec;		/* Seconds.  */
++     int64_t tv_usec;		/* Microseconds.  */
++   } ut_tv;			/* Time entry was made.  */
++ #else
++   long int ut_session;		/* Session ID, used for windowing.  */
++   struct timeval ut_tv;		/* Time entry was made.  */
++ #endif
++ 
++   int32_t ut_addr_v6[4];	/* Internet address of remote host.  */
++   char __unused[20];		/* Reserved for future use.  */
++ };
++ 
++ /* Backwards compatibility hacks.  */
++ #define ut_name		ut_user
++ #ifndef _NO_UT_TIME
++ /* We have a problem here: `ut_time' is also used otherwise.  Define
++    _NO_UT_TIME if the compiler complains.  */
++ # define ut_time	ut_tv.tv_sec
++ #endif
++ #define ut_xtime	ut_tv.tv_sec
++ #define ut_addr		ut_addr_v6[0]
++ 
++ 
++ /* Values for the `ut_type' field of a `struct utmp'.  */
++ #define EMPTY		0	/* No valid user accounting information.  */
++ 
++ #define RUN_LVL		1	/* The system's runlevel.  */
++ #define BOOT_TIME	2	/* Time of system boot.  */
++ #define NEW_TIME	3	/* Time after system clock changed.  */
++ #define OLD_TIME	4	/* Time when system clock changed.  */
++ 
++ #define INIT_PROCESS	5	/* Process spawned by the init process.  */
++ #define LOGIN_PROCESS	6	/* Session leader of a logged in user.  */
++ #define USER_PROCESS	7	/* Normal process.  */
++ #define DEAD_PROCESS	8	/* Terminated process.  */
++ 
++ #define ACCOUNTING	9
++ 
++ /* Old Linux name for the EMPTY type.  */
++ #define UT_UNKNOWN	EMPTY
++ 
++ 
++ /* Tell the user that we have a modern system with UT_HOST, UT_PID,
++    UT_TYPE, UT_ID and UT_TV fields.  */
++ #define _HAVE_UT_TYPE	1
++ #define _HAVE_UT_PID	1
++ #define _HAVE_UT_ID	1
++ #define _HAVE_UT_TV	1
++ #define _HAVE_UT_HOST	1
+Index: sysdeps/unix/sysv/linux/s390/bits/utmpx.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/bits/utmpx.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,104 ----
++ /* Structures and definitions for the user accounting database.  GNU version.
++    Copyright (C) 1997, 1998, 2000, 2001, 2002, 2008
++    Free Software Foundation, Inc.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #ifndef _UTMPX_H
++ # error "Never include <bits/utmpx.h> directly; use <utmpx.h> instead."
++ #endif
++ 
++ #include <bits/types.h>
++ #include <sys/time.h>
++ #include <bits/wordsize.h>
++ 
++ 
++ #ifdef __USE_GNU
++ # include <paths.h>
++ # define _PATH_UTMPX	_PATH_UTMP
++ # define _PATH_WTMPX	_PATH_WTMP
++ #endif
++ 
++ 
++ #define __UT_LINESIZE	32
++ #define __UT_NAMESIZE	32
++ #define __UT_HOSTSIZE	256
++ 
++ 
++ /* The structure describing the status of a terminated process.  This
++    type is used in `struct utmpx' below.  */
++ struct __exit_status
++   {
++ #ifdef __USE_GNU
++     short int e_termination;	/* Process termination status.  */
++     short int e_exit;		/* Process exit status.  */
++ #else
++     short int __e_termination;	/* Process termination status.  */
++     short int __e_exit;		/* Process exit status.  */
++ #endif
++   };
++ 
++ 
++ /* The structure describing an entry in the user accounting database.  */
++ struct utmpx
++ {
++   short int ut_type;		/* Type of login.  */
++   __pid_t ut_pid;		/* Process ID of login process.  */
++   char ut_line[__UT_LINESIZE];	/* Devicename.  */
++   char ut_id[4];		/* Inittab ID. */
++   char ut_user[__UT_NAMESIZE];	/* Username.  */
++   char ut_host[__UT_HOSTSIZE];	/* Hostname for remote login.  */
++   struct __exit_status ut_exit;	/* Exit status of a process marked
++ 				   as DEAD_PROCESS.  */
++ 
++ /* The fields ut_session and ut_tv must be the same size when compiled
++    32- and 64-bit.  This allows files and shared memory to be shared
++    between 32- and 64-bit applications.  */
++ #if __WORDSIZE == 32
++   __int64_t ut_session;		/* Session ID, used for windowing.  */
++   struct
++   {
++     __int64_t tv_sec;		/* Seconds.  */
++     __int64_t tv_usec;		/* Microseconds.  */
++   } ut_tv;			/* Time entry was made.  */
++ #else
++   long int ut_session;		/* Session ID, used for windowing.  */
++   struct timeval ut_tv;		/* Time entry was made.  */
++ #endif
++   __int32_t ut_addr_v6[4];	/* Internet address of remote host.  */
++   char __unused[20];		/* Reserved for future use.  */
++ };
++ 
++ 
++ /* Values for the `ut_type' field of a `struct utmpx'.  */
++ #define EMPTY		0	/* No valid user accounting information.  */
++ 
++ #ifdef __USE_GNU
++ # define RUN_LVL	1	/* The system's runlevel.  */
++ #endif
++ #define BOOT_TIME	2	/* Time of system boot.  */
++ #define NEW_TIME	3	/* Time after system clock changed.  */
++ #define OLD_TIME	4	/* Time when system clock changed.  */
++ 
++ #define INIT_PROCESS	5	/* Process spawned by the init process.  */
++ #define LOGIN_PROCESS	6	/* Session leader of a logged in user.  */
++ #define USER_PROCESS	7	/* Normal process.  */
++ #define DEAD_PROCESS	8	/* Terminated process.  */
++ 
++ #ifdef __USE_GNU
++ # define ACCOUNTING	9	/* System accounting.  */
++ #endif
+Index: sysdeps/unix/sysv/linux/s390/s390-32/Makefile
+===================================================================
+*** sysdeps/unix/sysv/linux/s390/s390-32/Makefile.orig	2008-07-21 08:57:13.000000000 +0200
+--- sysdeps/unix/sysv/linux/s390/s390-32/Makefile	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 1,3 ****
+--- 1,8 ----
++ ifeq ($(subdir),login)
++ sysdep_routines += utmp32 utmpx32
++ libutil-routines += login32
++ endif
++ 
+  ifeq ($(subdir),misc)
+  sysdep_headers += sys/elf.h
+  endif
+Index: sysdeps/unix/sysv/linux/s390/s390-32/Versions
+===================================================================
+*** sysdeps/unix/sysv/linux/s390/s390-32/Versions.orig	2008-07-21 08:57:13.000000000 +0200
+--- sysdeps/unix/sysv/linux/s390/s390-32/Versions	2008-07-21 09:43:55.000000000 +0200
+*************** libc {
+*** 26,29 ****
+--- 26,52 ----
+    GLIBC_2.3.3 {
+      posix_fadvise64; posix_fallocate64;
+    }
++   GLIBC_2.9 {
++     getutent;
++     getutid;
++     getutline;
++     pututline;
++     updwtmp;
++     getutent_r;
++     getutid_r;
++     getutline_r;
++     getutxent;
++     getutxid;
++     getutxline;
++     pututxline;
++     updwtmpx;
++     getutmp;
++     getutmpx;
++   }
++ }
++ 
++ libutil {
++   GLIBC_2.9 {
++     login;
++   }
+  }
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutent.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutent.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,29 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <stdlib.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "login/getutent.c"
++ 
++ default_symbol_version (__getutent, getutent, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutent_r.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutent_r.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,35 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <bits/libc-lock.h>
++ #include <stdlib.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ #include "utmp-private.h"
++ 
++ weak_alias (__setutent, setutent)
++ weak_alias (__endutent, endutent)
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "login/getutent_r.c"
++ 
++ default_symbol_version (__getutent_r, getutent_r, UTMP_COMPAT_BASE);
++ default_symbol_version (__pututline, pututline, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutid.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutid.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,29 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <stdlib.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "login/getutid.c"
++ 
++ default_symbol_version (__getutid, getutid, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutid_r.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutid_r.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,32 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <bits/libc-lock.h>
++ #include <errno.h>
++ #include <stdlib.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ #include "utmp-private.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "login/getutid_r.c"
++ 
++ default_symbol_version (__getutid_r, getutid_r, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutline.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutline.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,29 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <stdlib.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "login/getutline.c"
++ 
++ default_symbol_version (__getutline, getutline, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutline_r.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutline_r.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,31 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <errno.h>
++ #include <bits/libc-lock.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ #include "utmp-private.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "login/getutline_r.c"
++ 
++ default_symbol_version (__getutline_r, getutline_r, UTMP_COMPAT_BASE);;
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutmp.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutmp.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,38 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <string.h>
++ #include <utmp.h>
++ /* This is an ugly hack but we must not see the getutmpx declaration.  */
++ #define getutmpx XXXgetutmpx
++ #include <utmpx.h>
++ #undef getutmpx
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define getutmp __getutmp
++ #define getutmpx __getutmpx
++ #include "sysdeps/gnu/getutmp.c"
++ #undef getutmp
++ #undef getutmpx
++ 
++ default_symbol_version (__getutmp, getutmp, UTMP_COMPAT_BASE);
++ default_symbol_version (__getutmpx, getutmpx, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutxent.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutxent.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,31 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <utmp.h>
++ #include <utmpx.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define getutxent __getutxent
++ #include "login/getutxent.c"
++ #undef getutxent
++ 
++ default_symbol_version (__getutxent, getutxent, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutxid.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutxid.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,31 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <utmp.h>
++ #include <utmpx.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define getutxid __getutxid
++ #include "login/getutxid.c"
++ #undef getutxid
++ 
++ default_symbol_version (__getutxid, getutxid, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/getutxline.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/getutxline.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,31 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <utmp.h>
++ #include <utmpx.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define getutxline __getutxline
++ #include "login/getutxline.c"
++ #undef getutxline
++ 
++ default_symbol_version (__getutxline, getutxline, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/login.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/login.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,36 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <assert.h>
++ #include <errno.h>
++ #include <limits.h>
++ #include <string.h>
++ #include <unistd.h>
++ #include <stdlib.h>
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define login __login
++ #include "login/login.c"
++ #undef login
++ 
++ default_symbol_version (__login, login, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/login32.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/login32.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,37 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <sys/types.h>
++ #include <utmp.h>
++ #include <libc-symbols.h>
++ 
++ #include "utmp32.h"
++ #include "utmp-convert.h"
++ 
++ /* Write the given entry into utmp and wtmp.  */
++ void
++ login32 (const struct utmp32 *entry)
++ {
++   struct utmp in64;
++ 
++   utmp_convert32to64 (entry, &in64);
++   login (&in64);
++ }
++ 
++ symbol_version (login32, login, GLIBC_2.0);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/pututxline.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/pututxline.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,31 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <utmp.h>
++ #include <utmpx.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define pututxline __pututxline
++ #include "login/pututxline.c"
++ #undef pututxline
++ 
++ default_symbol_version (__pututxline, pututxline, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/updwtmp.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/updwtmp.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,29 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <utmp.h>
++ 
++ #include "utmp-compat.h"
++ #include "utmp-private.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #include "sysdeps/gnu/updwtmp.c"
++ 
++ default_symbol_version (__updwtmp, updwtmp, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/updwtmpx.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/updwtmpx.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,31 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <utmp.h>
++ #include <utmpx.h>
++ 
++ #include "utmp-compat.h"
++ 
++ #undef weak_alias
++ #define weak_alias(n,a)
++ #define updwtmpx __updwtmpx
++ #include "login/updwtmpx.c"
++ #undef updwtmpx
++ 
++ default_symbol_version (__updwtmpx, updwtmpx, UTMP_COMPAT_BASE);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmp-convert.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmp-convert.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,87 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ 
++ /* This file provides functions converting between the 32 and 64 bit
++    struct utmp variants.  */
++ 
++ #ifndef _UTMP_CONVERT_H
++ #define _UTMP_CONVERT_H 1
++ 
++ #include <string.h>
++ 
++ #include "utmp32.h"
++ 
++ /* Convert the 64 bit struct utmp value in FROM to the 32 bit version
++    returned in TO.  */
++ static inline void
++ utmp_convert64to32 (const struct utmp *from, struct utmp32 *to)
++ {
++ #if _HAVE_UT_TYPE - 0
++   to->ut_type = from->ut_type;
++ #endif
++ #if _HAVE_UT_PID - 0
++   to->ut_pid = from->ut_pid;
++ #endif
++   memcpy (to->ut_line, from->ut_line, UT_LINESIZE);
++   memcpy (to->ut_user, from->ut_user, UT_NAMESIZE);
++ #if _HAVE_UT_ID - 0
++   memcpy (to->ut_id, from->ut_id, 4);
++ #endif
++ #if _HAVE_UT_HOST - 0
++   memcpy (to->ut_host, from->ut_host, UT_HOSTSIZE);
++ #endif
++   to->ut_exit = from->ut_exit;
++   to->ut_session = (int32_t) from->ut_session;
++ #if _HAVE_UT_TV - 0
++   to->ut_tv.tv_sec = (int32_t) from->ut_tv.tv_sec;
++   to->ut_tv.tv_usec = (int32_t) from->ut_tv.tv_usec;
++ #endif
++   memcpy (to->ut_addr_v6, from->ut_addr_v6, 4 * 4);
++ }
++ 
++ /* Convert the 32 bit struct utmp value in FROM to the 64 bit version
++    returned in TO.  */
++ static inline void
++ utmp_convert32to64 (const struct utmp32 *from, struct utmp *to)
++ {
++ #if _HAVE_UT_TYPE - 0
++   to->ut_type = from->ut_type;
++ #endif
++ #if _HAVE_UT_PID - 0
++   to->ut_pid = from->ut_pid;
++ #endif
++   memcpy (to->ut_line, from->ut_line, UT_LINESIZE);
++   memcpy (to->ut_user, from->ut_user, UT_NAMESIZE);
++ #if _HAVE_UT_ID - 0
++   memcpy (to->ut_id, from->ut_id, 4);
++ #endif
++ #if _HAVE_UT_HOST - 0
++   memcpy (to->ut_host, from->ut_host, UT_HOSTSIZE);
++ #endif
++   to->ut_exit = from->ut_exit;
++   to->ut_session = (int64_t) from->ut_session;
++ #if _HAVE_UT_TV - 0
++   to->ut_tv.tv_sec = (int64_t) from->ut_tv.tv_sec;
++   to->ut_tv.tv_usec = (int64_t) from->ut_tv.tv_usec;
++ #endif
++   memcpy (to->ut_addr_v6, from->ut_addr_v6, 4 * 4);
++ }
++ 
++ #endif /* utmp-convert.h */
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmp32.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmp32.c	2008-07-21 09:45:24.000000000 +0200
+***************
+*** 0 ****
+--- 1,188 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <sys/types.h>
++ #include <utmp.h>
++ #include <errno.h>
++ #include <libc-symbols.h>
++ 
++ #include "utmp32.h"
++ #include "utmp-convert.h"
++ 
++ /* Allocate a static buffer to be returned to the caller.  As well as
++    with the existing version of these functions the caller has to be
++    aware that the contents of this buffer will change with subsequent
++    calls.  */
++ #define ALLOCATE_UTMP32_OUT(OUT)			\
++   static struct utmp32 *OUT = NULL;			\
++   							\
++   if (OUT == NULL)					\
++     {							\
++       OUT = malloc (sizeof (struct utmp32));		\
++       if (OUT == NULL)					\
++ 	{						\
++ 	  __set_errno (ENOMEM);				\
++ 	  return NULL;					\
++ 	}						\
++     }
++ 
++ /* Perform a lookup for a utmp entry matching FIELD using function
++    FUNC.  FIELD is converted to a 64 bit utmp and the result is
++    converted back to 32 bit utmp.  */
++ #define ACCESS_UTMP_ENTRY(FUNC, FIELD)			\
++   struct utmp in64;					\
++   struct utmp *out64;					\
++   ALLOCATE_UTMP32_OUT (out32);				\
++ 							\
++   utmp_convert32to64 (FIELD, &in64);			\
++   out64 = FUNC (&in64);					\
++ 							\
++   if (out64 == NULL)					\
++     return NULL;					\
++ 							\
++   utmp_convert64to32 (out64, out32);			\
++ 							\
++   return out32;
++ 
++ /* Search forward from the current point in the utmp file until the
++    next entry with a ut_type matching ID->ut_type.  */
++ struct utmp32 *
++ getutid32 (const struct utmp32 *id)
++ {
++   ACCESS_UTMP_ENTRY (getutid, id)
++ }
++ symbol_version (getutid32, getutid, GLIBC_2.0);
++ 
++ /* Search forward from the current point in the utmp file until the
++    next entry with a ut_line matching LINE->ut_line.  */
++ struct utmp32 *
++ getutline32 (const struct utmp32 *line)
++ {
++   ACCESS_UTMP_ENTRY (getutline, line)
++ }
++ symbol_version (getutline32, getutline, GLIBC_2.0);
++ 
++ /* Write out entry pointed to by UTMP_PTR into the utmp file.  */
++ struct utmp32 *
++ pututline32 (const struct utmp32 *utmp_ptr)
++ {
++   ACCESS_UTMP_ENTRY (pututline, utmp_ptr)
++ }
++ symbol_version (pututline32, pututline, GLIBC_2.0);
++ 
++ /* Read next entry from a utmp-like file.  */
++ struct utmp32 *
++ getutent32 (void)
++ {
++   struct utmp *out64;
++   ALLOCATE_UTMP32_OUT (out32);
++ 
++   out64 = getutent ();
++   if (!out64)
++     return NULL;
++ 
++   utmp_convert64to32 (out64, out32);
++   return out32;
++ }
++ symbol_version (getutent32, getutent, GLIBC_2.0);
++ 
++ /* Reentrant versions of the file for handling utmp files.  */
++ 
++ int
++ getutent_r32 (struct utmp32 *buffer, struct utmp32 **result)
++ {
++   struct utmp out64;
++   struct utmp *out64p;
++   int ret;
++ 
++   ret = getutent_r (&out64, &out64p);
++   if (ret == -1)
++     {
++       *result = NULL;
++       return -1;
++     }
++ 
++   utmp_convert64to32 (out64p, buffer);
++   *result = buffer;
++ 
++   return 0;
++ }
++ symbol_version (getutent_r32, getutent_r, GLIBC_2.0);
++ 
++ int
++ getutid_r32 (const struct utmp32 *id, struct utmp32 *buffer,
++ 	       struct utmp32 **result)
++ {
++   struct utmp in64;
++   struct utmp out64;
++   struct utmp *out64p;
++   int ret;
++ 
++   utmp_convert32to64 (id, &in64);
++ 
++   ret = getutid_r (&in64, &out64, &out64p);
++   if (ret == -1)
++     {
++       *result = NULL;
++       return -1;
++     }
++ 
++   utmp_convert64to32 (out64p, buffer);
++   *result = buffer;
++ 
++   return 0;
++ }
++ symbol_version (getutid_r32, getutid_r, GLIBC_2.0);
++ 
++ int
++ getutline_r32 (const struct utmp32 *line,
++ 		 struct utmp32 *buffer, struct utmp32 **result)
++ {
++   struct utmp in64;
++   struct utmp out64;
++   struct utmp *out64p;
++   int ret;
++ 
++   utmp_convert32to64 (line, &in64);
++ 
++   ret = getutline_r (&in64, &out64, &out64p);
++   if (ret == -1)
++     {
++       *result = NULL;
++       return -1;
++     }
++ 
++   utmp_convert64to32 (out64p, buffer);
++   *result = buffer;
++ 
++   return 0;
++ 
++ }
++ symbol_version (getutline_r32, getutline_r, GLIBC_2.0);
++ 
++ /* Append entry UTMP to the wtmp-like file WTMP_FILE.  */
++ void
++ updwtmp32 (const char *wtmp_file, const struct utmp32 *utmp)
++ {
++   struct utmp in32;
++ 
++   utmp_convert32to64 (utmp, &in32);
++   updwtmp (wtmp_file, &in32);
++ }
++ symbol_version (updwtmp32, updwtmp, GLIBC_2.0);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmp32.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmp32.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,53 ----
++ /* The `struct utmp' type, describing entries in the utmp file.  GNU version.
++    Copyright (C) 1993, 1996, 1997, 1998, 1999, 2002, 2008
++    Free Software Foundation, Inc.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #ifndef _UTMP32_H
++ #define _UTMP32_H 1
++ 
++ #include <paths.h>
++ #include <sys/time.h>
++ #include <sys/types.h>
++ #include <bits/wordsize.h>
++ #include <utmp.h>
++ 
++ /* The structure describing an entry in the user accounting database.  */
++ struct utmp32
++ {
++   short int ut_type;		/* Type of login.  */
++   pid_t ut_pid;			/* Process ID of login process.  */
++   char ut_line[UT_LINESIZE];	/* Devicename.  */
++   char ut_id[4];		/* Inittab ID.  */
++   char ut_user[UT_NAMESIZE];	/* Username.  */
++   char ut_host[UT_HOSTSIZE];	/* Hostname for remote login.  */
++   struct exit_status ut_exit;	/* Exit status of a process marked
++ 				   as DEAD_PROCESS.  */
++   int32_t ut_session;		/* Session ID, used for windowing.  */
++   struct
++   {
++     int32_t tv_sec;		/* Seconds.  */
++     int32_t tv_usec;		/* Microseconds.  */
++   } ut_tv;			/* Time entry was made.  */
++ 
++   int32_t ut_addr_v6[4];	/* Internet address of remote host.  */
++   char __unused[20];		/* Reserved for future use.  */
++ };
++ 
++ 
++ #endif  /* utmp32.h  */
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmpx-convert.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmpx-convert.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,86 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ 
++ /* This file provides functions converting between the 32 and 64 bit
++    struct utmp variants.  */
++ 
++ #ifndef _UTMPX_CONVERT_H
++ #define _UTMPX_CONVERT_H 1
++ 
++ #include <string.h>
++ #include "utmpx32.h"
++ 
++ /* Convert the 64 bit struct utmpx value in FROM to the 32 bit version
++    returned in TO.  */
++ static inline void
++ utmpx_convert64to32 (const struct utmpx *from, struct utmpx32 *to)
++ {
++ #if _HAVE_UT_TYPE - 0
++   to->ut_type = from->ut_type;
++ #endif
++ #if _HAVE_UT_PID - 0
++   to->ut_pid = from->ut_pid;
++ #endif
++   memcpy (to->ut_line, from->ut_line, __UT_LINESIZE);
++   memcpy (to->ut_user, from->ut_user, __UT_NAMESIZE);
++ #if _HAVE_UT_ID - 0
++   memcpy (to->ut_id, from->ut_id, 4);
++ #endif
++ #if _HAVE_UT_HOST - 0
++   memcpy (to->ut_host, from->ut_host, __UT_HOSTSIZE);
++ #endif
++   to->ut_exit = from->ut_exit;
++   to->ut_session = (int32_t) from->ut_session;
++ #if _HAVE_UT_TV - 0
++   to->ut_tv.tv_sec = (int32_t) from->ut_tv.tv_sec;
++   to->ut_tv.tv_usec = (int32_t) from->ut_tv.tv_usec;
++ #endif
++   memcpy (to->ut_addr_v6, from->ut_addr_v6, 4 * 4);
++ }
++ 
++ /* Convert the 32 bit struct utmpx value in FROM to the 64 bit version
++    returned in TO.  */
++ static inline void
++ utmpx_convert32to64 (const struct utmpx32 *from, struct utmpx *to)
++ {
++ #if _HAVE_UT_TYPE - 0
++   to->ut_type = from->ut_type;
++ #endif
++ #if _HAVE_UT_PID - 0
++   to->ut_pid = from->ut_pid;
++ #endif
++   memcpy (to->ut_line, from->ut_line, __UT_LINESIZE);
++   memcpy (to->ut_user, from->ut_user, __UT_NAMESIZE);
++ #if _HAVE_UT_ID - 0
++   memcpy (to->ut_id, from->ut_id, 4);
++ #endif
++ #if _HAVE_UT_HOST - 0
++   memcpy (to->ut_host, from->ut_host, __UT_HOSTSIZE);
++ #endif
++   to->ut_exit = from->ut_exit;
++   to->ut_session = (int64_t) from->ut_session;
++ #if _HAVE_UT_TV - 0
++   to->ut_tv.tv_sec = (int64_t) from->ut_tv.tv_sec;
++   to->ut_tv.tv_usec = (int64_t) from->ut_tv.tv_usec;
++ #endif
++   memcpy (to->ut_addr_v6, from->ut_addr_v6, 4 * 4);
++ }
++ 
++ #endif /* utmpx-convert.h */
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmpx32.c
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmpx32.c	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,143 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #include <sys/types.h>
++ #include <utmp.h>
++ #include <errno.h>
++ #include <libc-symbols.h>
++ 
++ #include "utmp32.h"
++ #include "utmp-convert.h"
++ 
++ #include "utmpx32.h"
++ #include "utmpx-convert.h"
++ 
++ /* Allocate a static buffer to be returned to the caller.  As well as
++    with the existing version of these functions the caller has to be
++    aware that the contents of this buffer will change with subsequent
++    calls.  */
++ #define ALLOCATE_UTMPX32_OUT(OUT)			\
++   static struct utmpx32 *OUT = NULL;			\
++   							\
++   if (OUT == NULL)					\
++     {							\
++       OUT = malloc (sizeof (struct utmpx32));		\
++       if (OUT == NULL)					\
++ 	{						\
++ 	  __set_errno (ENOMEM);				\
++ 	  return NULL;					\
++ 	}						\
++     }
++ 
++ /* Perform a lookup for a utmpx entry matching FIELD using function
++    FUNC.  FIELD is converted to a 64 bit utmpx and the result is
++    converted back to 32 bit utmpx.  */
++ #define ACCESS_UTMPX_ENTRY(FUNC, FIELD)			\
++   struct utmpx in64;					\
++   struct utmpx *out64;					\
++   ALLOCATE_UTMPX32_OUT (out32);				\
++ 							\
++   utmpx_convert32to64 (FIELD, &in64);			\
++   out64 = FUNC (&in64);					\
++ 							\
++   if (out64 == NULL)					\
++     return NULL;					\
++ 							\
++   utmpx_convert64to32 (out64, out32);			\
++ 							\
++   return out32;
++ 
++ 
++ /* Get the next entry from the user accounting database.  */
++ struct utmpx32 *
++ getutxent32 (void)
++ {
++   struct utmpx *out64;
++   ALLOCATE_UTMPX32_OUT (out32);
++ 
++   out64 = getutxent ();
++   if (!out64)
++     return NULL;
++ 
++   utmpx_convert64to32 (out64, out32);
++   return out32;
++ 
++ }
++ symbol_version (getutxent32, getutxent, GLIBC_2.1);
++ 
++ /* Get the user accounting database entry corresponding to ID.  */
++ struct utmpx32 *
++ getutxid32 (const struct utmpx32 *id)
++ {
++   ACCESS_UTMPX_ENTRY (getutxid, id);
++ }
++ symbol_version (getutxid32, getutxid, GLIBC_2.1);
++ 
++ /* Get the user accounting database entry corresponding to LINE.  */
++ struct utmpx32 *
++ getutxline32 (const struct utmpx32 *line)
++ {
++   ACCESS_UTMPX_ENTRY (getutxline, line);
++ }
++ symbol_version (getutxline32, getutxline, GLIBC_2.1);
++ 
++ /* Write the entry UTMPX into the user accounting database.  */
++ struct utmpx32 *
++ pututxline32 (const struct utmpx32 *utmpx)
++ {
++   ACCESS_UTMPX_ENTRY (pututxline, utmpx);
++ }
++ symbol_version (pututxline32, pututxline, GLIBC_2.1);
++ 
++ /* Append entry UTMP to the wtmpx-like file WTMPX_FILE.  */
++ void
++ updwtmpx32 (const char *wtmpx_file, const struct utmpx32 *utmpx)
++ {
++   struct utmpx in64;
++ 
++   utmpx_convert32to64 (utmpx, &in64);
++   updwtmpx (wtmpx_file, &in64);
++ }
++ symbol_version (updwtmpx32, updwtmpx, GLIBC_2.1);
++ 
++ /* Copy the information in UTMPX to UTMP.  */
++ void
++ getutmp32 (const struct utmpx32 *utmpx, struct utmp32 *utmp)
++ {
++   struct utmpx in64;
++   struct utmp out64;
++ 
++   utmpx_convert32to64 (utmpx, &in64);
++   getutmp (&in64, &out64);
++   utmp_convert64to32 (&out64, utmp);
++ }
++ symbol_version (getutmp32, getutmp, GLIBC_2.1.1);
++ 
++ /* Copy the information in UTMP to UTMPX.  */
++ void
++ getutmpx32 (const struct utmp32 *utmp, struct utmpx32 *utmpx)
++ {
++   struct utmp in64;
++   struct utmpx out64;
++ 
++   utmp_convert32to64 (utmp, &in64);
++   getutmpx (&in64, &out64);
++   utmpx_convert64to32 (&out64, utmpx);
++ }
++ symbol_version (getutmpx32, getutmpx, GLIBC_2.1.1);
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmpx32.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmpx32.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,52 ----
++ /* The `struct utmp' type, describing entries in the utmp file.  GNU version.
++    Copyright (C) 1993, 1996, 1997, 1998, 1999, 2002, 2008
++    Free Software Foundation, Inc.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ #ifndef _UTMPX32_H
++ #define _UTMPX32_H 1
++ 
++ #include <paths.h>
++ #include <sys/time.h>
++ #include <sys/types.h>
++ #include <bits/wordsize.h>
++ #include <utmpx.h>
++ 
++ /* The structure describing an entry in the user accounting database.  */
++ struct utmpx32
++ {
++   short int ut_type;		/* Type of login.  */
++   __pid_t ut_pid;		/* Process ID of login process.  */
++   char ut_line[__UT_LINESIZE];	/* Devicename.  */
++   char ut_id[4];		/* Inittab ID. */
++   char ut_user[__UT_NAMESIZE];	/* Username.  */
++   char ut_host[__UT_HOSTSIZE];	/* Hostname for remote login.  */
++   struct __exit_status ut_exit;	/* Exit status of a process marked
++ 				   as DEAD_PROCESS.  */
++   __int64_t ut_session;		/* Session ID, used for windowing.  */
++   struct
++   {
++     __int64_t tv_sec;		/* Seconds.  */
++     __int64_t tv_usec;		/* Microseconds.  */
++   } ut_tv;			/* Time entry was made.  */
++ 
++   __int32_t ut_addr_v6[4];	/* Internet address of remote host.  */
++   char __unused[20];		/* Reserved for future use.  */
++ };
++ 
++ #endif /* utmpx32.h */
+Index: sysdeps/unix/sysv/linux/s390/s390-32/utmp-compat.h
+===================================================================
+*** /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- sysdeps/unix/sysv/linux/s390/s390-32/utmp-compat.h	2008-07-21 09:43:55.000000000 +0200
+***************
+*** 0 ****
+--- 1,22 ----
++ /* Copyright (C) 2008 Free Software Foundation, Inc.
++    Contributed by Andreas Krebbel <Andreas.Krebbel@de.ibm.com>.
++    This file is part of the GNU C Library.
++ 
++    The GNU C Library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++ 
++    The GNU C Library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++ 
++    You should have received a copy of the GNU Lesser General Public
++    License along with the GNU C Library; if not, write to the Free
++    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++    02111-1307 USA.  */
++ 
++ /* This macro defines the glibc version tag at which the 64 bit struct
++    utmp functions have been added to the 32 bit glibc.  */
++ #define UTMP_COMPAT_BASE GLIBC_2.9
