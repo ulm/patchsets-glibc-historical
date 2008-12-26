@@ -1,6 +1,7 @@
 2		[pending]
 	+ 1020_all_glibc-2.9-strlen-hack.patch
 	+ 1060_all_glibc-nss-deepbind.patch
+	+ 1085_all_glibc-2.9-check_native-headers.patch
 	+ 5021_all_2.9-fnmatch.patch
 	+ 6120_all_ppc-glibc-2.9-atomic.patch
 	+ 6221_all_arm-glibc-2.9-hidden-fpu-setjmp.patch
