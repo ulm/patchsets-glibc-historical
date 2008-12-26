@@ -3,6 +3,7 @@
 	+ 1060_all_glibc-nss-deepbind.patch
 	+ 5021_all_2.9-fnmatch.patch
 	+ 6120_all_ppc-glibc-2.9-atomic.patch
+	+ 6221_all_arm-glibc-2.9-hidden-fpu-setjmp.patch
 
 1		08.12.2008
 	+ 0010_all_glibc-2.7-ssp-compat.patch
