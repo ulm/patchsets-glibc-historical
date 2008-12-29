@@ -1,0 +1,17 @@
+http://bugs.gentoo.org/252802
+
+2008-12-29  Mike Frysinger  <vapier@gentoo.org>
+
+	* iconvdata/Makefile (iconv-rules): Use LC_ALL=C when running awk script.
+
+--- a/iconvdata/Makefile
++++ b/iconvdata/Makefile
+@@ -286,7 +286,7 @@ $(objpfx)iconv-rules: Makefile
+ 	{ echo $(filter-out lib%, $(modules)); \
+ 	  echo 8bit $(gen-8bit-modules); \
+ 	  echo 8bit-gap $(gen-8bit-gap-modules); } | \
+-	$(AWK) 'NR == 1 { \
++	LC_ALL=C $(AWK) 'NR == 1 { \
+ 		  for (i = 1; i <= NF; i++) { \
+ 		    printf "%s-routines := %s\n", $$i, tolower($$i); \
+ 		    printf "%s-map := gconv.map\n", $$i; \
