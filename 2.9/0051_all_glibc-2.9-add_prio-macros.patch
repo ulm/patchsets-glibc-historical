@@ -1,0 +1,29 @@
+http://sourceware.org/ml/libc-alpha/2009-01/msg00003.html
+
+From a1737958e074e8f990760acc8abeb0c23715a859 Mon Sep 17 00:00:00 2001
+From: Roland McGrath <roland@gnu.org>
+Date: Sat, 3 Jan 2009 21:04:01 +0000
+Subject: [PATCH] 2009-01-03  Samuel Thibault  <samuel.thibault@ens-lyon.org>
+
+	* bits/resource.h (PRIO_PROCESS, PRIO_PGRP, PRIO_USER): Add macros.
+---
+ bits/resource.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/bits/resource.h b/bits/resource.h
+index 8057f5c..ef718db 100644
+--- a/bits/resource.h
++++ b/bits/resource.h
+@@ -185,6 +185,9 @@ struct rusage
+ enum __priority_which
+   {
+     PRIO_PROCESS = 0,           /* WHO is a process ID.  */
++#define PRIO_PROCESS PRIO_PROCESS
+     PRIO_PGRP = 1,              /* WHO is a process group ID.  */
++#define PRIO_PGRP PRIO_PGRP
+     PRIO_USER = 2               /* WHO is a user ID.  */
++#define PRIO_USER PRIO_USER
+   };
+-- 
+1.6.0.6
+

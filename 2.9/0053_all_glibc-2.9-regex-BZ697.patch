@@ -1,0 +1,31 @@
+http://sourceware.org/ml/libc-alpha/2009-01/msg00006.html
+
+From 37bdc055ceeb6b1144c07448a7210d9ab3fbb2f5 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Thu, 8 Jan 2009 00:47:05 +0000
+Subject: [PATCH] (prune_impossible_nodes): Handle sifted_states[0] being NULL also if
+ there are no backreferences.
+
+---
+ posix/regexec.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/posix/regexec.c b/posix/regexec.c
+index 135efe7..7bf0c08 100644
+--- a/posix/regexec.c
++++ b/posix/regexec.c
+@@ -1004,6 +1004,11 @@ prune_impossible_nodes (mctx)
+       re_node_set_free (&sctx.limits);
+       if (BE (ret != REG_NOERROR, 0))
+ 	goto free_return;
++      if (sifted_states[0] == NULL)
++	{
++	  ret = REG_NOMATCH;
++	  goto free_return;
++	}
+     }
+   re_free (mctx->state_log);
+   mctx->state_log = sifted_states;
+-- 
+1.6.0.6
+
