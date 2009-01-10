@@ -1,6 +1,15 @@
 3		[pending]
+	+ 0050_all_glibc-_nss_dns_gethostbyaddr2_r-check-and-adjust-the-buffer-alignment.patch
+	+ 0051_all_glibc-2.9-add_prio-macros.patch
+	+ 0052_all_glibc-2.9-regex-BZ9697.patch
+	+ 0053_all_glibc-2.9-regex-BZ697.patch
+	+ 0080_all_glibc-2.10-dns-no-gethostbyname4.patch
+	+ 0090_all_glibc-math-tests.patch
 	+ 1018_all_glibc-awk-in-C-locale.patch
 	- 1060_all_glibc-nss-deepbind.patch
+	+ 1070_all_glibc-fadvise64_64.patch
+	+ 1073_all_glibc-ldbl-nexttowardf.patch
+	+ 6610_all_glibc-r10k-workarounds.patch
 
 2		26.12.2008
 	+ 1020_all_glibc-2.9-strlen-hack.patch
