@@ -1,4 +1,4 @@
-3		[pending]
+3		16.02.2009
 	+ 0050_all_glibc-_nss_dns_gethostbyaddr2_r-check-and-adjust-the-buffer-alignment.patch
 	+ 0051_all_glibc-2.9-add_prio-macros.patch
 	+ 0052_all_glibc-2.9-regex-BZ9697.patch
