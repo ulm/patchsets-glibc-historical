@@ -1,33 +1,21 @@
+here is the old stuff:
 http://sources.redhat.com/ml/libc-alpha/2003-06/msg00027.html
 http://www.m17n.org/linux-sh/ml/linux-sh/2003-05/msg00010.html
-
 http://rpm.sh-linux.org/rpm-2004/target/SRPMS/glibc-2.3.3-27.12.src.rpm
-
 http://bugs.gentoo.org/100696
 
---- sysdeps/unix/sysv/linux/sh/sysdep.S
-+++ sysdeps/unix/sysv/linux/sh/sysdep.S
-@@ -30,3 +30,13 @@
- 
- #define __syscall_error __syscall_error_1
- #include <sysdeps/unix/sh/sysdep.S>
+and here is the change that was finally merged:
+http://sourceware.org/ml/libc-alpha/2009-01/msg00034.html
+http://sourceware.org/ml/libc-alpha/2009-02/msg00000.html
+
+--- a/sysdeps/unix/sysv/linux/sh/Makefile
++++ b/sysdeps/unix/sysv/linux/sh/Makefile
+@@ -5,3 +5,8 @@ endif
+ ifeq ($(subdir),stdlib)
+ gen-as-const-headers += ucontext_i.sym
+ endif
 +
-+	.data
-+	.align 3
-+	.globl ___fpscr_values
-+	.type ___fpscr_values, @object
-+	.size ___fpscr_values, 8
-+___fpscr_values:
-+	.long	0
-+	.long	0x80000
-+weak_alias (___fpscr_values, __fpscr_values)
---- sysdeps/unix/sysv/linux/sh/Versions
-+++ sysdeps/unix/sysv/linux/sh/Versions
-@@ -2,6 +2,7 @@
-   GLIBC_2.2 {
-     # functions used in other libraries
-     __xstat64; __fxstat64; __lxstat64;
-+    __fpscr_values;
- 
-     # a*
-     alphasort64;
++ifeq ($(subdir),math)
++# The libm.so link can't find __fpscr_values
++libm.so-no-z-defs = yes
++endif

@@ -1,0 +1,84 @@
+http://sourceware.org/ml/libc-alpha/2009-02/msg00033.html
+
+From: Andrew Stubbs <ams at codesourcery dot com>
+To: libc-alpha at sourceware dot org
+Date: Mon, 09 Feb 2009 12:49:45 +0000
+Subject: Re: [SH][PATCH] SH Kernel compatibility
+
+2009-02-09  Andrew Stubbs  <ams@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/sh/sys/procfs.h: Don't include asm/elf.h.
+	(REG_REG0, REG_REG15, REG_PC, REG_PR, REG_SR, REG_GBR, REG_MACH,
+	REG_MACL, REG_MACL): Define.
+	(elf_greg_t, ELF_NGREG, elf_gregset_t, user_fpu_struct,
+	elf_fpregset_t): Copy from linux asm-sh/elf.h.
+	* sysdeps/unix/sysv/linux/sh/sys/user.h: Don't include asm/user.h.
+
+---
+ src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/procfs.h |   26 ++++++++++++-
+ src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/user.h   |    4 --
+ 2 files changed, 25 insertions(+), 5 deletions(-)
+
+Index: src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/procfs.h
+===================================================================
+--- src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/procfs.h.orig
++++ src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/procfs.h
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1996, 1997, 1999, 2004 Free Software Foundation, Inc.
++/* Copyright (C) 1996, 1997, 1999, 2004, 2009 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -29,10 +29,32 @@
+ #include <sys/types.h>
+ #include <sys/ucontext.h>
+ #include <sys/user.h>
+-#include <asm/elf.h>
+
+ __BEGIN_DECLS
+
++typedef unsigned long elf_greg_t;
++
++#define ELF_NGREG 23
++typedef elf_greg_t elf_gregset_t[ELF_NGREG];
++
++#define REG_REG0        0
++#define REG_REG15      15
++#define REG_PC         16
++#define REG_PR         17
++#define REG_SR         18
++#define REG_GBR                19
++#define REG_MACH       20
++#define REG_MACL       21
++#define REG_SYSCALL    22
++
++struct user_fpu_struct {
++       unsigned long fp_regs[16];
++       unsigned long xfp_regs[16];
++       unsigned long fpscr;
++       unsigned long fpul;
++};
++typedef struct user_fpu_struct elf_fpregset_t;
++
+ struct elf_siginfo
+   {
+     int si_signo;                      /* Signal number.  */
+Index: src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/user.h
+===================================================================
+--- src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/user.h.orig
++++ src/glibc-mainline/sysdeps/unix/sysv/linux/sh/sys/user.h
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1998, 1999, 2000, 2003 Free Software Foundation, Inc.
++/* Copyright (C) 1998, 1999, 2000, 2003, 2009 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -21,8 +21,6 @@
+
+ #include <features.h>
+
+-#include <asm/user.h>
+-
+ #undef start_thread
+
+ #endif  /* sys/user.h */
