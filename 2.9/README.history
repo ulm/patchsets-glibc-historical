@@ -1,3 +1,6 @@
+5		[pending]
+	+ 6630_all_glibc-mips-n32-ldconfig.patch
+
 4		21.02.2009
 	+ 0008_all_glibc-2.9-linker-scripts.patch
 
