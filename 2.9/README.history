@@ -1,4 +1,5 @@
-5		[pending]
+5		31.03.2009
+	+ 0085_all_glibc-disable-ldconfig.patch
 	+ 6630_all_glibc-mips-n32-ldconfig.patch
 
 4		21.02.2009

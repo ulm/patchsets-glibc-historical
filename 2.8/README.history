@@ -1,3 +1,6 @@
+6		31.03.2008
+	+ 0085_all_glibc-disable-ldconfig.patch
+
 5		24.12.2008
 	+ 6700_s390_glibc-2.8-utmp-compat.patch
 
