@@ -1,3 +1,6 @@
+6		[pending]
+	+ 0045_all_glibc-2.10-gcc-4.4-nptl.patch
+
 5		31.03.2009
 	+ 0085_all_glibc-disable-ldconfig.patch
 	+ 6630_all_glibc-mips-n32-ldconfig.patch
