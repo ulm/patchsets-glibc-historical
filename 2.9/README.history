@@ -1,5 +1,6 @@
-6		[pending]
+6		28.08.2009
 	+ 0045_all_glibc-2.10-gcc-4.4-nptl.patch
+	+ 6019_all_alpha-floor_ceil_fix.patch
 
 5		31.03.2009
 	+ 0085_all_glibc-disable-ldconfig.patch
