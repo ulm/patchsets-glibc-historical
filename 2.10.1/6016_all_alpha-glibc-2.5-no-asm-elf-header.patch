@@ -3,8 +3,8 @@
 	* sysdeps/unix/sysv/linux/alpha/sys/procfs.h: Copy some defines
 	from alpha's asm/elf.h
 
---- libc/sysdeps/unix/sysv/linux/alpha/sys/procfs.h
-+++ libc/sysdeps/unix/sysv/linux/alpha/sys/procfs.h
+--- ports/sysdeps/unix/sysv/linux/alpha/sys/procfs.h
++++ ports/sysdeps/unix/sysv/linux/alpha/sys/procfs.h
 @@ -29,10 +29,23 @@
  #include <sys/types.h>
  #include <sys/ucontext.h>

@@ -11,8 +11,8 @@ known, and that nobody really cares about it.
 
 Info from: http://sourceware.org/bugzilla/show_bug.cgi?id=5216
 
---- sysdeps/unix/alpha/sysdep.h
-+++ sysdeps/unix/alpha/sysdep.h
+--- ports/sysdeps/unix/alpha/sysdep.h
++++ ports/sysdeps/unix/alpha/sysdep.h
 @@ -397,42 +397,4 @@ __LABEL(name)						\
  	_sc_ret = _sc_0, _sc_err = _sc_19;			\
  }
@@ -57,8 +57,8 @@ Info from: http://sourceware.org/bugzilla/show_bug.cgi?id=5216
 -
  #endif /* ASSEMBLER */
 
---- sysdeps/unix/sysv/linux/alpha/sysdep.h
-+++ sysdeps/unix/sysv/linux/alpha/sysdep.h
+--- ports/sysdeps/unix/sysv/linux/alpha/sysdep.h
++++ ports/sysdeps/unix/sysv/linux/alpha/sysdep.h
 @@ -98,4 +98,46 @@
  	INTERNAL_SYSCALL1(name, err_out, nr, args);			\
  })

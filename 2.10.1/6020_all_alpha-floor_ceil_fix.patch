@@ -1,6 +1,5 @@
-diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_ceil.c glibc-2.9-20081201/sysdeps/alpha/fpu/s_ceil.c
---- glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_ceil.c	2009-08-10 20:12:12.117316000 -0400
-+++ glibc-2.9-20081201/sysdeps/alpha/fpu/s_ceil.c	2009-08-10 20:14:04.947138000 -0400
+--- ports/sysdeps/alpha/fpu/s_ceil.c
++++ ports/sysdeps/alpha/fpu/s_ceil.c
 @@ -27,20 +27,25 @@
  double
  __ceil (double x)
@@ -37,9 +36,8 @@ diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_ceil.c glibc-2.9-20081201/sy
  }
  
  weak_alias (__ceil, ceil)
-diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_ceilf.c glibc-2.9-20081201/sysdeps/alpha/fpu/s_ceilf.c
---- glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_ceilf.c	2009-08-10 20:12:12.120247000 -0400
-+++ glibc-2.9-20081201/sysdeps/alpha/fpu/s_ceilf.c	2009-08-10 20:14:04.948115000 -0400
+--- ports/sysdeps/alpha/fpu/s_ceilf.c
++++ ports/sysdeps/alpha/fpu/s_ceilf.c
 @@ -26,20 +26,30 @@
  float
  __ceilf (float x)
@@ -81,9 +79,8 @@ diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_ceilf.c glibc-2.9-20081201/s
  }
  
  weak_alias (__ceilf, ceilf)
-diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_floor.c glibc-2.9-20081201/sysdeps/alpha/fpu/s_floor.c
---- glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_floor.c	2009-08-10 20:12:12.119270000 -0400
-+++ glibc-2.9-20081201/sysdeps/alpha/fpu/s_floor.c	2009-08-10 20:14:04.949092000 -0400
+--- ports/sysdeps/alpha/fpu/s_floor.c
++++ ports/sysdeps/alpha/fpu/s_floor.c
 @@ -21,26 +21,32 @@
  #include <math_ldbl_opt.h>
  
@@ -129,9 +126,8 @@ diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_floor.c glibc-2.9-20081201/s
  }
  
  weak_alias (__floor, floor)
-diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_floorf.c glibc-2.9-20081201/sysdeps/alpha/fpu/s_floorf.c
---- glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_floorf.c	2009-08-10 20:12:12.118293000 -0400
-+++ glibc-2.9-20081201/sysdeps/alpha/fpu/s_floorf.c	2009-08-10 20:14:04.950069000 -0400
+--- ports/sysdeps/alpha/fpu/s_floorf.c
++++ ports/sysdeps/alpha/fpu/s_floorf.c
 @@ -20,26 +20,37 @@
  #include <math.h>
  
@@ -182,9 +178,8 @@ diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_floorf.c glibc-2.9-20081201/
  }
  
  weak_alias (__floorf, floorf)
-diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_rint.c glibc-2.9-20081201/sysdeps/alpha/fpu/s_rint.c
---- glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_rint.c	2009-08-10 20:12:12.119270000 -0400
-+++ glibc-2.9-20081201/sysdeps/alpha/fpu/s_rint.c	2009-08-10 20:14:04.951046000 -0400
+--- ports/sysdeps/alpha/fpu/s_rint.c
++++ ports/sysdeps/alpha/fpu/s_rint.c
 @@ -24,15 +24,24 @@
  double
  __rint (double x)
@@ -218,9 +213,8 @@ diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_rint.c glibc-2.9-20081201/sy
  }
  
  weak_alias (__rint, rint)
-diff -ur glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_rintf.c glibc-2.9-20081201/sysdeps/alpha/fpu/s_rintf.c
---- glibc-2.9-20081201.old/sysdeps/alpha/fpu/s_rintf.c	2009-08-10 20:12:12.116339000 -0400
-+++ glibc-2.9-20081201/sysdeps/alpha/fpu/s_rintf.c	2009-08-10 20:14:04.952023000 -0400
+--- ports/sysdeps/alpha/fpu/s_rintf.c
++++ ports/sysdeps/alpha/fpu/s_rintf.c
 @@ -23,15 +23,30 @@
  float
  __rintf (float x)

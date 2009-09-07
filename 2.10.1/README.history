@@ -1,3 +1,20 @@
+2		06.09.2009
+	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
+	+ 1504_all_glibc-2.7-hppa-pie.patch
+	+ 1530_all_glibc-m68k-sys-user.patch
+	+ 6001_all_alpha-glibc-2.4-xstat.patch
+	+ 6015_all_alpha-glibc-2.5-no-page-header.patch
+	+ 6016_all_alpha-glibc-2.5-no-asm-elf-header.patch
+	+ 6017_all_alpha-glibc-2.8-creat.patch
+	+ 6018_all_alpha-glibc-2.8-cache-shape.patch
+	+ 6019_all_alpha-glibc-ptr-mangling.patch
+	+ 6020_all_alpha-floor_ceil_fix.patch
+	+ 6220_all_glibc-2.4-arm-cirrus-ep93xx-maverick-crunch-fpu.patch
+	+ 6240_all_glibc-2.8-nptl-lowlevellock.patch
+	+ 6600_mips_librt-mips.patch
+	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
+	+ 6610_all_glibc-r10k-workarounds.patch
+
 1		18.05.2009
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0040_all_glibc-i586-chk.patch

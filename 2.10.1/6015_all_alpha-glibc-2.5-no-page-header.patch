@@ -4,8 +4,8 @@
 	from the kernel header to sys/user.h and remove the #include of
 	sys/user.h.
 
---- a/sysdeps/unix/sysv/linux/alpha/sys/user.h
-+++ b/sysdeps/unix/sysv/linux/alpha/sys/user.h
+--- ports/sysdeps/unix/sysv/linux/alpha/sys/user.h
++++ ports/sysdeps/unix/sysv/linux/alpha/sys/user.h
 @@ -23,7 +23,6 @@
     only. Don't read too much into it. Don't use it for anything other
     than gdb/strace unless you know what you are doing. */
