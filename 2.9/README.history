@@ -1,3 +1,6 @@
+7		[pending]
+	+ 0060_all_glibc-tweak-first-day-of-week.patch
+
 6		28.08.2009
 	+ 0045_all_glibc-2.10-gcc-4.4-nptl.patch
 	+ 6019_all_alpha-floor_ceil_fix.patch

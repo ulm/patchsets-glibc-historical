@@ -1,0 +1,468 @@
+http://bugs.gentoo.org/275956
+
+From 3873630cd814a11a75f2e7173bcf1efd08e94663 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Sat, 25 Apr 2009 04:44:16 +0000
+
+	* locales/cs.CZ: Change week[2] to 19971130, change first_weekday and
+	first_workday to 2.
+	* locales/da_DK: Likewise.
+	* locales/de_DE: Likewise.
+	* locales/fr_FR: Likewise.
+	* locales/fur_IT: Likewise.
+	* locales/fy_DE: Likewise.
+	* locales/ht_HT: Likewise.
+	* locales/hu_HU: Likewise.
+	* locales/li_BE: Likewise.
+	* locales/li_NL: Likewise.
+	* locales/mk_MK: Likewise.
+	* locales/nb_NO: Likewise.
+	* locales/nds_DE: Likewise.
+	* locales/nds_NL: Likewise.
+	* locales/nn_NO: Likewise.
+	* locales/pl_PL: Likewise.
+	* locales/sc_IT: Likewise.
+	* locales/sk_SK: Likewise.
+	* locales/uk_UA: Likewise.
+
+	* locales/csb_PL: Change week[2] to 19971130.
+	* locales/en_GB: Likewise.
+	* locales/et_EE: Likewise.
+
+	* locales/sr_ME: Set week to 7;19971130;4.
+	* locales/sr_RS: Likewise.
+	* locales/sr_RS@latin: Likewise.
+---
+ localedata/ChangeLog           |   31 +++++++++++++++++++++++++++++++
+ localedata/locales/cs_CZ       |    6 +++---
+ localedata/locales/csb_PL      |    2 +-
+ localedata/locales/da_DK       |    6 +++---
+ localedata/locales/de_DE       |    6 +++---
+ localedata/locales/en_GB       |    2 +-
+ localedata/locales/et_EE       |    2 +-
+ localedata/locales/fr_FR       |    6 +++---
+ localedata/locales/fur_IT      |    6 +++---
+ localedata/locales/fy_DE       |    6 +++---
+ localedata/locales/ht_HT       |    6 +++---
+ localedata/locales/hu_HU       |    6 +++---
+ localedata/locales/li_BE       |    6 +++---
+ localedata/locales/li_NL       |    6 +++---
+ localedata/locales/mk_MK       |    6 +++---
+ localedata/locales/nb_NO       |    6 +++---
+ localedata/locales/nds_DE      |    6 +++---
+ localedata/locales/nds_NL      |    6 +++---
+ localedata/locales/nn_NO       |    6 +++---
+ localedata/locales/pl_PL       |    6 +++---
+ localedata/locales/sc_IT       |    6 +++---
+ localedata/locales/sk_SK       |    6 +++---
+ localedata/locales/sr_ME       |    2 +-
+ localedata/locales/sr_RS       |    2 +-
+ localedata/locales/sr_RS@latin |    2 +-
+ localedata/locales/uk_UA       |    8 +++++---
+ 26 files changed, 96 insertions(+), 63 deletions(-)
+
+diff --git a/localedata/locales/cs_CZ b/localedata/locales/cs_CZ
+index 640c8f8..2f25e9a 100644
+--- a/localedata/locales/cs_CZ
++++ b/localedata/locales/cs_CZ
+@@ -2438,9 +2438,9 @@ abmon		"<U006C><U0065><U0064>";/
+ %		"<U004E><U006F><U0076>";/
+ %		"<U0044><U0065><U0063>"
+ 
+-week		7;19971201;4
+-first_weekday	1
+-first_workday	1
++week		7;19971130;4
++first_weekday	2
++first_workday	2
+ 
+ d_t_fmt		"<U0025><U0061><U00A0><U0025><U002D><U0064><U002E><U00A0><U0025><U0042><U00A0><U0025><U0059><U002C><U00A0><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U00A0><U0025><U005A>"
+ 
+diff --git a/localedata/locales/csb_PL b/localedata/locales/csb_PL
+index 663fd6c..93c9ae2 100644
+--- a/localedata/locales/csb_PL
++++ b/localedata/locales/csb_PL
+@@ -184,7 +184,7 @@ t_fmt_ampm ""
+ date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week    7;19971201;4
++week    7;19971130;4
+ first_weekday 2
+ first_workday 2
+ END LC_TIME
+diff --git a/localedata/locales/da_DK b/localedata/locales/da_DK
+index 2c8a41a..c4b451d 100644
+--- a/localedata/locales/da_DK
++++ b/localedata/locales/da_DK
+@@ -209,9 +209,9 @@ t_fmt_ampm  ""
+ date_fmt	"<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week    7;19971201;4
+-first_weekday 1
+-first_workday 1
++week    7;19971130;4
++first_weekday 2
++first_workday 2
+ END LC_TIME
+ 
+ LC_MESSAGES
+diff --git a/localedata/locales/de_DE b/localedata/locales/de_DE
+index b040923..eac517a 100644
+--- a/localedata/locales/de_DE
++++ b/localedata/locales/de_DE
+@@ -155,9 +155,9 @@ date_fmt	"<U0025><U0061><U0020><U0025><U002D><U0064><U002E><U0020>/
+ <U0025><U0062><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>/
+ <U0020><U0025><U005A><U0020><U0025><U0059>"
+ 
+-week    7;19971201;4
+-first_weekday 1
+-first_workday 1
++week    7;19971130;4
++first_weekday 2
++first_workday 2
+ END LC_TIME
+ 
+ LC_MESSAGES
+diff --git a/localedata/locales/en_GB b/localedata/locales/en_GB
+index fe58f1f..6a81d6d 100644
+--- a/localedata/locales/en_GB
++++ b/localedata/locales/en_GB
+@@ -121,7 +121,7 @@ t_fmt_ampm  ""
+ date_fmt	"<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week    7;19971201;4
++week    7;19971130;4
+ first_weekday 2
+ first_workday 2
+ END LC_TIME
+diff --git a/localedata/locales/et_EE b/localedata/locales/et_EE
+index e4bfcd5..efec335 100644
+--- a/localedata/locales/et_EE
++++ b/localedata/locales/et_EE
+@@ -2196,7 +2196,7 @@ t_fmt_ampm    ""
+ date_fmt	"<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week    7;19971201;4
++week    7;19971130;4
+ first_weekday 1
+ first_workday 1
+ END LC_TIME
+diff --git a/localedata/locales/fr_FR b/localedata/locales/fr_FR
+index ffa6513..dd54bcf 100644
+--- a/localedata/locales/fr_FR
++++ b/localedata/locales/fr_FR
+@@ -141,9 +141,9 @@ date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+ 
+-week    7;19971201;4
+-first_weekday 1
+-first_workday 1
++week    7;19971130;4
++first_weekday 2
++first_workday 2
+ END LC_TIME
+ 
+ LC_PAPER
+diff --git a/localedata/locales/fur_IT b/localedata/locales/fur_IT
+index 35da38c..4dab671 100644
+--- a/localedata/locales/fur_IT
++++ b/localedata/locales/fur_IT
+@@ -110,9 +110,9 @@ t_fmt_ampm ""
+ date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week			7;19971201;4
+-first_weekday		1
+-first_workday		1
++week			7;19971130;4
++first_weekday		2
++first_workday		2
+ END LC_TIME
+ 
+ LC_PAPER
+diff --git a/localedata/locales/fy_DE b/localedata/locales/fy_DE
+index dc4757f..588f3e2 100644
+--- a/localedata/locales/fy_DE
++++ b/localedata/locales/fy_DE
+@@ -127,7 +127,7 @@ d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+ t_fmt   "<U0025><U0054>"
+ am_pm   "";""
+ t_fmt_ampm ""
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+diff --git a/localedata/locales/ht_HT b/localedata/locales/ht_HT
+index 37ba0a5..8ec865d 100644
+--- a/localedata/locales/ht_HT
++++ b/localedata/locales/ht_HT
+@@ -139,9 +139,9 @@ date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0045>/
+ <U0020><U0025><U0068><U003A><U0025><U006D><U003A><U0025><U0073><U0020>/
+ <U0025><U005A><U0020><U0025><U0079>"
+ 
+-week    7;19971201;4
+-first_weekday 1
+-first_workday 1
++week    7;19971130;4
++first_weekday 2
++first_workday 2
+ END LC_TIME
+ 
+ LC_PAPER
+diff --git a/localedata/locales/hu_HU b/localedata/locales/hu_HU
+index 6948df4..8fce6e4 100644
+--- a/localedata/locales/hu_HU
++++ b/localedata/locales/hu_HU
+@@ -520,9 +520,9 @@ am_pm   "";""
+ t_fmt_ampm "<U0025><U0048><U002E><U0025><U004D><U002E><U0025><U0053>"
+ date_fmt "<U0025><U0059><U002E><U0020><U0025><U0062><U002E><U0020><U0025><U0065><U002E><U002C>/
+ <U0020><U0025><U0041><U002C><U0020><U0025><U0048><U002E><U0025><U004D><U002E><U0025><U0053><U0020><U0025><U005A>"
+-week     7;19971201;4
+-first_weekday	1
+-first_workday	1
++week     7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+ 
+ LC_PAPER
+diff --git a/localedata/locales/li_BE b/localedata/locales/li_BE
+index eea6bdb..7896092 100644
+--- a/localedata/locales/li_BE
++++ b/localedata/locales/li_BE
+@@ -126,7 +126,7 @@ d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+ t_fmt   "<U0025><U0054>"
+ am_pm   "";""
+ t_fmt_ampm ""
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+diff --git a/localedata/locales/li_NL b/localedata/locales/li_NL
+index 21c5044..d0a710a 100644
+--- a/localedata/locales/li_NL
++++ b/localedata/locales/li_NL
+@@ -127,7 +127,7 @@ d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+ t_fmt   "<U0025><U0054>"
+ am_pm   "";""
+ t_fmt_ampm ""
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+diff --git a/localedata/locales/mk_MK b/localedata/locales/mk_MK
+index 3157b49..8c137a6 100644
+--- a/localedata/locales/mk_MK
++++ b/localedata/locales/mk_MK
+@@ -85,9 +85,9 @@ t_fmt_ampm ""
+ date_fmt "<U0025><U0061><U002C><U0020><U0025><U0064><U0020><U0025><U0062>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week    7;19971201;4
+-first_weekday 1 % Monday
+-first_workday 1 % Monday
++week    7;19971130;4
++first_weekday 2 % Monday
++first_workday 2 % Monday
+ END LC_TIME
+ 
+ LC_MONETARY
+diff --git a/localedata/locales/nb_NO b/localedata/locales/nb_NO
+index 2604676..e491643 100644
+--- a/localedata/locales/nb_NO
++++ b/localedata/locales/nb_NO
+@@ -201,9 +201,9 @@ date_fmt       "<U0025><U0061><U0020><U0025><U0064><U002E><U0020><U0025>/
+ <U0062><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>/
+ <U0020><U0025><U007A><U0020><U0025><U0059>"
+ 
+-week    7;19971201;4
+-first_weekday 1
+-first_workday 1
++week    7;19971130;4
++first_weekday 2
++first_workday 2
+ END LC_TIME
+ 
+ LC_MESSAGES
+diff --git a/localedata/locales/nds_DE b/localedata/locales/nds_DE
+index 5c37f31..02c1b1a 100644
+--- a/localedata/locales/nds_DE
++++ b/localedata/locales/nds_DE
+@@ -125,7 +125,7 @@ d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+ t_fmt   "<U0025><U0054>"
+ am_pm   "";""
+ t_fmt_ampm ""
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+diff --git a/localedata/locales/nds_NL b/localedata/locales/nds_NL
+index 51ac583..3857947 100644
+--- a/localedata/locales/nds_NL
++++ b/localedata/locales/nds_NL
+@@ -124,7 +124,7 @@ d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+ t_fmt   "<U0025><U0054>"
+ am_pm   "";""
+ t_fmt_ampm ""
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+diff --git a/localedata/locales/nn_NO b/localedata/locales/nn_NO
+index ea22339..5095067 100644
+--- a/localedata/locales/nn_NO
++++ b/localedata/locales/nn_NO
+@@ -128,9 +128,9 @@ date_fmt       "<U0025><U0061><U0020><U0025><U0064><U002E><U0020><U0025>/
+ <U0062><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>/
+ <U0020><U0025><U007A><U0020><U0025><U0059>"
+ 
+-week    7;19971201;4
+-first_weekday 1
+-first_workday 1
++week    7;19971130;4
++first_weekday 2
++first_workday 2
+ END LC_TIME
+ 
+ 
+diff --git a/localedata/locales/pl_PL b/localedata/locales/pl_PL
+index 37f9e5c..1bce8f5 100644
+--- a/localedata/locales/pl_PL
++++ b/localedata/locales/pl_PL
+@@ -2196,9 +2196,9 @@ t_fmt_ampm ""
+ date_fmt "<U0025><U0061><U002C><U0020>/
+ <U0025><U002D><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U002C><U0020>/
+ <U0025><U0054><U0020><U0025><U005A>"
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+ 
+ LC_PAPER
+diff --git a/localedata/locales/sc_IT b/localedata/locales/sc_IT
+index 0309d56..f0b99d2 100644
+--- a/localedata/locales/sc_IT
++++ b/localedata/locales/sc_IT
+@@ -110,9 +110,9 @@ t_fmt_ampm ""
+ date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+-week	7;19971201;4
+-first_weekday	1
+-first_workday	1
++week	7;19971130;4
++first_weekday	2
++first_workday	2
+ END LC_TIME
+ 
+ LC_PAPER
+diff --git a/localedata/locales/sk_SK b/localedata/locales/sk_SK
+index 6a45858..0b737a0 100644
+--- a/localedata/locales/sk_SK
++++ b/localedata/locales/sk_SK
+@@ -183,9 +183,9 @@ date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+ <U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+ <U0025><U005A><U0020><U0025><U0059>"
+ 
+-week		7;19971201;4
+-first_weekday	1
+-first_workday	1
++week		7;19971130;4
++first_weekday	2
++first_workday	2
+ 
+ END LC_TIME
+ 
+diff --git a/localedata/locales/sr_ME b/localedata/locales/sr_ME
+index ed12002..231efb1 100644
+--- a/localedata/locales/sr_ME
++++ b/localedata/locales/sr_ME
+@@ -120,7 +120,7 @@ t_fmt_ampm "<U0025><U0054>"
+ date_fmt  "<U0025><U0061><U002c><U0020><U0025><U0065><U002E><U0020>/
+ <U0025><U0062><U0020><U0025><U0059><U002E><U0020><U0020><U0025><U0048>/
+ <U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A><U000A>"
+-% week    7;19971201;4
++week    7;19971130;4
+ first_weekday 2
+ first_workday 2
+ END LC_TIME
+diff --git a/localedata/locales/sr_RS b/localedata/locales/sr_RS
+index 90d54aa..3028e35 100644
+--- a/localedata/locales/sr_RS
++++ b/localedata/locales/sr_RS
+@@ -301,7 +301,7 @@ t_fmt_ampm "<U0025><U0054>"
+ date_fmt  "<U0025><U0061><U002C><U0020><U0025><U0065><U002E><U0020>/
+ <U0025><U0062><U0020><U0025><U0059><U002E><U0020><U0020><U0025><U0048>/
+ <U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A><U000A>"
+-% week    7;19971201;4
++week    7;19971130;4
+ first_weekday 2
+ first_workday 2
+ END LC_TIME
+diff --git a/localedata/locales/sr_RS@latin b/localedata/locales/sr_RS@latin
+index 207f515..6bc402a 100644
+--- a/localedata/locales/sr_RS@latin
++++ b/localedata/locales/sr_RS@latin
+@@ -121,7 +121,7 @@ t_fmt_ampm "<U0025><U0054>"
+ date_fmt  "<U0025><U0061><U002c><U0020><U0025><U0065><U002E><U0020>/
+ <U0025><U0062><U0020><U0025><U0059><U002E><U0020><U0020><U0025><U0048>/
+ <U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A><U000A>"
+-% week    7;19971201;4
++week    7;19971130;4
+ first_weekday 2
+ first_workday 2
+ END LC_TIME
+diff --git a/localedata/locales/uk_UA b/localedata/locales/uk_UA
+index 80f1f7b..b5f5381 100644
+--- a/localedata/locales/uk_UA
++++ b/localedata/locales/uk_UA
+@@ -901,7 +901,9 @@ LC_TIME
+ %
+ % ISO 8601 conforming applications should use the values 7, 19971201 (a
+ % Monday), and 4 (Thursday), respectively.
+-week 7;19971201;4
++% week 7;19971201;4
++% But see BUG below.
++week 7;19971130;4
+ 
+ % A list of abbreviated weekday names. (%a)
+ %
+@@ -1015,10 +1017,10 @@ am_pm     "";""
+ 
+ % Define the first day of the week to be displayed in a calendar.
+ % This weekday is relative to the date defined in the <week> keyword.
+-first_weekday 1
++first_weekday 2
+ 
+ % Define the first workday relative to the <week> keyword
+-first_workday 1
++first_workday 2
+ 
+ % Zymovyj CHas (winter time) or z.ch. (or nothing)
+ % Litnij CHas (summer time) or l.ch.
+-- 
+1.6.4
+
