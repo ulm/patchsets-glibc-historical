@@ -1,3 +1,6 @@
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=5350
+https://bugs.gentoo.org/264335
+
 --- ports/sysdeps/alpha/fpu/s_ceil.c
 +++ ports/sysdeps/alpha/fpu/s_ceil.c
 @@ -27,20 +27,25 @@
