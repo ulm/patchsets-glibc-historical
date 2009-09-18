@@ -1,14 +1,10 @@
 #!/sbin/runscript
 # Copyright 1999-2005 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/extra/etc/nscd,v 1.2 2007/03/14 00:20:37 vapier Exp $
+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/extra/etc/nscd,v 1.3 2009/09/18 12:29:46 flameeyes Exp $
 
 depend() {
 	use dns ldap net slapd
-}
-
-get_pidfile() {
-	strings /usr/sbin/nscd | grep nscd.pid
 }
 
 checkconfig() {
@@ -48,7 +44,7 @@ start() {
 		;;
 		esac
 		done < /etc/nsswitch.conf`
-	local pidfile=$(get_pidfile)
+	local pidfile=@PIDFILE@
 	mkdir -p "$(dirname ${pidfile})"
 	start-stop-daemon --start --quiet \
 		--exec /usr/sbin/nscd --pidfile ${pidfile} \
@@ -57,7 +53,7 @@ start() {
 }
 
 stop() {
-	local pidfile=$(get_pidfile)
+	local pidfile=@PIDFILE@
 	ebegin "Shutting down Name Service Cache Daemon"
 	start-stop-daemon --stop --quiet \
 		--exec /usr/sbin/nscd --pidfile ${pidfile}
