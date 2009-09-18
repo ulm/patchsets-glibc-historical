@@ -1,3 +1,6 @@
+3		18.09.2009
+	+ 6705_all_binutils-2.20-compat.patch
+
 2		06.09.2009
 	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
 	+ 1504_all_glibc-2.7-hppa-pie.patch
