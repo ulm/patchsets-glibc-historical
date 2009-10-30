@@ -1,3 +1,14 @@
+4		30.10.2009
+	+ 6020_all_alpha-fix-gcc-4.1-warnings.patch
+	+ 6021_all_alpha-add-dl-procinfo-support.patch
+	+ 6022_alpha_alpha-add-fdatasync-support.patch
+	+ 6023_all_alpha-add-getsystats-support.patch
+	+ 6024_all_alpha-fix-includes.patch
+	+ 6025_all_alpha-add-futex-defines.patch
+	+ 6026_all_alpha-fix-rtld-fPIC.patch
+	+ 6027_all_alpha-fix-memchr.patch
+	+ 6028_all_alpha-fix-SOCK_NONBLOCK.patch
+
 3		18.09.2009
 	+ 6705_all_binutils-2.20-compat.patch
 
