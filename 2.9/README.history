@@ -1,5 +1,6 @@
 7		[pending]
 	+ 0060_all_glibc-tweak-first-day-of-week.patch
+	+ 0060_all_binutils-2.20-compat.patch
 
 6		28.08.2009
 	+ 0045_all_glibc-2.10-gcc-4.4-nptl.patch
