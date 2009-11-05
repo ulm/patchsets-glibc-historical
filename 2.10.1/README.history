@@ -1,3 +1,6 @@
+5		[pending]
+	M 6705_all_binutils-2.20-compat.patch -> 0060_all_binutils-2.20-compat.patch
+
 4		30.10.2009
 	+ 6020_all_alpha-fix-gcc-4.1-warnings.patch
 	+ 6021_all_alpha-add-dl-procinfo-support.patch
