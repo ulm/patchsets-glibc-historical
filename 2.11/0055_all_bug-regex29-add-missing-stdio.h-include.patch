@@ -1,0 +1,27 @@
+From dd2bdbad476cccc6acb46111da942b29c3907d08 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 6 Nov 2009 08:36:14 -0500
+Subject: [PATCH] bug-regex29: add missing stdio.h include
+
+2009-11-06  Mike Frsyinger  <vapier@gentoo.org>
+
+	* posix/bug-regex29.c: Include stdio.h.
+
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+---
+ posix/bug-regex29.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/posix/bug-regex29.c b/posix/bug-regex29.c
+index bd796c6..cfc9f99 100644
+--- a/posix/bug-regex29.c
++++ b/posix/bug-regex29.c
+@@ -1,4 +1,5 @@
+ #include <regex.h>
++#include <stdio.h>
+ 
+ static int
+ do_test (void)
+-- 
+1.6.5.1
+
