@@ -1,5 +1,7 @@
-2		[pending]
+2		06.11.2009
 	+ 0055_all_bug-regex29-add-missing-stdio.h-include.patch
+	+ 6130_all_ppc-glibc-2.11-cell-vector.patch
+	+ 6900_all_glibc-2.11-ia64-ifunc.patch
 
 1		05.11.2009
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch

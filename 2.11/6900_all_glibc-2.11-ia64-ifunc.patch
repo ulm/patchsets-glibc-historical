@@ -1,0 +1,60 @@
+http://sourceware.org/ml/libc-alpha/2009-11/msg00001.html
+
+From: "H.J. Lu" <hongjiu dot lu at intel dot com>
+To: GNU C Library <libc-alpha at sourceware dot org>
+Date: Sun, 1 Nov 2009 09:34:18 -0800
+Subject: PATCH: Properly handle STT_GNU_IFUNC symbols in do_sym
+
+do_sym should use DL_FIXUP_VALUE_XXX macros to call IFUNC function.
+Otherwise, it won't compile on ia64. This patch fixes it and adds
+a test.
+
+
+H.J.
+----
+2009-11-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* elf/dl-sym.c (do_sym): Properly handle STT_GNU_IFUNC symbols.
+
+	* elf/ifuncmain3.c (main): Test dlopen STT_GNU_IFUNC symbol.
+
+diff --git a/elf/dl-sym.c b/elf/dl-sym.c
+index 459729f..0fa3b3a 100644
+--- a/elf/dl-sym.c
++++ b/elf/dl-sym.c
+@@ -193,8 +193,13 @@ RTLD_NEXT used in code not dynamically loaded"));
+ 
+       /* Resolve indirect function address.  */
+       if (__builtin_expect (ELFW(ST_TYPE) (ref->st_info) == STT_GNU_IFUNC, 0))
+-	value
+-	  = ((DL_FIXUP_VALUE_TYPE (*) (void)) DL_FIXUP_VALUE_ADDR (value)) ();
++	{
++	  DL_FIXUP_VALUE_TYPE fixup
++	    = DL_FIXUP_MAKE_VALUE (result, (ElfW(Addr)) value);
++	  fixup = 
++	    ((DL_FIXUP_VALUE_TYPE (*) (void)) DL_FIXUP_VALUE_ADDR (fixup)) ();
++	  value = (void *) DL_FIXUP_VALUE_CODE_ADDR (fixup);
++	}
+ 
+ #ifdef SHARED
+       /* Auditing checkpoint: we have a new binding.  Provide the
+diff --git a/elf/ifuncmain3.c b/elf/ifuncmain3.c
+index 5d067cc..1574dd5 100644
+--- a/elf/ifuncmain3.c
++++ b/elf/ifuncmain3.c
+@@ -46,6 +46,15 @@ main (void)
+       return 1;
+     }
+ 
++  p = dlsym (h, "foo");
++  if (p == NULL)
++    {
++      printf ("symbol not found: %s\n", dlerror ());
++      return 1;
++    }
++  if ((*p) () != -1)
++    abort ();
++
+   f = dlsym (h, "get_foo_p");
+   if (f == NULL)
+     {
