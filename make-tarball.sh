@@ -1,6 +1,6 @@
 #!/bin/bash
 
-gver=$1
+gver=${1%/}
 pver=$2
 
 if [[ -z ${gver} ]] ; then
