@@ -1,3 +1,6 @@
+8		[pending]
+	- 0040_all_glibc-i586-chk.patch
+
 7		05.11.2009
 	+ 0060_all_glibc-tweak-first-day-of-week.patch
 	+ 0060_all_binutils-2.20-compat.patch
