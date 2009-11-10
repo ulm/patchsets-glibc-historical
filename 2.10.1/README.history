@@ -1,5 +1,7 @@
-5		[pending]
+5		09.11.2009
 	M 6705_all_binutils-2.20-compat.patch -> 0060_all_binutils-2.20-compat.patch
+	+ 0077_all_i386-glibc-no-fallocate.patch
+	+ 1060_all_glibc-localedef-mmap.patch
 
 4		30.10.2009
 	+ 6020_all_alpha-fix-gcc-4.1-warnings.patch

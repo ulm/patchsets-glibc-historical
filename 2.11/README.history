@@ -1,3 +1,6 @@
+3		09.11.2009
+	+ 0077_all_i386-glibc-no-fallocate.patch
+
 2		06.11.2009
 	+ 0055_all_bug-regex29-add-missing-stdio.h-include.patch
 	+ 6130_all_ppc-glibc-2.11-cell-vector.patch
