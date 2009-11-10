@@ -1,0 +1,57 @@
+Fix building on x86 when older linux headers lack __NR_fallocate define.
+
+URL: http://bugs.gentoo.org/274269
+Reported-by: Mikael Magnusson <mikachu@gmail.com>
+
+2009-11-09  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/unix/sysv/linux/i386/fallocate.c: Include errno.h.
+	(fallocate): Return ENOSYS if __NR_fallocate is not defined.
+	* sysdeps/unix/sysv/linux/i386/fallocate64.c: Likewise.
+
+diff --git a/sysdeps/unix/sysv/linux/i386/fallocate.c b/sysdeps/unix/sysv/linux/i386/fallocate.c
+index 7a943e4..14e7883 100644
+--- a/sysdeps/unix/sysv/linux/i386/fallocate.c
++++ b/sysdeps/unix/sysv/linux/i386/fallocate.c
+@@ -16,6 +16,7 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++#include <errno.h>
+ #include <fcntl.h>
+ #include <sysdep.h>
+ 
+@@ -28,5 +29,10 @@ extern int __call_fallocate (int fd, int mode, __off64_t offset, __off64_t len)
+ int
+ fallocate (int fd, int mode, __off_t offset, __off_t len)
+ {
++#ifdef __NR_fallocate
+   return __call_fallocate (fd, mode, offset, len);
++#else
++  __set_errno (ENOSYS);
++  return -1;
++#endif
+ }
+diff --git a/sysdeps/unix/sysv/linux/i386/fallocate64.c b/sysdeps/unix/sysv/linux/i386/fallocate64.c
+index 4998f5e..85f315c 100644
+--- a/sysdeps/unix/sysv/linux/i386/fallocate64.c
++++ b/sysdeps/unix/sysv/linux/i386/fallocate64.c
+@@ -16,6 +16,7 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++#include <errno.h>
+ #include <fcntl.h>
+ #include <sysdep.h>
+ 
+@@ -28,5 +29,10 @@ extern int __call_fallocate (int fd, int mode, __off64_t offset, __off64_t len)
+ int
+ fallocate64 (int fd, int mode, __off64_t offset, __off64_t len)
+ {
++#ifdef __NR_fallocate
+   return __call_fallocate (fd, mode, offset, len);
++#else
++  __set_errno (ENOSYS);
++  return -1;
++#endif
+ }
