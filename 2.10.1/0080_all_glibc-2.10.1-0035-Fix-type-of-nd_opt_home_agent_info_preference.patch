@@ -1,0 +1,40 @@
+From 3ff6565150bef32e4cfc565b1463df84dd8c6d7a Mon Sep 17 00:00:00 2001
+From: Arnaud Ebalard <arno@natisbad.org>
+Date: Mon, 15 Jun 2009 20:33:39 -0700
+Subject: [PATCH 035/100] Fix type of nd_opt_home_agent_info_preference.
+
+(cherry picked from commit 7ed520bd8504700cf4aaf3b06deb10575bfc546a)
+---
+ ChangeLog            |    5 +++++
+ inet/netinet/icmp6.h |    4 ++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+2009-06-15  Ulrich Drepper  <drepper@redhat.com>
+
+	[BZ #10195]
+	* inet/netinet/icmp6.h (struct nd_opt_home_agent_info): Change type
+	of nd_opt_home_agent_info_preference to uint16_t.
+	Patch by Arnaud Ebalard <arno@natisbad.org>.
+
+diff --git a/inet/netinet/icmp6.h b/inet/netinet/icmp6.h
+index 0cb1aa6..82893da 100644
+--- a/inet/netinet/icmp6.h
++++ b/inet/netinet/icmp6.h
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1991-1997,2000,2006 Free Software Foundation, Inc.
++/* Copyright (C) 1991-1997,2000,2006,2009 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -339,7 +339,7 @@ struct nd_opt_home_agent_info
+     uint8_t   nd_opt_home_agent_info_type;
+     uint8_t   nd_opt_home_agent_info_len;
+     uint16_t  nd_opt_home_agent_info_reserved;
+-    int16_t   nd_opt_home_agent_info_preference;
++    uint16_t  nd_opt_home_agent_info_preference;
+     uint16_t  nd_opt_home_agent_info_lifetime;
+   };
+ 
+-- 
+1.6.5.2
+

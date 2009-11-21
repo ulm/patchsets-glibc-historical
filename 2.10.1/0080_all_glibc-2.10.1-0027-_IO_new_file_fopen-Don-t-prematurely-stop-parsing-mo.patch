@@ -1,0 +1,44 @@
+From e40d82c4ee736936290827c8297c2c58e2181932 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Tue, 9 Jun 2009 06:59:02 -0700
+Subject: [PATCH 027/100] (_IO_new_file_fopen): Don't prematurely stop parsing mode string.
+ (cherry picked from commits 0d74e0436195a051d69e78bef10d23879788cb7e,
+ d360a0da2b42b2b79e9ce9c2d7984c234e840b7a)
+
+---
+ ChangeLog       |    5 +++++
+ libio/fileops.c |    6 +++---
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+2009-06-09  Ulrich Drepper  <drepper@redhat.com>
+
+       * libio/fileops.c (_IO_new_file_fopen): Don't prematurely stop
+       parsing mode string.
+
+diff --git a/libio/fileops.c b/libio/fileops.c
+index cf47c91..4698953 100644
+--- a/libio/fileops.c
++++ b/libio/fileops.c
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 1993, 1995, 1997-2005, 2006, 2007, 2008
++/* Copyright (C) 1993, 1995, 1997-2005, 2006, 2007, 2008, 2009
+    Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Written by Per Bothner <bothner@cygnus.com>.
+@@ -319,11 +319,11 @@ _IO_new_file_fopen (fp, filename, mode, is32not64)
+ 	  continue;
+ 	case 'c':
+ 	  fp->_flags2 |= _IO_FLAGS2_NOTCANCEL;
+-	  break;
++	  continue;
+ #ifdef O_CLOEXEC
+ 	case 'e':
+ 	  oflags |= O_CLOEXEC;
+-	  break;
++	  continue;
+ #endif
+ 	default:
+ 	  /* Ignore.  */
+-- 
+1.6.5.2
+

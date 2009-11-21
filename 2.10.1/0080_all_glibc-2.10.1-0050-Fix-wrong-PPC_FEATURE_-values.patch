@@ -1,0 +1,37 @@
+From ee38f2391d9d67ffb232780e28469a26ce3d221d Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <aschwab@redhat.com>
+Date: Sun, 5 Jul 2009 23:46:03 -0700
+Subject: [PATCH 050/100] Fix wrong PPC_FEATURE_* values.
+
+Nothing uses these wrong values yet, but it fixes a warning due to
+conflicting definitions in <asm/cputable.h>.
+
+(cherry picked from commit 2123d5815eaaa53a772be4b6069bdc6332f2f491)
+---
+ ChangeLog                |    5 +++++
+ sysdeps/powerpc/sysdep.h |    4 ++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+2009-07-03  Andreas Schwab  <aschwab@redhat.com>
+
+	* sysdeps/powerpc/sysdep.h (PPC_FEATURE_ARCH_2_06): Fix value.
+	(PPC_FEATURE_HAS_VSX): Likewise.
+
+diff --git a/sysdeps/powerpc/sysdep.h b/sysdeps/powerpc/sysdep.h
+index 43edeb7..f5c79c5 100644
+--- a/sysdeps/powerpc/sysdep.h
++++ b/sysdeps/powerpc/sysdep.h
+@@ -44,8 +44,8 @@
+ #define PPC_FEATURE_PA6T		0x00000800 /* PA Semi 6T Core */
+ #define PPC_FEATURE_HAS_DFP		0x00000400 /* Decimal FP Unit */
+ #define PPC_FEATURE_POWER6_EXT		0x00000200 /* P6 + mffgpr/mftgpr */
+-#define PPC_FEATURE_HAS_VSX		0x00000100 /* P7 Vector Extension.  */
+-#define PPC_FEATURE_ARCH_2_06	        0x00000080 /* ISA 2.06 */
++#define PPC_FEATURE_ARCH_2_06	        0x00000100 /* ISA 2.06 */
++#define PPC_FEATURE_HAS_VSX		0x00000080 /* P7 Vector Extension.  */
+ #define PPC_FEATURE_970 (PPC_FEATURE_POWER4 + PPC_FEATURE_HAS_ALTIVEC)
+ 
+ #ifdef __ASSEMBLER__
+-- 
+1.6.5.2
+

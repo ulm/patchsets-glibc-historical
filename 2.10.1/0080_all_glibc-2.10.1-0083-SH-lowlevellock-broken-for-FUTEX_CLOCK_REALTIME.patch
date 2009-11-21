@@ -1,0 +1,32 @@
+From f9ec44fb98801bb6fa72f18b922f08c41dec0e36 Mon Sep 17 00:00:00 2001
+From: Andrew Stubbs <ams@codesourcery.com>
+Date: Fri, 28 Aug 2009 14:57:16 -0700
+Subject: [PATCH 083/100] SH lowlevellock broken for FUTEX_CLOCK_REALTIME.
+
+(cherry picked from commit 7812c65b908916f34161e41a76114004d0fcebb3)
+---
+ nptl/ChangeLog                                 |    5 +++++
+ nptl/sysdeps/unix/sysv/linux/sh/lowlevellock.S |   18 +++++++++---------
+ 2 files changed, 14 insertions(+), 9 deletions(-)
+
+2009-08-27  Andrew Stubbs  <ams@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/sh/lowlevellock.S (__lll_timedlock_wait):
+	Correct a logic error.
+
+diff --git a/nptl/sysdeps/unix/sysv/linux/sh/lowlevellock.S b/nptl/sysdeps/unix/sysv/linux/sh/lowlevellock.S
+index b80c369..49b4e6d 100644
+--- a/nptl/sysdeps/unix/sysv/linux/sh/lowlevellock.S
++++ b/nptl/sysdeps/unix/sysv/linux/sh/lowlevellock.S
+@@ -253,7 +253,7 @@ __lll_timedlock_wait:
+ 	mov	#2, r6
+ 	cmp/eq	r6, r2
+ 	bf/s	2f
+-	 mov	r2, r6
++	 mov	r6, r2
+ 
+ 1:
+ 	mov	#2, r6
+-- 
+1.6.5.2
+

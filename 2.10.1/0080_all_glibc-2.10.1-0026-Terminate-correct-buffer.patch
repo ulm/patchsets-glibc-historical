@@ -1,0 +1,32 @@
+From e926cb177490407dfea3fc6c181a272b7b8a2a20 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Wed, 3 Jun 2009 08:30:35 -0700
+Subject: [PATCH 026/100] Terminate correct buffer.
+
+Little typo could cause additional characters to be printed.
+(cherry picked from commit fbb04b35e7997070feec74e0fd46953faef71f9e)
+---
+ ChangeLog       |    4 ++++
+ elf/dl-sysdep.c |    2 +-
+ 2 files changed, 5 insertions(+), 1 deletions(-)
+
+2009-06-03  Ulrich Drepper  <drepper@redhat.com>
+
+	* elf/dl-sysdep.c (_dl_show_auxv): Terminate correct string.
+
+diff --git a/elf/dl-sysdep.c b/elf/dl-sysdep.c
+index db10012..5700272 100644
+--- a/elf/dl-sysdep.c
++++ b/elf/dl-sysdep.c
+@@ -335,7 +335,7 @@ _dl_show_auxv (void)
+ 
+       /* Unknown value: print a generic line.  */
+       char buf2[17];
+-      buf[sizeof (buf2) - 1] = '\0';
++      buf2[sizeof (buf2) - 1] = '\0';
+       const char *val2 = _itoa ((unsigned long int) av->a_un.a_val,
+ 				buf2 + sizeof buf2 - 1, 16, 0);
+       const char *val =  _itoa ((unsigned long int) av->a_type,
+-- 
+1.6.5.2
+

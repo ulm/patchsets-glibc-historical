@@ -1,8 +1,22 @@
-6		[pending]
+6		21.11.2009
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
 	+ 0063_all_glibc-2.10-output-int-overflow.patch
 	+ 0066_all_glibc-2.10-malloc-check-race-crash.patch
+	+ 0080_all_glibc-2.10.1-0012-Unify-__WAIT_INT-definition-in-stdlib.h-and-sys-wait.patch
+	+ 0080_all_glibc-2.10.1-0026-Terminate-correct-buffer.patch
+	+ 0080_all_glibc-2.10.1-0027-_IO_new_file_fopen-Don-t-prematurely-stop-parsing-mo.patch
+	+ 0080_all_glibc-2.10.1-0030-Fix-futex-syscall-parameter-for-x86-absolute-timeout.patch
+	+ 0080_all_glibc-2.10.1-0035-Fix-type-of-nd_opt_home_agent_info_preference.patch
+	+ 0080_all_glibc-2.10.1-0041-Fix-x86-64-memchr-for-large-lengths.patch
+	+ 0080_all_glibc-2.10.1-0048-Fix-possible-race-when-freeing-object-in-fast-bin-li.patch
+	+ 0080_all_glibc-2.10.1-0050-Fix-wrong-PPC_FEATURE_-values.patch
+	+ 0080_all_glibc-2.10.1-0062-Compatibility-of-signalfd-eventfd-with-older-kernels.patch
+	+ 0080_all_glibc-2.10.1-0072-SH-fix-clobber-list-in-stdlib-longlong.h.patch
+	+ 0080_all_glibc-2.10.1-0083-SH-lowlevellock-broken-for-FUTEX_CLOCK_REALTIME.patch
+	+ 0080_all_glibc-2.10.1-0090-Fix-timer_create-to-initialize-timer_t-properly.patch
+	+ 0080_all_glibc-2.10.1-0097-Fix-preadv-pwritev-and-fallocate-for-D_FILE_OFFSET_B.patch
+	+ 0080_all_glibc-2.10.1-0098-Correct-readahead-syscall-wrapper-on-powerpc32.patch
 
 5		09.11.2009
 	M 6705_all_binutils-2.20-compat.patch -> 0060_all_binutils-2.20-compat.patch

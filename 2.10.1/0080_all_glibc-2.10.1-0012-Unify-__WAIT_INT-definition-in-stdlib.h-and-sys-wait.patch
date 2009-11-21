@@ -1,0 +1,37 @@
+From 94c11628f5d077da7ce5372019ab3af73efb67f3 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@redhat.com>
+Date: Sat, 16 May 2009 11:39:39 -0700
+Subject: [PATCH 012/100] Unify __WAIT_INT definition in stdlib.h and sys/wait.h.
+
+This fixes BZ #10159.  The stdlib.h definition was out of date.
+(cherry picked from commit a64039b084ae3faca3336b7d95f2e40c497d20e1)
+---
+ ChangeLog       |    3 +++
+ stdlib/stdlib.h |    6 +++---
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+2009-05-16  Ulrich Drepper  <drepper@redhat.com>
+ 
+	[BZ #10159]
+	* stdlib/stdlib.h (__WAIT_INT): Match the definition in <sys/wait.h>.
+
+diff --git a/stdlib/stdlib.h b/stdlib/stdlib.h
+index 77bb860..5b084ef 100644
+--- a/stdlib/stdlib.h
++++ b/stdlib/stdlib.h
+@@ -48,9 +48,9 @@ __BEGIN_DECLS
+    as well as POSIX.1 use of `int' for the status word.  */
+ 
+ #  if defined __GNUC__ && !defined __cplusplus
+-#   define __WAIT_INT(status)						      \
+-  (__extension__ ({ union { __typeof(status) __in; int __i; } __u;	      \
+-		    __u.__in = (status); __u.__i; }))
++#   define __WAIT_INT(status) \
++  (__extension__ (((union { __typeof(status) __in; int __i; }) \
++                   { .__in = (status) }).__i))
+ #  else
+ #   define __WAIT_INT(status)	(*(int *) &(status))
+ #  endif
+-- 
+1.6.5.2
+

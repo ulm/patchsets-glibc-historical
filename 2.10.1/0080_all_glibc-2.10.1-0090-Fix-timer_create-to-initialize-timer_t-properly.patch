@@ -1,0 +1,40 @@
+From c2c83ab3c062d57de42b35b69b302bae1151a952 Mon Sep 17 00:00:00 2001
+From: Suzuki Poulose <suzuki@in.ibm.com>
+Date: Wed, 2 Sep 2009 19:58:50 -0700
+Subject: [PATCH 090/100] Fix timer_create to initialize timer_t properly.
+
+(cherry picked from commit 38eb61366303c2857f1b00785757bc21da983d70)
+---
+ nptl/ChangeLog                              |    8 ++++++++
+ nptl/sysdeps/unix/sysv/linux/timer_create.c |    3 ++-
+ 2 files changed, 10 insertions(+), 1 deletions(-)
+
+2009-09-02  Suzuki K P  <suzuki@in.ibm.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	[BZ #7094]
+	* sysdeps/unix/sysv/linux/timer_create.c (timer_create):
+	Initialize the sigev_notify field for newly created timer to make sure
+	the timer gets deleted from the active timer's list upon timer_delete.  
+
+diff --git a/nptl/sysdeps/unix/sysv/linux/timer_create.c b/nptl/sysdeps/unix/sysv/linux/timer_create.c
+index a07234d..cdf127c 100644
+--- a/nptl/sysdeps/unix/sysv/linux/timer_create.c
++++ b/nptl/sysdeps/unix/sysv/linux/timer_create.c
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 2003,2004, 2007 Free Software Foundation, Inc.
++/* Copyright (C) 2003,2004, 2007, 2009 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by Ulrich Drepper <drepper@redhat.com>, 2003.
+ 
+@@ -167,6 +167,7 @@ timer_create (clock_id, evp, timerid)
+ 	      /* Copy the thread parameters the user provided.  */
+ 	      newp->sival = evp->sigev_value;
+ 	      newp->thrfunc = evp->sigev_notify_function;
++	      newp->sigev_notify = SIGEV_THREAD;
+ 
+ 	      /* We cannot simply copy the thread attributes since the
+ 		 implementation might keep internal information for
+-- 
+1.6.5.2
+
