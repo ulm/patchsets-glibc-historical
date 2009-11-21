@@ -1,5 +1,6 @@
 4		[pending]
 	- 0040_all_glibc-i586-chk.patch
+	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
 
 3		09.11.2009
 	+ 0077_all_i386-glibc-no-fallocate.patch
