@@ -2,6 +2,7 @@
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
 	+ 0063_all_glibc-2.10-output-int-overflow.patch
+	+ 0066_all_glibc-2.10-malloc-check-race-crash.patch
 
 5		09.11.2009
 	M 6705_all_binutils-2.20-compat.patch -> 0060_all_binutils-2.20-compat.patch
