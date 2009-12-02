@@ -1,8 +1,30 @@
-4		[pending]
+4		01.12.2009
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
+	+ 0056_all_glibc-2.11-preadv-pwritev-fallocate-64bit.patch
+	+ 0057_all_glibc-2.11-readahead-ppc32.patch
+	+ 0058_all_glibc-2.11-memset-fortify-const-warning.patch
 	+ 0066_all_glibc-2.10-malloc-check-race-crash.patch
 	+ 1020_all_glibc-longjmp-chk-hidden-fortify.patch
+	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch                                                                                                                            
+	+ 1530_all_glibc-m68k-sys-user.patch                                                                                                                                    
+	+ 6001_all_alpha-glibc-2.4-xstat.patch                                                                                                                                  
+	+ 6015_all_alpha-glibc-2.5-no-page-header.patch                                                                                                                         
+	+ 6017_all_alpha-glibc-2.8-creat.patch                                                                                                                                  
+	+ 6018_all_alpha-glibc-2.8-cache-shape.patch                                                                                                                            
+	+ 6019_all_alpha-glibc-ptr-mangling.patch                                                                                                                               
+	+ 6020_all_alpha-fix-gcc-4.1-warnings.patch                                                                                                                             
+	+ 6020_all_alpha-floor_ceil_fix.patch                                                                                                                                   
+	+ 6021_all_alpha-add-dl-procinfo-support.patch                                                                                                                          
+	+ 6022_alpha_alpha-add-fdatasync-support.patch                                                                                                                          
+	+ 6026_all_alpha-fix-rtld-fPIC.patch                                                                                                                                    
+	+ 6027_all_alpha-fix-memchr.patch                                                                                                                                       
+	+ 6028_all_alpha-fix-SOCK_NONBLOCK.patch                                                                                                                                
+	+ 6220_all_glibc-2.4-arm-cirrus-ep93xx-maverick-crunch-fpu.patch                                                                                                        
+	+ 6240_all_glibc-2.8-nptl-lowlevellock.patch                                                                                                                            
+	+ 6600_mips_librt-mips.patch                                                                                                                                            
+	+ 6605_all_glibc-2.4-fpu-cw-mips.patch                                                                                                                                  
+	+ 6610_all_glibc-r10k-workarounds.patch                                                                                                                                 
 
 3		09.11.2009
 	+ 0077_all_i386-glibc-no-fallocate.patch
