@@ -1,0 +1,27 @@
+From 5b55d23611e939340d658f42212c474c8188053e Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@redhat.com>
+Date: Fri, 6 Nov 2009 09:29:24 -0800
+Subject: [PATCH 05/25] Correct readahead syscall wrapper on powerpc32.
+
+Due to alignment of 64bit parameters there is a dummy second argument.
+But other than that the syscall arguments are directly mapped to the
+function arguments.
+---
+ ChangeLog                                          |    5 +++++
+ .../sysv/linux/powerpc/powerpc32/syscalls.list     |    3 +++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/powerpc/powerpc32/syscalls.list b/sysdeps/unix/sysv/linux/powerpc/powerpc32/syscalls.list
+index 82025b4..1233be6 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/powerpc32/syscalls.list
++++ b/sysdeps/unix/sysv/linux/powerpc/powerpc32/syscalls.list
+@@ -3,3 +3,6 @@
+ # System calls with wrappers.
+ oldgetrlimit	EXTRA	getrlimit	i:ip	__old_getrlimit	getrlimit@GLIBC_2.0
+ oldsetrlimit	EXTRA	setrlimit	i:ip	__old_setrlimit	setrlimit@GLIBC_2.0
++
++# Due to 64bit alignment there is a dummy second parameter
++readahead	-	readahead	i:iiiii	__readahead	readahead
+-- 
+1.6.5.3
+

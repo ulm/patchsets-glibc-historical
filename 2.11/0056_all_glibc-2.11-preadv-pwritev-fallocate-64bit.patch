@@ -1,0 +1,147 @@
+From 34df851b3364e14133b865574dbc5f2a8b88874e Mon Sep 17 00:00:00 2001
+From: Jakub Jelinek <jakub@redhat.com>
+Date: Fri, 6 Nov 2009 09:26:31 -0800
+Subject: [PATCH 03/25] Fix preadv, pwritev and fallocate for	-D_FILE_OFFSET_BITS=64.
+
+As reported in http://bugzilla.redhat.com/533063 , preadv/pwritev prototypes
+are wrong on 32-bit arches with -D_FILE_OFFSET_BITS=64 and as I've just
+found, fallocate is wrong too.
+The problem is that only off_t is remapped to the 64-bit type transparently,
+__off_t is not.
+---
+ ChangeLog                                    |   14 ++++++++++++++
+ misc/sys/uio.h                               |    4 ++--
+ sysdeps/unix/sysv/linux/i386/bits/fcntl.h    |    4 ++--
+ sysdeps/unix/sysv/linux/ia64/bits/fcntl.h    |    4 ++--
+ sysdeps/unix/sysv/linux/powerpc/bits/fcntl.h |    4 ++--
+ sysdeps/unix/sysv/linux/s390/bits/fcntl.h    |    4 ++--
+ sysdeps/unix/sysv/linux/sh/bits/fcntl.h      |    4 ++--
+ sysdeps/unix/sysv/linux/sparc/bits/fcntl.h   |    4 ++--
+ sysdeps/unix/sysv/linux/x86_64/bits/fcntl.h  |    4 ++--
+ 9 files changed, 30 insertions(+), 16 deletions(-)
+
+diff --git a/misc/sys/uio.h b/misc/sys/uio.h
+index 05d956b..a32b7ed 100644
+--- a/misc/sys/uio.h
++++ b/misc/sys/uio.h
+@@ -80,10 +80,10 @@ extern ssize_t pwritev (int __fd, __const struct iovec *__iovec, int __count,
+ # else
+ #  ifdef __REDIRECT
+ extern ssize_t __REDIRECT (preadv, (int __fd, __const struct iovec *__iovec,
+-				    int __count, __off_t __offset),
++				    int __count, __off64_t __offset),
+ 			   preadv64) __wur;
+ extern ssize_t __REDIRECT (pwritev, (int __fd, __const struct iovec *__iovec,
+-				     int __count, __off_t __offset),
++				     int __count, __off64_t __offset),
+ 			   pwritev64) __wur;
+ #  else
+ #   define preadv preadv64
+diff --git a/sysdeps/unix/sysv/linux/i386/bits/fcntl.h b/sysdeps/unix/sysv/linux/i386/bits/fcntl.h
+index 06b9e48..6a38dc0 100644
+--- a/sysdeps/unix/sysv/linux/i386/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/i386/bits/fcntl.h
+@@ -259,8 +259,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+diff --git a/sysdeps/unix/sysv/linux/ia64/bits/fcntl.h b/sysdeps/unix/sysv/linux/ia64/bits/fcntl.h
+index 9677394..9a0245a 100644
+--- a/sysdeps/unix/sysv/linux/ia64/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/ia64/bits/fcntl.h
+@@ -253,8 +253,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+diff --git a/sysdeps/unix/sysv/linux/powerpc/bits/fcntl.h b/sysdeps/unix/sysv/linux/powerpc/bits/fcntl.h
+index ea0ee6e..6c4b66b 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/powerpc/bits/fcntl.h
+@@ -259,8 +259,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+diff --git a/sysdeps/unix/sysv/linux/s390/bits/fcntl.h b/sysdeps/unix/sysv/linux/s390/bits/fcntl.h
+index 3a11c48..d3dddbc 100644
+--- a/sysdeps/unix/sysv/linux/s390/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/s390/bits/fcntl.h
+@@ -279,8 +279,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+diff --git a/sysdeps/unix/sysv/linux/sh/bits/fcntl.h b/sysdeps/unix/sysv/linux/sh/bits/fcntl.h
+index 03ecd72..d7a21ea 100644
+--- a/sysdeps/unix/sysv/linux/sh/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/sh/bits/fcntl.h
+@@ -259,8 +259,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+diff --git a/sysdeps/unix/sysv/linux/sparc/bits/fcntl.h b/sysdeps/unix/sysv/linux/sparc/bits/fcntl.h
+index 2b8c9bd..dfa848a 100644
+--- a/sysdeps/unix/sysv/linux/sparc/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/sparc/bits/fcntl.h
+@@ -278,8 +278,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/fcntl.h b/sysdeps/unix/sysv/linux/x86_64/bits/fcntl.h
+index 29c956c..c3eb859 100644
+--- a/sysdeps/unix/sysv/linux/x86_64/bits/fcntl.h
++++ b/sysdeps/unix/sysv/linux/x86_64/bits/fcntl.h
+@@ -273,8 +273,8 @@ extern ssize_t tee (int __fdin, int __fdout, size_t __len,
+ extern int fallocate (int __fd, int __mode, __off_t __offset, __off_t __len);
+ # else
+ #  ifdef __REDIRECT
+-extern int __REDIRECT (fallocate, (int __fd, int __mode, __off_t __offset,
+-				   __off_t __len),
++extern int __REDIRECT (fallocate, (int __fd, int __mode, __off64_t __offset,
++				   __off64_t __len),
+ 		       fallocate64);
+ #  else
+ #   define fallocate fallocate64
+-- 
+1.6.5.3
+
