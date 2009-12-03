@@ -1,4 +1,4 @@
-5		[pending]
+5		02.12.2009
 	+ 1120_all_glibc-2.11-longjmp-chk-fallback.patch
 	+ 6023_all_alpha-fcntl-updates.patch
 	+ 6024_all_alpha-settime-typo.patch
