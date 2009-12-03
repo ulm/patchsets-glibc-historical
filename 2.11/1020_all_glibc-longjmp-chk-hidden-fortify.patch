@@ -1,4 +1,5 @@
 http://bugs.gentoo.org/293637
+http://sourceware.org/ml/libc-alpha/2009-12/msg00010.html
 
 a bunch of ____longjmp_chk files mix PIC and SHARED code under just PIC.
 use the HIDDEN_JUMPTARGET() function so the right function is called.
