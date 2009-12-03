@@ -1,3 +1,9 @@
+5		[pending]
+	+ 1120_all_glibc-2.11-longjmp-chk-fallback.patch
+	+ 6023_all_alpha-fcntl-updates.patch
+	+ 6024_all_alpha-settime-typo.patch
+	U 6026_all_alpha-fix-rtld-fPIC.patch
+
 4		01.12.2009
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
