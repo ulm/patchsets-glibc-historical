@@ -1,3 +1,6 @@
+6		[pending]
+	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
+
 5		02.12.2009
 	+ 1120_all_glibc-2.11-longjmp-chk-fallback.patch
 	+ 6023_all_alpha-fcntl-updates.patch
