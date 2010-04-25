@@ -2,6 +2,7 @@ revert cfi additions to clone on i386/x86_64 to workaround problems in
 gcc's unwinder code.  this is not a bug in glibc, it triggers problems
 elsewhere.  this cfi code does not gain us a whole lot anyways.
 
+http://bugs.gentoo.org/202055
 http://gcc.gnu.org/ml/gcc/2006-12/msg00293.html
 
 Index: sysdeps/unix/sysv/linux/i386/clone.S
