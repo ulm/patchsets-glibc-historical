@@ -1,5 +1,6 @@
 7		[pending]
 	- 0040_all_glibc-i586-chk.patch
+	U 1010_all_glibc-queue-header-updates.patch
 
 6		31.03.2008
 	+ 0085_all_glibc-disable-ldconfig.patch

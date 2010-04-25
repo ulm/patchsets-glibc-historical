@@ -1,3 +1,6 @@
+1.8		[pending]
+	U 1010_all_glibc-queue-header-updates.patch
+
 1.7		03.23.2007
 	+ 0065_all_glibc-2.7-i386-new-binutils.patch
 	+ 0070_all_glibc-i386-x86_64-revert-clone-cfi.patch

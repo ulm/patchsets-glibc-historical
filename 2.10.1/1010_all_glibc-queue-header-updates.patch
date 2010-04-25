@@ -41,7 +41,7 @@ http://bugs.gentoo.org/201979
 +	(STAILQ_EMPTY((head)) ?						\
 +		NULL :							\
 +	        ((struct type *)(void *)				\
-+		((char *)((head)->stqh_last) - __offsetof(struct type, field))))
++		((char *)((head)->stqh_last) - offsetof(struct type, field))))
 +
  #define	STAILQ_INSERT_AFTER(head, listelm, elm, field) do {		\
  	if (((elm)->field.stqe_next = (listelm)->field.stqe_next) == NULL)\

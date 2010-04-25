@@ -1,3 +1,6 @@
+7		[pending]
+	U 1010_all_glibc-queue-header-updates.patch
+
 6		21.11.2009
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch

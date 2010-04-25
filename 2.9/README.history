@@ -1,5 +1,6 @@
 8		[pending]
 	- 0040_all_glibc-i586-chk.patch
+	U 1010_all_glibc-queue-header-updates.patch
 
 7		05.11.2009
 	+ 0060_all_glibc-tweak-first-day-of-week.patch
