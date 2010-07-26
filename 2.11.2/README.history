@@ -1,5 +1,6 @@
-3		[pending]
+3		26.07.2010
 	U 0020_all_glibc-tweak-rfc1918-lookup.patch
+	+ 1505_hppa_glibc-2.11-hppa-nptl.patch
 
 2		29.06.2010
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
