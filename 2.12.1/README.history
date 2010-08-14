@@ -1,3 +1,6 @@
+2		[pending]
+	+ 0010_all_glibc-locale-output-quote.patch
+
 1		05.08.2010
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
