@@ -1,5 +1,7 @@
-2		[pending]
+2		19.08.2010
 	+ 0010_all_glibc-locale-output-quote.patch
+	+ 0055_all_glibc-2.12-static-shared-getpagesize.patch
+	+ 0060_all_glibc-2.12-sse4-x86-static-strspn.patch
 
 1		05.08.2010
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
