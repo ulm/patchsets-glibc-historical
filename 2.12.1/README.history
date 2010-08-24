@@ -1,3 +1,6 @@
+3		23.08.2010
+	+ 0070_all_glibc-2.12-asm-gnu-indirect.patch
+
 2		19.08.2010
 	+ 0010_all_glibc-locale-output-quote.patch
 	+ 0055_all_glibc-2.12-static-shared-getpagesize.patch
