@@ -1,5 +1,6 @@
 4		[pending]
 	+ 0010_all_glibc-locale-output-quote.patch
+	+ 1509_all_glibc-2.11-hppa-SOCK_CLOEXEC.patch
 
 3		26.07.2010
 	U 0020_all_glibc-tweak-rfc1918-lookup.patch
