@@ -2,7 +2,8 @@
 	+ 0010_all_glibc-locale-output-quote.patch
 	+ 0050_all_glibc-make-3.82-rules.patch
 	+ 1509_all_glibc-2.11-hppa-SOCK_CLOEXEC.patch
-	+ 6029_all_sparc-glibc-2.12-epoll_create1.patch
+	R 6028_all_alpha-fix-SOCK_NONBLOCK.patch -> 6030_all_alpha-fix-SOCK_NONBLOCK.patch
+	+ 6031_all_sparc-glibc-2.12-epoll_create1.patch
 	+ 6531_all_sparc-glibc-2.12-epoll_create1.patch
 
 3		26.07.2010
