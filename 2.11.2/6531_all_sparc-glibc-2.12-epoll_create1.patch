@@ -1,0 +1,47 @@
+https://bugs.gentoo.org/331639
+
+From fdc0c10d9b5c39ec20c35d2f3808d3c70cb7f60b Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Tue, 31 Aug 2010 16:03:50 -0400
+Subject: [PATCH] linux/sparc: convert from epoll_create2 to epoll_create1
+
+Sparc's epoll.h was missed when epoll_create2 was changed to epoll_create1.
+
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2010-08-31  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/unix/sysv/linux/sparc/sys/epoll.h (epoll_create2): Delete.
+	(epoll_create1): Add.
+---
+ sysdeps/unix/sysv/linux/sparc/sys/epoll.h |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/sparc/sys/epoll.h b/sysdeps/unix/sysv/linux/sparc/sys/epoll.h
+index cc0ddef..9943f21 100644
+--- a/sysdeps/unix/sysv/linux/sparc/sys/epoll.h
++++ b/sysdeps/unix/sysv/linux/sparc/sys/epoll.h
+@@ -31,7 +31,7 @@ typedef __sigset_t sigset_t;
+ #endif
+ 
+ 
+-/* Flags to be passed to epoll_create2.  */
++/* Flags to be passed to epoll_create1.  */
+ enum
+   {
+     EPOLL_CLOEXEC = 0x400000,
+@@ -101,8 +101,9 @@ __BEGIN_DECLS
+    returned by epoll_create() should be closed with close().  */
+ extern int epoll_create (int __size) __THROW;
+ 
+-/* Same as epoll_create but with an additional FLAGS parameter.  */
+-extern int epoll_create2 (int __size, int __flags) __THROW;
++/* Same as epoll_create but with an FLAGS parameter.  The unused SIZE
++   parameter has been dropped.  */
++extern int epoll_create1 (int __flags) __THROW;
+ 
+ 
+ /* Manipulate an epoll instance "epfd". Returns 0 in case of success,
+-- 
+1.7.2
+

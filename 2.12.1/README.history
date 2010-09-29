@@ -1,3 +1,6 @@
+4		[pending]
+	+ 6531_all_sparc-glibc-2.12-epoll_create1.patch
+
 3		23.08.2010
 	+ 0070_all_glibc-2.12-asm-gnu-indirect.patch
 
