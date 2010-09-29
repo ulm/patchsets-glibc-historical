@@ -1,8 +1,24 @@
-2009-07-27  Aurelien Jarno  <aurelien@aurel32.net>
+From 200b5faee1cfac10d831e9b278ef294ca3119f53 Mon Sep 17 00:00:00 2001
+From: Richard Henderson <rth@twiddle.net>
+Date: Tue, 4 May 2010 09:06:15 -0700
+Subject: [PATCH] alpha: fix memchr to not cause memory faults.
 
+http://www.mail-archive.com/debian-alpha@lists.debian.org/msg25088.html
+
+2010-05-03  Aurelien Jarno  <aurelien@aurel32.net>
+ 
 	* sysdeps/alpha/memchr.S: Use prefetch load.
 	* sysdeps/alpha/alphaev6/memchr.S: Likewise.
 
+Signed-off-by: Matt Turner <mattst88@gmail.com>
+---
+ ChangeLog.alpha                 |    5 +++++
+ sysdeps/alpha/alphaev6/memchr.S |   26 +++++++++++++-------------
+ sysdeps/alpha/memchr.S          |   22 +++++++++++-----------
+ 3 files changed, 29 insertions(+), 24 deletions(-)
+
+diff --git a/sysdeps/alpha/alphaev6/memchr.S b/sysdeps/alpha/alphaev6/memchr.S
+index 88e91fa..fe77cd8 100644
 --- ports/sysdeps/alpha/alphaev6/memchr.S
 +++ ports/sysdeps/alpha/alphaev6/memchr.S
 @@ -127,7 +127,7 @@ $first_quad:
@@ -65,6 +81,8 @@
  	nop			# E :
  	bne	$18, $last_quad	# U :
  
+diff --git a/sysdeps/alpha/memchr.S b/sysdeps/alpha/memchr.S
+index 5d713d5..87c7fb1 100644
 --- ports/sysdeps/alpha/memchr.S
 +++ ports/sysdeps/alpha/memchr.S
 @@ -119,7 +119,7 @@ $first_quad:
@@ -115,3 +133,5 @@
  	bne	a2, $last_quad	# e1	:
  
  $not_found:
+-- 
+1.7.3
