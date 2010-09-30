@@ -7,6 +7,7 @@
 	+ 6029_all_alpha-fix-memchr.patch
 	R 6028_all_alpha-fix-SOCK_NONBLOCK.patch -> 6030_all_alpha-fix-SOCK_NONBLOCK.patch
 	+ 6031_all_sparc-glibc-2.12-epoll_create1.patch
+	+ 6230_all_arm-glibc-hardened.patch
 	+ 6531_all_sparc-glibc-2.12-epoll_create1.patch
 
 3		26.07.2010
