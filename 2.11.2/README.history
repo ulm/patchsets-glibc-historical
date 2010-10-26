@@ -1,3 +1,6 @@
+5		[pending]
+	+ 0060_all_glibc-ld-audit-setuid.patch
+
 4		13.10.2010
 	+ 0010_all_glibc-locale-output-quote.patch
 	+ 0050_all_glibc-make-3.82-rules.patch
