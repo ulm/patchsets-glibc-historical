@@ -1,3 +1,7 @@
+6		31.10.2010
+	+ 0061_all_glibc-double-expansion.patch
+	+ 0062_all_glibc-no-ORIGIN-setuid.patch
+
 5		26.10.2010
 	+ 0060_all_glibc-ld-audit-setuid.patch
 
