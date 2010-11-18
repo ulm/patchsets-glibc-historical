@@ -1,5 +1,0 @@
---- ports/sysdeps/unix/sysv/linux/alpha/nptl/timer_settime.c
-+++ ports/sysdeps/unix/sysv/linux/alpha/nptl/timer_settime.c
-@@ -1 +1 @@
--#include <nptl/sysdeps/unix/sysv/linux/x86_64/timer_gettime.c>
-+#include <nptl/sysdeps/unix/sysv/linux/x86_64/timer_settime.c>

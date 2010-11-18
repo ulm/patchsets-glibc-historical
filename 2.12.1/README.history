@@ -1,5 +1,22 @@
-7		[pending]
+7		18.11.2010
 	- 0062_all_glibc-no-ORIGIN-setuid.patch
+	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
+	+ 1505_hppa_glibc-2.11-hppa-nptl.patch
+	+ 1509_all_glibc-2.11-hppa-SOCK_CLOEXEC.patch
+	+ 1530_all_glibc-m68k-sys-user.patch
+	+ 6018_all_alpha-glibc-2.8-cache-shape.patch
+	+ 6020_all_alpha-fix-gcc-4.1-warnings.patch
+	+ 6022_alpha_alpha-add-fdatasync-support.patch
+	+ 6026_all_alpha-fix-rtld-fPIC.patch
+	+ 6028_all_alpha-fix-memchr.patch
+	+ 6029_all_alpha-fix-memchr.patch
+	+ 6031_all_alpha-glibc-2.12-epoll_create1.patch
+	+ 6032_all_alpha-syscall-6.patch
+	+ 6220_all_glibc-2.4-arm-cirrus-ep93xx-maverick-crunch-fpu.patch
+	+ 6230_all_arm-glibc-hardened.patch
+	+ 6240_all_glibc-2.8-nptl-lowlevellock.patch
+	+ 6600_mips_librt-mips.patch
+	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
 
 6		31.10.2010
 	+ 0061_all_glibc-double-expansion.patch
