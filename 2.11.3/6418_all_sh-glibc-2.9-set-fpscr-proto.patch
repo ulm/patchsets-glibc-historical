@@ -1,0 +1,12 @@
+
+
+--- a/sysdeps/sh/sh4/fpu/fpu_control.h
++++ b/sysdeps/sh/sh4/fpu/fpu_control.h
+@@ -45,6 +45,7 @@ typedef unsigned int fpu_control_t;
+ #define _FPU_GETCW(cw) __asm__ ("sts fpscr,%0" : "=r" (cw))
+ 
+ #if defined __GNUC__
++extern void __set_fpscr(unsigned long);
+ #define _FPU_SETCW(cw) __set_fpscr ((cw))
+ #else
+ #define _FPU_SETCW(cw) __asm__ ("lds %0,fpscr" : : "r" (cw))
