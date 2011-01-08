@@ -20,8 +20,8 @@ __have_sock_cloexec and __have_pipe2 to true.  but if glibc was built against
 older kernel headers where __NR_pipe2 does not exist, glibc will have a ENOSYS
 stub for it.  so popen() will always fail as glibc assumes pipe2() works.
 
---- include/unistd.h
-+++ include/unistd.h
+--- a/include/unistd.h
++++ b/include/unistd.h
 @@ -167,9 +167,6 @@
  extern int __pause_nocancel (void) attribute_hidden;
  
@@ -33,8 +33,8 @@ stub for it.  so popen() will always fail as glibc assumes pipe2() works.
 +extern int __have_pipe2;
  
  #endif
---- socket/have_sock_cloexec.c
-+++ socket/have_sock_cloexec.c
+--- a/socket/have_sock_cloexec.c
++++ b/socket/have_sock_cloexec.c
 @@ -16,9 +16,14 @@
     Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
     02111-1307 USA.  */

@@ -1,5 +1,5 @@
---- localedata/locales/zh_TW	2003-04-05 11:04:24.000000000 +0900
-+++ localedata/locales/zh_TW	2003-04-05 11:05:26.000000000 +0900
+--- a/localedata/locales/zh_TW
++++ b/localedata/locales/zh_TW
 @@ -1,7 +1,7 @@
  comment_char %
  escape_char /

@@ -21,8 +21,8 @@ Kazu Hirata
 
 Index: sysdeps/generic/initfini.c
 ===================================================================
---- sysdeps/generic/initfini.c	16 Aug 2004 04:50:53 -0000	1.9
-+++ sysdeps/generic/initfini.c	7 May 2006 15:31:08 -0000
+--- a/sysdeps/generic/initfini.c	16 Aug 2004 04:50:53 -0000	1.9
++++ b/sysdeps/generic/initfini.c	7 May 2006 15:31:08 -0000
 @@ -70,7 +70,7 @@
  /* The beginning of _init:  */
  asm (&quot;\n/*@_init_PROLOG_BEGINS*/&quot;);

@@ -4,8 +4,8 @@ many ports hit this warning:
 
 snipped from suse
 
---- sysdeps/unix/sysv/linux/check_native.c
-+++ sysdeps/unix/sysv/linux/check_native.c
+--- a/sysdeps/unix/sysv/linux/check_native.c
++++ b/sysdeps/unix/sysv/linux/check_native.c
 @@ -23,6 +23,7 @@
  #include <stddef.h>
  #include <stdint.h>
