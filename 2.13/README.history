@@ -1,3 +1,6 @@
+2		[pending]
+	+ 0060_all_glibc-2.13-static-memmove-ssse3.patch
+
 1		05.02.2011
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
