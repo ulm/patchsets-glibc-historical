@@ -1,4 +1,5 @@
-2		[pending]
+2		14.02.2011
+	+ 0050_all_glibc-2.13-ldso-prelink-segv.patch
 	+ 0060_all_glibc-2.13-static-memmove-ssse3.patch
 
 1		05.02.2011
