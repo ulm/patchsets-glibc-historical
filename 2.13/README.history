@@ -1,6 +1,9 @@
 3		[pending]
 	+ 0061_all_glibc-2.13-static-memset.patch
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
+	- 6028_all_alpha-fix-memchr.patch
+	- 6029_all_alpha-fix-memchr.patch
+	- 6606_all_mips-glibc-delete-getpagesize.c.patch
 
 2		14.02.2011
 	+ 0050_all_glibc-2.13-ldso-prelink-segv.patch
