@@ -1,5 +1,6 @@
 2		[pending]
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
+	+ 6532_all_sparc64-tls-cross-test.patch
 
 1		25.04.2010
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch

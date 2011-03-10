@@ -1,5 +1,6 @@
 9		[pending]
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
+	+ 6532_all_sparc64-tls-cross-test.patch
 
 8		09.12.2010
 	+ 6606_all_mips-glibc-delete-getpagesize.c.patch

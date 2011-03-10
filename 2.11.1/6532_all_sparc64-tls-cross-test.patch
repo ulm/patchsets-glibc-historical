@@ -1,0 +1,75 @@
+From 2aa10e7026b5e37ffb4a994e2d630cddaebed167 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 10 Mar 2011 02:21:57 -0500
+Subject: [PATCH] sparc64: relax tls linking test
+
+The TLS test attempts to link an assembly program, but this implicitly
+pulls in start objects.  This obviously causes problems when attempting
+to cross-compile glibc for the first time since glibc itself provides
+these start files.  So tweak the test to skip these bits which are
+irrelevant to the test at hand.
+
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2011-03-10  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/sparc/sparc64/elf/configure.in (libc_cv_sparc64_tls): Add
+	$LDFLAGS and -nostdlib -nostartfiles to linking step.  Change main
+	to _start.
+	* sysdeps/sparc/sparc64/elf/configure: Regenerate.
+---
+ sysdeps/sparc/sparc64/elf/configure    |    6 +++---
+ sysdeps/sparc/sparc64/elf/configure.in |    6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/sysdeps/sparc/sparc64/elf/configure b/sysdeps/sparc/sparc64/elf/configure
+index 2c9e29e..f213438 100644
+--- a/sysdeps/sparc/sparc64/elf/configure
++++ b/sysdeps/sparc/sparc64/elf/configure
+@@ -16,8 +16,8 @@ foo:	.word	1
+ 	.globl bar
+ bar:	.skip	4
+ 	.text
+-	.globl main
+-main:	sethi	%tgd_hi22(foo), %l1
++	.globl _start
++_start:	sethi	%tgd_hi22(foo), %l1
+ 	add	%l1, %tgd_lo10(foo), %l1
+ 	add	%l7, %l1, %o0, %tgd_add(foo)
+ 	call	__tls_get_addr, %tgd_call(foo)
+@@ -35,7 +35,7 @@ main:	sethi	%tgd_hi22(foo), %l1
+ 	sethi	%tle_hix22(foo), %l1
+ 	xor	%l1, %tle_lox10(foo), %l1
+ EOF
+-if { ac_try='${CC-cc} -o conftest.bin $CFLAGS conftest.s 1>&5'
++if { ac_try='${CC-cc} -o conftest.bin $CFLAGS $LDFLAGS conftest.s -nostdlib -nostartfiles 1>&5'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+diff --git a/sysdeps/sparc/sparc64/elf/configure.in b/sysdeps/sparc/sparc64/elf/configure.in
+index fd7e34e..4f75978 100644
+--- a/sysdeps/sparc/sparc64/elf/configure.in
++++ b/sysdeps/sparc/sparc64/elf/configure.in
+@@ -13,8 +13,8 @@ foo:	.word	1
+ 	.globl bar
+ bar:	.skip	4
+ 	.text
+-	.globl main
+-main:	sethi	%tgd_hi22(foo), %l1
++	.globl _start
++_start:	sethi	%tgd_hi22(foo), %l1
+ 	add	%l1, %tgd_lo10(foo), %l1
+ 	add	%l7, %l1, %o0, %tgd_add(foo)
+ 	call	__tls_get_addr, %tgd_call(foo)
+@@ -34,7 +34,7 @@ main:	sethi	%tgd_hi22(foo), %l1
+ EOF
+ changequote([,])dnl
+ dnl
+-if AC_TRY_COMMAND(${CC-cc} -o conftest.bin $CFLAGS conftest.s 1>&AS_MESSAGE_LOG_FD); then
++if AC_TRY_COMMAND(${CC-cc} -o conftest.bin $CFLAGS $LDFLAGS conftest.s -nostdlib -nostartfiles 1>&AS_MESSAGE_LOG_FD); then
+   libc_cv_sparc64_tls=yes
+ else
+   libc_cv_sparc64_tls=no
+-- 
+1.7.4.1
+

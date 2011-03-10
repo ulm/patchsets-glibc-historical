@@ -1,6 +1,7 @@
 6		[pending]
 	U 1010_all_glibc-queue-header-updates.patch
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
+	+ 6532_all_sparc64-tls-cross-test.patch
 
 5		02.12.2009
 	+ 1120_all_glibc-2.11-longjmp-chk-fallback.patch
