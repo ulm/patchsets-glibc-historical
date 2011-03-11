@@ -1,5 +1,6 @@
-3		[pending]
+3		11.03.2011
 	+ 0061_all_glibc-2.13-static-memset.patch
+	+ 1005_all_glibc-sigaction.patch
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
 	+ 6027_all_alpha-glibc-2.13-F_GET-SETPIPE_SZ.patch
 	+ 6028_all_alpha-glibc-2.13-statfs.f_flags.patch
