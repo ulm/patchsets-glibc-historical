@@ -1,33 +1,7 @@
 http://bugs.gentoo.org/301642
 
-diff -uNr glibc-2.11.2.orig/ChangeLog glibc-2.11.2/ChangeLog
---- glibc-2.11.2.orig/ChangeLog	2010-07-25 21:58:31.317129388 +0200
-+++ glibc-2.11.2/ChangeLog	2010-07-25 22:01:24.035435289 +0200
-@@ -211,6 +211,14 @@
- 	* io/ftw.c (ftw_startup): Close	descriptor for initial directory
- 	after changing back to it.
- 
-+2010-02-09  Carlos O'Donell  <carlos@codesourcery.com>
-+
-+	* elf/dl-fptr.c: Update copyright year.
-+	(struct local): Don't initialize root.
-+	(make_fdesc): Initialize root table pointer.
-+	(_dl_fptr_init): New function.
-+	* sysdeps/generic/dl-fptr.h (_dl_fptr_init): New prototype. 
-+
- 2010-02-09  Ulrich Drepper  <drepper@redhat.com>
- 
- 	* sysdeps/i386/lshift.S: Fix unwind information.
-diff -uNr glibc-2.11.2.orig/elf/dl-fptr.c glibc-2.11.2/elf/dl-fptr.c
---- glibc-2.11.2.orig/elf/dl-fptr.c	2010-07-25 21:58:31.241131107 +0200
-+++ glibc-2.11.2/elf/dl-fptr.c	2010-07-25 22:00:54.323726976 +0200
-@@ -1,5 +1,5 @@
- /* Manage function descriptors.  Generic version.
--   Copyright (C) 1999-2004, 2006 Free Software Foundation, Inc.
-+   Copyright (C) 1999-2004, 2006, 2010 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
- 
-    The GNU C Library is free software; you can redistribute it and/or
+--- a/elf/dl-fptr.c	2010-07-25 21:58:31.241131107 +0200
++++ b/elf/dl-fptr.c	2010-07-25 22:00:54.323726976 +0200
 @@ -56,7 +56,8 @@
    }
  local =
@@ -56,40 +30,8 @@ diff -uNr glibc-2.11.2.orig/elf/dl-fptr.c glibc-2.11.2/elf/dl-fptr.c
  
  static ElfW(Addr)
  make_fdesc (ElfW(Addr) ip, ElfW(Addr) gp)
-diff -uNr glibc-2.11.2.orig/nptl/ChangeLog glibc-2.11.2/nptl/ChangeLog
---- glibc-2.11.2.orig/nptl/ChangeLog	2010-07-25 21:58:30.721135832 +0200
-+++ glibc-2.11.2/nptl/ChangeLog	2010-07-25 22:00:00.884251052 +0200
-@@ -1,3 +1,21 @@
-+2010-02-09  Carlos O'Donell  <carlos@codesourcery.com>
-+
-+	* allocatestack.c (allocate_stack): Define
-+	_STACK_GROWS_DOWN and _STACK_GROWS_UP cases for
-+	user defined stacks. Adjust define indentation.
-+	Remove assert for _STACK_GROWS_UP case.
-+	* pthread_create.c: Update coprigyt year.
-+	(start_thread): Implement _STACK_GROWS_UP case.
-+	* pthread_attr_getstack.c: Update copyright year.
-+	(__pthread_attr_getstack): Define _STACK_GROWS_UP
-+	case.
-+	* pthread_attr_setstack.c: Update copyright year.
-+	(__pthread_attr_setstack): Define _STACK_GROWS_UP
-+	case.
-+	(__old_pthread_attr_setstack): Likewise.
-+	* pthread_getattr_np: Update copyright year.
-+	(pthread_getattr_np): Define _STACK_GROWS_UP cases.
-+
- 2009-11-27  Andreas Schwab  <schwab@redhat.com>
- 
- 	* sysdeps/unix/sysv/linux/x86_64/cancellation.S: Reload
-diff -uNr glibc-2.11.2.orig/nptl/allocatestack.c glibc-2.11.2/nptl/allocatestack.c
---- glibc-2.11.2.orig/nptl/allocatestack.c	2010-07-25 21:58:30.669136153 +0200
-+++ glibc-2.11.2/nptl/allocatestack.c	2010-07-25 21:59:05.528795435 +0200
-@@ -1,4 +1,4 @@
--/* Copyright (C) 2002-2007, 2009 Free Software Foundation, Inc.
-+/* Copyright (C) 2002-2007, 2009, 2010 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
+--- a/nptl/allocatestack.c	2010-07-25 21:58:30.669136153 +0200
++++ b/nptl/allocatestack.c	2010-07-25 21:59:05.528795435 +0200
 @@ -354,6 +354,15 @@
    if (__builtin_expect (attr->flags & ATTR_FLAG_STACKADDR, 0))
      {
@@ -159,9 +101,8 @@ diff -uNr glibc-2.11.2.orig/nptl/allocatestack.c glibc-2.11.2/nptl/allocatestack
  #endif
  
    return 0;
-diff -uNr glibc-2.11.2.orig/nptl/pthread_attr_getstack.c glibc-2.11.2/nptl/pthread_attr_getstack.c
---- glibc-2.11.2.orig/nptl/pthread_attr_getstack.c	2010-07-25 21:58:30.717135358 +0200
-+++ glibc-2.11.2/nptl/pthread_attr_getstack.c	2010-07-25 21:59:05.532796982 +0200
+--- a/nptl/pthread_attr_getstack.c	2010-07-25 21:58:30.717135358 +0200
++++ b/nptl/pthread_attr_getstack.c	2010-07-25 21:59:05.532796982 +0200
 @@ -1,4 +1,4 @@
 -/* Copyright (C) 2002 Free Software Foundation, Inc.
 +/* Copyright (C) 2002, 2010 Free Software Foundation, Inc.
@@ -180,9 +121,8 @@ diff -uNr glibc-2.11.2.orig/nptl/pthread_attr_getstack.c glibc-2.11.2/nptl/pthre
    *stacksize = iattr->stacksize;
  
    return 0;
-diff -uNr glibc-2.11.2.orig/nptl/pthread_attr_setstack.c glibc-2.11.2/nptl/pthread_attr_setstack.c
---- glibc-2.11.2.orig/nptl/pthread_attr_setstack.c	2010-07-25 21:58:30.717135358 +0200
-+++ glibc-2.11.2/nptl/pthread_attr_setstack.c	2010-07-25 21:59:05.532796982 +0200
+--- a/nptl/pthread_attr_setstack.c	2010-07-25 21:58:30.717135358 +0200
++++ b/nptl/pthread_attr_setstack.c	2010-07-25 21:59:05.532796982 +0200
 @@ -1,4 +1,4 @@
 -/* Copyright (C) 2002, 2003, 2006 Free Software Foundation, Inc.
 +/* Copyright (C) 2002, 2003, 2006, 2010 Free Software Foundation, Inc.
@@ -213,9 +153,8 @@ diff -uNr glibc-2.11.2.orig/nptl/pthread_attr_setstack.c glibc-2.11.2/nptl/pthre
    iattr->flags |= ATTR_FLAG_STACKADDR;
  
    return 0;
-diff -uNr glibc-2.11.2.orig/nptl/pthread_create.c glibc-2.11.2/nptl/pthread_create.c
---- glibc-2.11.2.orig/nptl/pthread_create.c	2010-07-25 21:58:30.713135617 +0200
-+++ glibc-2.11.2/nptl/pthread_create.c	2010-07-25 21:59:05.536794818 +0200
+--- a/nptl/pthread_create.c	2010-07-25 21:58:30.713135617 +0200
++++ b/nptl/pthread_create.c	2010-07-25 21:59:05.536794818 +0200
 @@ -1,4 +1,4 @@
 -/* Copyright (C) 2002-2007,2008,2009 Free Software Foundation, Inc.
 +/* Copyright (C) 2002-2007,2008,2009,2010 Free Software Foundation, Inc.
@@ -244,9 +183,8 @@ diff -uNr glibc-2.11.2.orig/nptl/pthread_create.c glibc-2.11.2/nptl/pthread_crea
  
    /* If the thread is detached free the TCB.  */
    if (IS_DETACHED (pd))
-diff -uNr glibc-2.11.2.orig/nptl/pthread_getattr_np.c glibc-2.11.2/nptl/pthread_getattr_np.c
---- glibc-2.11.2.orig/nptl/pthread_getattr_np.c	2010-07-25 21:58:30.713135617 +0200
-+++ glibc-2.11.2/nptl/pthread_getattr_np.c	2010-07-25 21:59:05.536794818 +0200
+--- a/nptl/pthread_getattr_np.c	2010-07-25 21:58:30.713135617 +0200
++++ b/nptl/pthread_getattr_np.c	2010-07-25 21:59:05.536794818 +0200
 @@ -1,4 +1,5 @@
 -/* Copyright (C) 2002, 2003, 2004, 2006, 2007 Free Software Foundation, Inc.
 +/* Copyright (C) 2002, 2003, 2004, 2006, 2007, 
@@ -288,21 +226,14 @@ diff -uNr glibc-2.11.2.orig/nptl/pthread_getattr_np.c glibc-2.11.2/nptl/pthread_
  		      /* We succeed and no need to look further.  */
  		      ret = 0;
  		      break;
-diff -uNr glibc-2.11.2.orig/ports/ChangeLog.hppa glibc-2.11.2/ports/ChangeLog.hppa
---- glibc-2.11.2.orig/ports/ChangeLog.hppa	2010-07-25 21:58:30.213140619 +0200
-+++ glibc-2.11.2/ports/ChangeLog.hppa	2010-07-25 22:02:52.062583751 +0200
-@@ -1,3 +1,8 @@
-+2010-02-09  Carlos O'Donell  <carlos@codesourcery.com>
-+
-+	* sysdeps/hppa/dl-machine.h (ELF_MACHINE_BEFORE_RTLD_RELOC):
-+ 	Call _dl_fptr_init.
-+
- 2009-11-15  Carlos O'Donell  <carlos@codesourcery.com>
- 
- 	[BZ #6676]
-diff -uNr glibc-2.11.2.orig/ports/sysdeps/hppa/dl-machine.h glibc-2.11.2/ports/sysdeps/hppa/dl-machine.h
---- glibc-2.11.2.orig/ports/sysdeps/hppa/dl-machine.h	2010-07-25 21:58:30.189140390 +0200
-+++ glibc-2.11.2/ports/sysdeps/hppa/dl-machine.h	2010-07-25 22:02:25.502848298 +0200
+
+2010-02-09  Carlos O'Donell  <carlos@codesourcery.com>
+
+	* sysdeps/hppa/dl-machine.h (ELF_MACHINE_BEFORE_RTLD_RELOC):
+	Call _dl_fptr_init.
+
+--- a/ports/sysdeps/hppa/dl-machine.h	2010-07-25 21:58:30.189140390 +0200
++++ b/ports/sysdeps/hppa/dl-machine.h	2010-07-25 22:02:25.502848298 +0200
 @@ -64,7 +64,8 @@
  }
  
@@ -313,9 +244,8 @@ diff -uNr glibc-2.11.2.orig/ports/sysdeps/hppa/dl-machine.h glibc-2.11.2/ports/s
  
  /* Return nonzero iff ELF header is compatible with the running host.  */
  static inline int
-diff -uNr glibc-2.11.2.orig/sysdeps/generic/dl-fptr.h glibc-2.11.2/sysdeps/generic/dl-fptr.h
---- glibc-2.11.2.orig/sysdeps/generic/dl-fptr.h	2010-07-25 21:58:30.525138223 +0200
-+++ glibc-2.11.2/sysdeps/generic/dl-fptr.h	2010-07-25 22:00:54.323726976 +0200
+--- a/sysdeps/generic/dl-fptr.h	2010-07-25 21:58:30.525138223 +0200
++++ b/sysdeps/generic/dl-fptr.h	2010-07-25 22:00:54.323726976 +0200
 @@ -40,6 +40,9 @@
  
  extern ElfW(Addr) _dl_boot_fptr_table [];

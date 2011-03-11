@@ -1,5 +1,6 @@
 7		[pending]
 	- 0062_all_glibc-no-ORIGIN-setuid.patch
+	U 1505_hppa_glibc-2.11-hppa-nptl.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
 
 6		31.10.2010
