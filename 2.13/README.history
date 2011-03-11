@@ -1,6 +1,7 @@
 3		[pending]
 	+ 0061_all_glibc-2.13-static-memset.patch
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
+	+ 6027_all_alpha-glibc-2.13-F_GET-SETPIPE_SZ.patch
 	- 6028_all_alpha-fix-memchr.patch
 	- 6029_all_alpha-fix-memchr.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
