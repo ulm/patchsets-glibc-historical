@@ -1,3 +1,6 @@
+5		[pending]
+	+ 6019_all_alpha-glibc-2.13-longjmp-chk.patch
+
 4		11.03.2011
 	+ 1502_all_hppa-glibc-2.13-F_GET-SETPIPE_SZ.patch
 
