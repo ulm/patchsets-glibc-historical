@@ -1,3 +1,6 @@
+6		10.04.2011
+	+ 1508_all_glibc-2.13-hppa-DEFAULT_STACK_PERMS.patch
+
 5		03.04.2011
 	+ 6019_all_alpha-glibc-2.13-longjmp-chk.patch
 	+ 6021_all_alpha-glibc-2.13-ptr-mangle.patch
