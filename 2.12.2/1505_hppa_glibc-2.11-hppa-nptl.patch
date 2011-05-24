@@ -72,7 +72,7 @@ http://bugs.gentoo.org/301642
  #elif TLS_DTV_AT_TP
 -      pd = (struct pthread *) (((uintptr_t) attr->stackaddr
 +      pd = (struct pthread *) (((uintptr_t) stackaddr
- 			        - __static_tls_size - adj)
+ 				- __static_tls_size - adj)
  			       - TLS_PRE_TCB_SIZE);
  #endif
 @@ -392,7 +401,7 @@
