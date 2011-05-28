@@ -1,0 +1,34 @@
+From 21afa712db5ecfc4d847fc36d0eedf173212a15a Mon Sep 17 00:00:00 2001
+From: Ryan S. Arnold <rsa@us.ibm.com>
+Date: Thu, 17 Feb 2011 00:59:15 -0500
+Subject: [PATCH] Disable VSX usage in rtld.c to prevent TOC ref before relocs
+ are resolved. (cherry picked from commit
+ 2206397e1c46f69fb20eeb3de1920d3a7014c325)
+
+---
+ ChangeLog                                 |    7 +++++++
+ sysdeps/powerpc/powerpc64/power7/Makefile |    5 +++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
+ create mode 100644 sysdeps/powerpc/powerpc64/power7/Makefile
+
+2011-02-15  Ryan S. Arnold  <rsa@us.ibm.com>
+
+	* sysdeps/powerpc/powerpc64/power7/Makefile: New file which adds
+	-mno-vsx to the CFLAGS-rtld.c variable to avoid using VSX registers and
+	insns in _dl_start to prevent a TOC reference before relocs are
+	resolved.
+
+diff --git a/sysdeps/powerpc/powerpc64/power7/Makefile b/sysdeps/powerpc/powerpc64/power7/Makefile
+new file mode 100644
+index 0000000..b0f4520
+--- /dev/null
++++ b/sysdeps/powerpc/powerpc64/power7/Makefile
+@@ -0,0 +1,5 @@
++ifeq ($(subdir),elf)
++# Prevent the use of VSX registers and insns in _dl_start, which under -O3
++# optimization may require a TOC reference before relocations are resolved.
++CFLAGS-rtld.c += -mno-vsx
++endif
+-- 
+1.7.5.rc3
+

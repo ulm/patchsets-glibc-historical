@@ -1,0 +1,744 @@
+From 968dad0ab1f367a087ff4ad503b511dd0c565adc Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@gmail.com>
+Date: Wed, 19 Jan 2011 15:32:35 -0500
+Subject: [PATCH] Fix ordering of DSO constructors and destructors.
+
+---
+ ChangeLog             |   27 +++++++++
+ elf/Makefile          |   24 +++++++-
+ elf/dl-deps.c         |   86 ++++++++++++++++------------
+ elf/dl-fini.c         |  151 ++++++++++++++++++++++++-------------------------
+ elf/tst-initorder.c   |    7 ++
+ elf/tst-initorder.exp |   13 ++++
+ elf/tst-initordera1.c |   16 +++++
+ elf/tst-initordera2.c |   16 +++++
+ elf/tst-initordera3.c |   16 +++++
+ elf/tst-initordera4.c |   16 +++++
+ elf/tst-initorderb1.c |   16 +++++
+ elf/tst-initorderb2.c |   16 +++++
+ elf/tst-order-a1.c    |   16 +++++
+ elf/tst-order-a2.c    |   16 +++++
+ elf/tst-order-a3.c    |   16 +++++
+ elf/tst-order-a4.c    |   16 +++++
+ elf/tst-order-b1.c    |   16 +++++
+ elf/tst-order-b2.c    |   16 +++++
+ elf/tst-order-main.c  |   10 +++
+ 19 files changed, 394 insertions(+), 116 deletions(-)
+ create mode 100644 elf/tst-initorder.c
+ create mode 100644 elf/tst-initorder.exp
+ create mode 100644 elf/tst-initordera1.c
+ create mode 100644 elf/tst-initordera2.c
+ create mode 100644 elf/tst-initordera3.c
+ create mode 100644 elf/tst-initordera4.c
+ create mode 100644 elf/tst-initorderb1.c
+ create mode 100644 elf/tst-initorderb2.c
+ create mode 100644 elf/tst-order-a1.c
+ create mode 100644 elf/tst-order-a2.c
+ create mode 100644 elf/tst-order-a3.c
+ create mode 100644 elf/tst-order-a4.c
+ create mode 100644 elf/tst-order-b1.c
+ create mode 100644 elf/tst-order-b2.c
+ create mode 100644 elf/tst-order-main.c
+
+2011-01-19  Ulrich Drepper  <drepper@gmail.com>
+
+	[BZ #11724]
+	* elf/dl-deps.c (_dl_map_object_deps): Rewrite sorting determining order
+	of constructors.
+	* elf/dl-fini.c (_dl_sort_fini): Rewrite sorting determining order
+	of destructors.
+	(_dl_fini): Don't call _dl_sort_fini if there is only one object.
+
+	[BZ #11724]
+	* elf/Makefile: Add rules to build and run new test.
+	* elf/tst-initorder.c: New file.
+	* elf/tst-initorder.exp: New file.
+	* elf/tst-initordera1.c: New file.
+	* elf/tst-initordera2.c: New file.
+	* elf/tst-initordera3.c: New file.
+	* elf/tst-initordera4.c: New file.
+	* elf/tst-initorderb1.c: New file.
+	* elf/tst-initorderb2.c: New file.
+	* elf/tst-order-a1.c: New file.
+	* elf/tst-order-a2.c: New file.
+	* elf/tst-order-a3.c: New file.
+	* elf/tst-order-a4.c: New file.
+	* elf/tst-order-b1.c: New file.
+	* elf/tst-order-b2.c: New file.
+	* elf/tst-order-main.c: New file.
+	New test case by George Gensure <werkt0@gmail.com>.
+
+diff --git a/elf/Makefile b/elf/Makefile
+index 3c79fcf..0f37804 100644
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -118,7 +118,10 @@ distribute	:= rtld-Rules \
+ 		   ifuncmain7.c ifuncmain7pic.c ifuncmain7picstatic.c \
+ 		   ifuncmain7pie.c ifuncmain7static.c \
+ 		   tst-unique1.c tst-unique1mod1.c tst-unique1mod2.c \
+-		   tst-unique2.c tst-unique2mod1.c tst-unique2mod2.c
++		   tst-unique2.c tst-unique2mod1.c tst-unique2mod2.c \
++			 tst-initordera1.c tst-initordera2.c tst-initorderb1.c \
++			 tst-initorderb2.c tst-initordera3.c tst-initordera4.c \
++			 tst-initorder.c
+ 
+ CFLAGS-dl-runtime.c = -fexceptions -fasynchronous-unwind-tables
+ CFLAGS-dl-lookup.c = -fexceptions -fasynchronous-unwind-tables
+@@ -198,7 +201,8 @@ tests += loadtest restest1 preloadtest loadfail multiload origtest resolvfail \
+ 	 unload3 unload4 unload5 unload6 unload7 tst-global1 order2 \
+ 	 tst-audit1 tst-audit2 \
+ 	 tst-stackguard1 tst-addr1 tst-thrlock \
+-	 tst-unique1 tst-unique2
++	 tst-unique1 tst-unique2 \
++	 tst-initorder
+ #	 reldep9
+ test-srcs = tst-pathopt
+ tests-execstack-yes = tst-execstack tst-execstack-needed tst-execstack-prog
+@@ -250,7 +254,10 @@ modules-names = testobj1 testobj2 testobj3 testobj4 testobj5 testobj6 \
+ 		unload7mod1 unload7mod2 \
+ 		order2mod1 order2mod2 order2mod3 order2mod4 \
+ 		tst-unique1mod1 tst-unique1mod2 \
+-		tst-unique2mod1 tst-unique2mod2
++		tst-unique2mod1 tst-unique2mod2 \
++		tst-initordera1 tst-initorderb1 \
++		tst-initordera2 tst-initorderb2 \
++		tst-initordera3 tst-initordera4
+ ifeq (yes,$(have-initfini-array))
+ modules-names += tst-array2dep tst-array5dep
+ endif
+@@ -531,6 +538,11 @@ $(objpfx)unload6mod2.so: $(libdl)
+ $(objpfx)unload6mod3.so: $(libdl)
+ $(objpfx)unload7mod1.so: $(libdl)
+ $(objpfx)unload7mod2.so: $(objpfx)unload7mod1.so
++$(objpfx)tst-initordera2.so: $(objpfx)tst-initordera1.so
++$(objpfx)tst-initorderb2.so: $(objpfx)tst-initorderb1.so $(objpfx)tst-initordera2.so
++$(objpfx)tst-initordera3.so: $(objpfx)tst-initorderb2.so $(objpfx)tst-initorderb1.so
++$(objpfx)tst-initordera4.so: $(objpfx)tst-initordera3.so
++$(objpfx)tst-initorder: $(objpfx)tst-initordera4.so $(objpfx)tst-initordera1.so $(objpfx)tst-initorderb2.so
+ 
+ LDFLAGS-tst-tlsmod5.so = -nostdlib
+ LDFLAGS-tst-tlsmod6.so = -nostdlib
+@@ -1162,6 +1174,12 @@ $(objpfx)tst-unique1.out: $(objpfx)tst-unique1mod1.so \
+ $(objpfx)tst-unique2: $(libdl) $(objpfx)tst-unique2mod1.so
+ $(objpfx)tst-unique2.out: $(objpfx)tst-unique2mod2.so
+ 
++$(objpfx)tst-initorder.out: $(objpfx)tst-initorder
++	$(elf-objpfx)${rtld-installed-name} \
++	  --library-path $(rpath-link)$(patsubst %,:%,$(sysdep-library-path)) \
++	  $< > $@
++	cmp $@ tst-initorder.exp > /dev/null
++
+ ifeq (yes,$(config-cflags-avx))
+ CFLAGS-tst-audit4.c += -mavx
+ CFLAGS-tst-auditmod4a.c += -mavx
+diff --git a/elf/dl-deps.c b/elf/dl-deps.c
+index a51fb6e..440fb56 100644
+--- a/elf/dl-deps.c
++++ b/elf/dl-deps.c
+@@ -1,5 +1,5 @@
+ /* Load the dependencies of a mapped object.
+-   Copyright (C) 1996-2003, 2004, 2005, 2006, 2007, 2010
++   Copyright (C) 1996-2003, 2004, 2005, 2006, 2007, 2010, 2011
+    Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+@@ -591,7 +591,7 @@ Filters not supported with LD_TRACE_PRELINKING"));
+ 	    /* Need to allocate new array of relocation dependencies.  */
+ 	    struct link_map_reldeps *l_reldeps;
+ 	    l_reldeps = malloc (sizeof (*l_reldeps)
+-	    			+ map->l_reldepsmax
++				+ map->l_reldepsmax
+ 				  * sizeof (struct link_map *));
+ 	    if (l_reldeps == NULL)
+ 	      /* Bad luck, keep the reldeps duplicated between
+@@ -616,48 +616,60 @@ Filters not supported with LD_TRACE_PRELINKING"));
+   /* Now determine the order in which the initialization has to happen.  */
+   memcpy (l_initfini, map->l_searchlist.r_list,
+ 	  nlist * sizeof (struct link_map *));
++
+   /* We can skip looking for the binary itself which is at the front
+-     of the search list.  Look through the list backward so that circular
+-     dependencies are not changing the order.  */
+-  for (i = 1; i < nlist; ++i)
++     of the search list.  */
++  assert (nlist > 1);
++  i = 1;
++  bool seen[nlist];
++  memset (seen, false, nlist * sizeof (seen[0]));
++  while (1)
+     {
+-      struct link_map *l = map->l_searchlist.r_list[i];
+-      unsigned int j;
+-      unsigned int k;
+-
+-      /* Find the place in the initfini list where the map is currently
+-	 located.  */
+-      for (j = 1; l_initfini[j] != l; ++j)
+-	;
+-
+-      /* Find all object for which the current one is a dependency and
+-	 move the found object (if necessary) in front.  */
+-      for (k = j + 1; k < nlist; ++k)
++      /* Keep track of which object we looked at this round.  */
++      seen[i] = true;
++      struct link_map *thisp = l_initfini[i];
++
++      /* Find the last object in the list for which the current one is
++	 a dependency and move the current object behind the object
++	 with the dependency.  */
++      unsigned int k = nlist - 1;
++      while (k > i)
+ 	{
+-	  struct link_map **runp;
+-
+-	  runp = l_initfini[k]->l_initfini;
++	  struct link_map **runp = l_initfini[k]->l_initfini;
+ 	  if (runp != NULL)
+-	    {
+-	      while (*runp != NULL)
+-		if (__builtin_expect (*runp++ == l, 0))
+-		  {
+-		    struct link_map *here = l_initfini[k];
+-
+-		    /* Move it now.  */
+-		    memmove (&l_initfini[j] + 1, &l_initfini[j],
+-			     (k - j) * sizeof (struct link_map *));
+-		    l_initfini[j] = here;
++	    /* Look through the dependencies of the object.  */
++	    while (*runp != NULL)
++	      if (__builtin_expect (*runp++ == thisp, 0))
++		{
++		  /* Move the current object to the back past the last
++		     object with it as the dependency.  */
++		  memmove (&l_initfini[i], &l_initfini[i + 1],
++			   (k - i) * sizeof (l_initfini[0]));
++		  l_initfini[k] = thisp;
++
++		  if (seen[i + 1])
++		    {
++		      ++i;
++		      goto next_clear;
++		    }
++
++		  memmove (&seen[i], &seen[i + 1], (k - i) * sizeof (seen[0]));
++		  seen[k] = true;
++
++		  goto next;
++		}
++
++	  --k;
++	}
+ 
+-		    /* Don't insert further matches before the last
+-		       entry moved to the front.  */
+-		    ++j;
++      if (++i == nlist)
++	break;
++    next_clear:
++      memset (&seen[i], false, (nlist - i) * sizeof (seen[0]));
+ 
+-		    break;
+-		  }
+-	    }
+-	}
++    next:;
+     }
++
+   /* Terminate the list of dependencies.  */
+   l_initfini[nlist] = NULL;
+   atomic_write_barrier ();
+diff --git a/elf/dl-fini.c b/elf/dl-fini.c
+index ff4c33e..ba6c62a 100644
+--- a/elf/dl-fini.c
++++ b/elf/dl-fini.c
+@@ -1,5 +1,6 @@
+ /* Call the termination functions of loaded shared objects.
+-   Copyright (C) 1995,96,1998-2002,2004-2005,2009 Free Software Foundation, Inc.
++   Copyright (C) 1995,96,1998-2002,2004-2005,2009,2011
++   Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -32,86 +33,84 @@ internal_function
+ _dl_sort_fini (struct link_map *l, struct link_map **maps, size_t nmaps,
+ 	       char *used, Lmid_t ns)
+ {
+-  if (ns == LM_ID_BASE)
+-    /* The main executable always comes first.  */
+-    l = l->l_next;
+-
+-  for (; l != NULL; l = l->l_next)
+-    /* Do not handle ld.so in secondary namespaces and object which
+-       are not removed.  */
+-    if (l == l->l_real && l->l_idx != -1)
+-      {
+-	/* Find the place in the 'maps' array.  */
+-	unsigned int j;
+-	for (j = ns == LM_ID_BASE ? 1 : 0; maps[j] != l; ++j)
+-	  assert (j < nmaps);
+-
+-	/* Find all object for which the current one is a dependency
+-	   and move the found object (if necessary) in front.  */
+-	for (unsigned int k = j + 1; k < nmaps; ++k)
+-	  {
+-	    struct link_map **runp = maps[k]->l_initfini;
+-	    if (runp != NULL)
+-	      {
+-		while (*runp != NULL)
+-		  if (*runp == l)
++  /* We can skip looking for the binary itself which is at the front
++     of the search list for the main namespace.  */
++  assert (nmaps > 1);
++  unsigned int i = ns == LM_ID_BASE;
++  bool seen[nmaps];
++  memset (seen, false, nmaps * sizeof (seen[0]));
++  while (1)
++    {
++      /* Keep track of which object we looked at this round.  */
++      seen[i] = true;
++      struct link_map *thisp = maps[i];
++
++      /* Do not handle ld.so in secondary namespaces and object which
++	 are not removed.  */
++      if (thisp != thisp->l_real || thisp->l_idx == -1)
++	goto skip;
++
++      /* Find the last object in the list for which the current one is
++	 a dependency and move the current object behind the object
++	 with the dependency.  */
++      unsigned int k = nmaps - 1;
++      while (k > i)
++	{
++	  struct link_map **runp = maps[k]->l_initfini;
++	  if (runp != NULL)
++	    /* Look through the dependencies of the object.  */
++	    while (*runp != NULL)
++	      if (__builtin_expect (*runp++ == thisp, 0))
++		{
++		move:
++		  /* Move the current object to the back past the last
++		     object with it as the dependency.  */
++		  memmove (&maps[i], &maps[i + 1],
++			   (k - i) * sizeof (maps[0]));
++		  maps[k] = thisp;
++
++		  if (used != NULL)
+ 		    {
+-		      struct link_map *here = maps[k];
++		      char here_used = used[i];
++		      memmove (&used[i], &used[i + 1],
++			       (k - i) * sizeof (used[0]));
++		      used[k] = here_used;
++		    }
+ 
+-		      /* Move it now.  */
+-		      memmove (&maps[j] + 1,
+-			       &maps[j], (k - j) * sizeof (struct link_map *));
+-		      maps[j] = here;
++		  if (seen[i + 1])
++		    {
++		      ++i;
++		      goto next_clear;
++		    }
+ 
+-		      if (used != NULL)
+-			{
+-			  char here_used = used[k];
++		  memmove (&seen[i], &seen[i + 1], (k - i) * sizeof (seen[0]));
++		  seen[k] = true;
+ 
+-			  memmove (&used[j] + 1,
+-				   &used[j], (k - j) * sizeof (char));
+-			  used[j] = here_used;
+-			}
++		  goto next;
++		}
+ 
+-		      ++j;
++	  if (__builtin_expect (maps[k]->l_reldeps != NULL, 0))
++	    {
++	      unsigned int m = maps[k]->l_reldeps->act;
++	      struct link_map **relmaps = &maps[k]->l_reldeps->list[0];
+ 
+-		      break;
+-		    }
+-		  else
+-		    ++runp;
+-	      }
+-
+-	    if (__builtin_expect (maps[k]->l_reldeps != NULL, 0))
+-	      {
+-		unsigned int m = maps[k]->l_reldeps->act;
+-		struct link_map **relmaps = &maps[k]->l_reldeps->list[0];
+-
+-		while (m-- > 0)
+-		  {
+-		    if (relmaps[m] == l)
+-		      {
+-			struct link_map *here = maps[k];
+-
+-			/* Move it now.  */
+-			memmove (&maps[j] + 1,
+-				 &maps[j],
+-				 (k - j) * sizeof (struct link_map *));
+-			maps[j] = here;
+-
+-			if (used != NULL)
+-			  {
+-			    char here_used = used[k];
+-
+-			    memmove (&used[j] + 1,
+-				     &used[j], (k - j) * sizeof (char));
+-			    used[j] = here_used;
+-			  }
+-
+-			break;
+-		      }
+-		  }
+-	      }
+-	  }
+-      }
++	    /* Look through the relocation dependencies of the object.  */
++	      while (m-- > 0)
++		if (__builtin_expect (relmaps[m] == thisp, 0))
++		  goto move;
++	    }
++
++	  --k;
++	}
++
++    skip:
++      if (++i == nmaps)
++	break;
++    next_clear:
++      memset (&seen[i], false, (nmaps - i) * sizeof (seen[0]));
++
++    next:;
++    }
+ }
+ 
+ 
+@@ -196,7 +195,7 @@ _dl_fini (void)
+       assert (ns == LM_ID_BASE || i == nloaded || i == nloaded - 1);
+       nmaps = i;
+ 
+-      if (nmaps != 0)
++      if (nmaps > 1)
+ 	/* Now we have to do the sorting.  */
+ 	_dl_sort_fini (GL(dl_ns)[ns]._ns_loaded, maps, nmaps, NULL, ns);
+ 
+diff --git a/elf/tst-initorder.c b/elf/tst-initorder.c
+new file mode 100644
+index 0000000..9638382
+--- /dev/null
++++ b/elf/tst-initorder.c
+@@ -0,0 +1,7 @@
++#include <stdio.h>
++
++int
++main( int argc, char *argv[] )
++{
++  printf( "main\n" );
++}
+diff --git a/elf/tst-initorder.exp b/elf/tst-initorder.exp
+new file mode 100644
+index 0000000..8718f65
+--- /dev/null
++++ b/elf/tst-initorder.exp
+@@ -0,0 +1,13 @@
++start_a1
++start_a2
++start_b1
++start_b2
++start_a3
++start_a4
++main
++finish_a4
++finish_a3
++finish_b2
++finish_b1
++finish_a2
++finish_a1
+diff --git a/elf/tst-initordera1.c b/elf/tst-initordera1.c
+new file mode 100644
+index 0000000..f161257
+--- /dev/null
++++ b/elf/tst-initordera1.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a1( void ) __attribute__((constructor));
++extern void finish_a1( void ) __attribute__((destructor));
++
++void
++start_a1( void )
++{
++  printf( "start_a1\n" );
++}
++
++void
++finish_a1( void )
++{
++  printf( "finish_a1\n" );
++}
+diff --git a/elf/tst-initordera2.c b/elf/tst-initordera2.c
+new file mode 100644
+index 0000000..a5a9b42
+--- /dev/null
++++ b/elf/tst-initordera2.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a2( void ) __attribute__((constructor));
++extern void finish_a2( void ) __attribute__((destructor));
++
++void
++start_a2( void )
++{
++  printf( "start_a2\n" );
++}
++
++void
++finish_a2( void )
++{
++  printf( "finish_a2\n" );
++}
+diff --git a/elf/tst-initordera3.c b/elf/tst-initordera3.c
+new file mode 100644
+index 0000000..1c7f496
+--- /dev/null
++++ b/elf/tst-initordera3.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a3( void ) __attribute__((constructor));
++extern void finish_a3( void ) __attribute__((destructor));
++
++void
++start_a3( void )
++{
++  printf( "start_a3\n" );
++}
++
++void
++finish_a3( void )
++{
++  printf( "finish_a3\n" );
++}
+diff --git a/elf/tst-initordera4.c b/elf/tst-initordera4.c
+new file mode 100644
+index 0000000..70b9f5e
+--- /dev/null
++++ b/elf/tst-initordera4.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a4( void ) __attribute__((constructor));
++extern void finish_a4( void ) __attribute__((destructor));
++
++void
++start_a4( void )
++{
++  printf( "start_a4\n" );
++}
++
++void
++finish_a4( void )
++{
++  printf( "finish_a4\n" );
++}
+diff --git a/elf/tst-initorderb1.c b/elf/tst-initorderb1.c
+new file mode 100644
+index 0000000..993ea3f
+--- /dev/null
++++ b/elf/tst-initorderb1.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_b1( void ) __attribute__((constructor));
++extern void finish_b1( void ) __attribute__((destructor));
++
++void
++start_b1( void )
++{
++  printf( "start_b1\n" );
++}
++
++void
++finish_b1( void )
++{
++  printf( "finish_b1\n" );
++}
+diff --git a/elf/tst-initorderb2.c b/elf/tst-initorderb2.c
+new file mode 100644
+index 0000000..3334dda
+--- /dev/null
++++ b/elf/tst-initorderb2.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_b2( void ) __attribute__((constructor));
++extern void finish_b2( void ) __attribute__((destructor));
++
++void
++start_b2( void )
++{
++  printf( "start_b2\n" );
++}
++
++void
++finish_b2( void )
++{
++  printf( "finish_b2\n" );
++}
+diff --git a/elf/tst-order-a1.c b/elf/tst-order-a1.c
+new file mode 100644
+index 0000000..f161257
+--- /dev/null
++++ b/elf/tst-order-a1.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a1( void ) __attribute__((constructor));
++extern void finish_a1( void ) __attribute__((destructor));
++
++void
++start_a1( void )
++{
++  printf( "start_a1\n" );
++}
++
++void
++finish_a1( void )
++{
++  printf( "finish_a1\n" );
++}
+diff --git a/elf/tst-order-a2.c b/elf/tst-order-a2.c
+new file mode 100644
+index 0000000..a5a9b42
+--- /dev/null
++++ b/elf/tst-order-a2.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a2( void ) __attribute__((constructor));
++extern void finish_a2( void ) __attribute__((destructor));
++
++void
++start_a2( void )
++{
++  printf( "start_a2\n" );
++}
++
++void
++finish_a2( void )
++{
++  printf( "finish_a2\n" );
++}
+diff --git a/elf/tst-order-a3.c b/elf/tst-order-a3.c
+new file mode 100644
+index 0000000..1c7f496
+--- /dev/null
++++ b/elf/tst-order-a3.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a3( void ) __attribute__((constructor));
++extern void finish_a3( void ) __attribute__((destructor));
++
++void
++start_a3( void )
++{
++  printf( "start_a3\n" );
++}
++
++void
++finish_a3( void )
++{
++  printf( "finish_a3\n" );
++}
+diff --git a/elf/tst-order-a4.c b/elf/tst-order-a4.c
+new file mode 100644
+index 0000000..70b9f5e
+--- /dev/null
++++ b/elf/tst-order-a4.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_a4( void ) __attribute__((constructor));
++extern void finish_a4( void ) __attribute__((destructor));
++
++void
++start_a4( void )
++{
++  printf( "start_a4\n" );
++}
++
++void
++finish_a4( void )
++{
++  printf( "finish_a4\n" );
++}
+diff --git a/elf/tst-order-b1.c b/elf/tst-order-b1.c
+new file mode 100644
+index 0000000..993ea3f
+--- /dev/null
++++ b/elf/tst-order-b1.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_b1( void ) __attribute__((constructor));
++extern void finish_b1( void ) __attribute__((destructor));
++
++void
++start_b1( void )
++{
++  printf( "start_b1\n" );
++}
++
++void
++finish_b1( void )
++{
++  printf( "finish_b1\n" );
++}
+diff --git a/elf/tst-order-b2.c b/elf/tst-order-b2.c
+new file mode 100644
+index 0000000..3334dda
+--- /dev/null
++++ b/elf/tst-order-b2.c
+@@ -0,0 +1,16 @@
++#include <stdio.h>
++
++extern void start_b2( void ) __attribute__((constructor));
++extern void finish_b2( void ) __attribute__((destructor));
++
++void
++start_b2( void )
++{
++  printf( "start_b2\n" );
++}
++
++void
++finish_b2( void )
++{
++  printf( "finish_b2\n" );
++}
+diff --git a/elf/tst-order-main.c b/elf/tst-order-main.c
+new file mode 100644
+index 0000000..80f4f6b
+--- /dev/null
++++ b/elf/tst-order-main.c
+@@ -0,0 +1,10 @@
++#include <stdio.h>
++#include <unistd.h>
++#include <stdlib.h>
++
++int
++main( int argc, char *argv[] )
++{
++  printf( "main\n" );
++  exit(EXIT_SUCCESS);
++}
+-- 
+1.7.5.rc3
+

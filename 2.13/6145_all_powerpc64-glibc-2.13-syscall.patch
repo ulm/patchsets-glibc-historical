@@ -1,0 +1,175 @@
+From fbd64d7ff21658ab754db8faa796f5ce5d388e7c Mon Sep 17 00:00:00 2001
+From: Ryan S. Arnold <rsa@us.ibm.com>
+Date: Thu, 17 Feb 2011 01:21:08 -0500
+Subject: [PATCH] Fix INTERNAL_[V]SYSCALL_NCS macros to not cast return val to
+ int. (cherry picked from commit
+ d55fd7a5573ea7c7c14af95bc37618469cde8a5f)
+
+---
+ ChangeLog                                          |    9 ++
+ sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h |    4 +-
+ sysdeps/wordsize-64/Makefile                       |    6 +
+ sysdeps/wordsize-64/tst-writev.c                   |  107 ++++++++++++++++++++
+ 4 files changed, 124 insertions(+), 2 deletions(-)
+ create mode 100644 sysdeps/wordsize-64/Makefile
+ create mode 100644 sysdeps/wordsize-64/tst-writev.c
+
+2011-02-16  Ryan S. Arnold  <rsa@us.ibm.com>
+
+	* sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h:
+	(INTERNAL_VSYSCALL_NCS INTERNAL_SYSCALL_NCS): Remove erroneous (int)
+	cast from r3.
+	* sysdeps/wordsize-64/Makefile: New file.  Add tst-writev to
+	'tests' variable.
+	* sysdeps/wordsize-64/tst-writev.c: New file.
+
+diff --git a/sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h b/sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h
+index aab4b72..e714c4c 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h
++++ b/sysdeps/unix/sysv/linux/powerpc/powerpc64/sysdep.h
+@@ -172,7 +172,7 @@
+        : "r9", "r10", "r11", "r12",					\
+          "cr0", "ctr", "lr", "memory");					\
+ 	  err = (long int) r0;						\
+-    (int) r3;								\
++    r3;								\
+   })
+ 
+ #undef INLINE_SYSCALL
+@@ -219,7 +219,7 @@
+        : "r9", "r10", "r11", "r12",					\
+          "cr0", "ctr", "memory");					\
+ 	  err = r0;  \
+-    (int) r3;  \
++    r3;  \
+   })
+ #define INTERNAL_SYSCALL(name, err, nr, args...)			\
+   INTERNAL_SYSCALL_NCS (__NR_##name, err, nr, args)
+diff --git a/sysdeps/wordsize-64/Makefile b/sysdeps/wordsize-64/Makefile
+new file mode 100644
+index 0000000..9903f51
+--- /dev/null
++++ b/sysdeps/wordsize-64/Makefile
+@@ -0,0 +1,6 @@
++ifeq ($(subdir),misc)
++tests += tst-writev
++
++# Time enough for a large writev syscall to complete.
++tst-writev-ENV = TIMEOUTFACTOR="10"
++endif
+diff --git a/sysdeps/wordsize-64/tst-writev.c b/sysdeps/wordsize-64/tst-writev.c
+new file mode 100644
+index 0000000..6e47886
+--- /dev/null
++++ b/sysdeps/wordsize-64/tst-writev.c
+@@ -0,0 +1,107 @@
++/* Copyright (C) 2011 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Ryan S. Arnold <rsa@us.ibm.com>, 2011.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#include <fcntl.h>
++#include <paths.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <sys/uio.h>
++
++
++/* The purpose of this test is to verify that the INTERNAL_[V]SYSCALL_NCS
++   macros on 64-bit platforms don't cast the return type to (int) which would
++   erroneously sign extend the return value should the high bit of the bottom
++   half of the word be '1'.  */
++
++#if 0
++/* Used to test the non power-of-2 code path.  */
++#undef IOV_MAX
++#define IOV_MAX 1000
++#endif
++
++/* writev() should report that it has written EXPECTED number of bytes.  */
++#define EXPECTED ((size_t) INT32_MAX + 1)
++
++static int
++do_test (void)
++{
++  struct iovec iv[IOV_MAX];
++  /* POSIX doesn't guarantee that IOV_MAX is pow of 2 but we're optimistic.  */
++  size_t bufsz = EXPECTED / IOV_MAX;
++  size_t bufrem = EXPECTED % IOV_MAX;
++
++  /* If there's a remainder then IOV_MAX probably isn't a power of 2 and we
++     need to make bufsz bigger so that the last iovec, iv[IOV_MAX-1], is free
++     for the remainder.  */
++  if (bufrem)
++    {
++      bufsz = bufsz + 1;
++      bufrem = EXPECTED - (bufsz * (IOV_MAX - 1));
++    }
++
++  /* We writev to /dev/null since we're just testing writev's return value.  */
++  int fd = open (_PATH_DEVNULL, O_WRONLY);
++  if (fd == -1)
++    {
++      printf ("Unable to open /dev/null for writing.\n");
++      return -1;
++    }
++
++  iv[0].iov_base = malloc (bufsz);
++  if (iv[0].iov_base == NULL)
++    {
++      printf ("malloc (%zu) failed.\n", bufsz);
++      close (fd);
++      return -1;
++    }
++  iv[0].iov_len = bufsz;
++
++  /* We optimistically presume that there isn't a remainder and set all iovec
++     instances to the same base and len as the first instance.  */
++  for (int i = 1; i < IOV_MAX; i++)
++    {
++      /* We don't care what the data is so reuse the allocation from iv[0];  */
++      iv[i].iov_base = iv[0].iov_base;
++      iv[i].iov_len = iv[0].iov_len;
++    }
++
++  /* If there is a remainder then we correct the last iov_len.  */
++  if (bufrem)
++    iv[IOV_MAX - 1].iov_len = bufrem;
++
++  /* Write junk to /dev/null with the writev syscall in order to get a return
++     of INT32_MAX+1 bytes to verify that the INTERNAL_SYSCALL wrappers aren't
++     mangling the result if the signbit of a 32-bit number is set.  */
++  ssize_t ret = writev (fd, iv, IOV_MAX);
++
++  free (iv[0].iov_base);
++  close (fd);
++
++  if (ret != (ssize_t) EXPECTED)
++    {
++      printf ("writev() return value: %zd != EXPECTED: %zd\n", ret, EXPECTED);
++      return 1;
++    }
++
++  return 0;
++}
++
++#define TEST_FUNCTION do_test ()
++#include "../test-skeleton.c"
+-- 
+1.7.5.rc3
+
