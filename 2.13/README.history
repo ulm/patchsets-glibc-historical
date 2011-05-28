@@ -1,3 +1,6 @@
+7		[pending]
+	+ 0043_all_glibc-2.12-broken-tls-init.patch
+
 6		10.04.2011
 	+ 1508_all_glibc-2.13-hppa-DEFAULT_STACK_PERMS.patch
 

@@ -1,3 +1,6 @@
+4		[pending]
+	+ 0043_all_glibc-2.12-broken-tls-init.patch
+
 3		23.05.2011
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
