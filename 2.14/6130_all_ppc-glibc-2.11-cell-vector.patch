@@ -1,0 +1,37 @@
+http://sourceware.org/ml/libc-alpha/2009-11/msg00017.html
+
+From: Petr Baudis <pasky at suse dot cz>
+To: libc-alpha at sourceware dot org
+Date: Fri, 6 Nov 2009 12:03:59 +0100
+Subject: Fix compilation with Altivec
+
+(This is essentially the same as Andreas Schwab's similar change in Oct
+2004. glibc-2.11 fails to build with -mcpu=cell, where __vector is
+gcc-reserved keyword.)
+
+2009-11-06  Petr Baudis <pasky@suse.cz>
+
+	* include/sys/uio.h: Change __vector to __iovec to avoid clash
+	with altivec.
+
+diff --git a/include/sys/uio.h b/include/sys/uio.h
+index 8c2b016..bfaec59 100644
+--- a/include/sys/uio.h
++++ b/include/sys/uio.h
+@@ -2,12 +2,12 @@
+ #include <misc/sys/uio.h>
+ 
+ /* Now define the internal interfaces.  */
+-extern ssize_t __readv (int __fd, __const struct iovec *__vector,
++extern ssize_t __readv (int __fd, __const struct iovec *__iovec,
+ 			int __count);
+-extern ssize_t __libc_readv (int __fd, __const struct iovec *__vector,
++extern ssize_t __libc_readv (int __fd, __const struct iovec *__iovec,
+ 			     int __count);
+-extern ssize_t __writev (int __fd, __const struct iovec *__vector,
++extern ssize_t __writev (int __fd, __const struct iovec *__iovec,
+ 			 int __count);
+-extern ssize_t __libc_writev (int __fd, __const struct iovec *__vector,
++extern ssize_t __libc_writev (int __fd, __const struct iovec *__iovec,
+ 			      int __count);
+ #endif
