@@ -1,5 +1,5 @@
 3		[pending]
-	U 0050_all_glibc-2.14-leak-revert-crash.patch
+	+ 0051_all_glibc-2.14-resolver-crash.patch
 
 2		06.06.2011
 	+ 0050_all_glibc-2.14-leak-revert-crash.patch
