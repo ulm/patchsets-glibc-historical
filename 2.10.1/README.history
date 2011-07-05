@@ -1,4 +1,5 @@
-7		[pending]
+7		05.07.2012
+	+ 0050_all_glibc-make-3.82-rules.patch
 	U 1010_all_glibc-queue-header-updates.patch
 
 6		21.11.2009
