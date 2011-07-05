@@ -1,10 +1,11 @@
-7		[pending]
+7		05.07.2011
 	+ 0043_all_glibc-2.12-broken-tls-init.patch
 	+ 0045_all_glibc-2.13-canonical-getaddrinfo.patch
 	+ 0046_all_glibc-2.13-dso-init-fini-order.patch
 	U 0050_all_glibc-2.13-ldso-prelink-segv.patch
 	+ 6145_all_powerpc64-glibc-2.13-syscall.patch
 	+ 6146_all_ppc-glibc-2.13-vsx-toc-O3.patch
+	+ 6610_all_glibc-r10k-workarounds.patch
 
 6		10.04.2011
 	+ 1508_all_glibc-2.13-hppa-DEFAULT_STACK_PERMS.patch
