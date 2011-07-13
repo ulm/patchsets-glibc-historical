@@ -1,5 +1,6 @@
-8		[pending]
+8		13.07.2011
 	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
+	+ 0062_all_glibc-2.13-dso-no-ld.so-deps.patch
 
 7		05.07.2011
 	+ 0043_all_glibc-2.12-broken-tls-init.patch
