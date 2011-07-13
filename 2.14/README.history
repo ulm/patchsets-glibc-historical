@@ -1,3 +1,6 @@
+4		13.07.2011
+	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
+
 3		18.06.2011
 	+ 0051_all_glibc-2.14-resolver-crash.patch
 

@@ -1,3 +1,6 @@
+8		[pending]
+	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
+
 7		05.07.2011
 	+ 0043_all_glibc-2.12-broken-tls-init.patch
 	+ 0045_all_glibc-2.13-canonical-getaddrinfo.patch
