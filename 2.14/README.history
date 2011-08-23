@@ -1,3 +1,7 @@
+5		23.08.2011
+	+ 0040_all_glibc-2.14-ssp-typo.patch
+	+ 1008_all_glibc-rwlock-assume.patch
+
 4		13.07.2011
 	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
 
