@@ -1,3 +1,6 @@
+7		31.08.2011
+	+ 0070_all_glibc-2.14-rpc-export.patch
+
 6		23.08.2011
 	+ 1502_all_hppa-glibc-2.13-F_GET-SETPIPE_SZ.patch
 	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
