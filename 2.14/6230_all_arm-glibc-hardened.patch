@@ -4,6 +4,7 @@ whether the code is going into a shared library when it should be using
 "SHARED".  otherwise, building static PIC code goes wrong.
 
 https://bugs.gentoo.org/336914
+http://sourceware.org/ml/libc-ports/2011-09/msg00018.html
 
 --- ports/sysdeps/arm/eabi/setjmp.S
 +++ ports/sysdeps/arm/eabi/setjmp.S
