@@ -2,22 +2,22 @@
 	- 0040_all_glibc-i586-chk.patch
 	U 1010_all_glibc-queue-header-updates.patch
 
-7		05.11.2009
+7		05 Nov 2009
 	+ 0060_all_glibc-tweak-first-day-of-week.patch
 	+ 0060_all_binutils-2.20-compat.patch
 
-6		28.08.2009
+6		28 Aug 2009
 	+ 0045_all_glibc-2.10-gcc-4.4-nptl.patch
 	+ 6019_all_alpha-floor_ceil_fix.patch
 
-5		31.03.2009
+5		31 Mar 2009
 	+ 0085_all_glibc-disable-ldconfig.patch
 	+ 6630_all_glibc-mips-n32-ldconfig.patch
 
-4		21.02.2009
+4		21 Feb 2009
 	+ 0008_all_glibc-2.9-linker-scripts.patch
 
-3		16.02.2009
+3		16 Feb 2009
 	+ 0050_all_glibc-_nss_dns_gethostbyaddr2_r-check-and-adjust-the-buffer-alignment.patch
 	+ 0051_all_glibc-2.9-add_prio-macros.patch
 	+ 0052_all_glibc-2.9-regex-BZ9697.patch
@@ -36,7 +36,7 @@
 	+ 6418_all_sh-glibc-2.9-set-fpscr-proto.patch
 	+ 6610_all_glibc-r10k-workarounds.patch
 
-2		26.12.2008
+2		26 Dec 2008
 	+ 1020_all_glibc-2.9-strlen-hack.patch
 	+ 1060_all_glibc-nss-deepbind.patch
 	+ 1085_all_glibc-2.9-check_native-headers.patch
@@ -46,7 +46,7 @@
 	+ 6221_all_arm-glibc-2.9-hidden-fpu-setjmp.patch
 	+ 6222_all_arm-glibc-2.9-pie.patch
 
-1		08.12.2008
+1		08 Dec 2008
 	+ 0010_all_glibc-2.7-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0040_all_glibc-i586-chk.patch

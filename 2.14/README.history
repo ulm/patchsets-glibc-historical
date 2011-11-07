@@ -1,7 +1,7 @@
-7		31.08.2011
+7		31 Aug 2011
 	+ 0070_all_glibc-2.14-rpc-export.patch
 
-6		23.08.2011
+6		23 Aug 2011
 	+ 1502_all_hppa-glibc-2.13-F_GET-SETPIPE_SZ.patch
 	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
 	+ 1505_hppa_glibc-2.11-hppa-nptl.patch
@@ -23,20 +23,20 @@
 	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
 	+ 6610_all_glibc-r10k-workarounds.patch
 
-5		23.08.2011
+5		23 Aug 2011
 	+ 0040_all_glibc-2.14-ssp-typo.patch
 	+ 1008_all_glibc-rwlock-assume.patch
 
-4		13.07.2011
+4		13 Jul 2011
 	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
 
-3		18.06.2011
+3		18 Jun 2011
 	+ 0051_all_glibc-2.14-resolver-crash.patch
 
-2		06.06.2011
+2		06 Jun 2011
 	+ 0050_all_glibc-2.14-leak-revert-crash.patch
 
-1		01.06.2011
+1		01 Jun 2011
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0055_all_glibc-2.12-static-shared-getpagesize.patch

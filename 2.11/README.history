@@ -3,13 +3,13 @@
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
 
-5		02.12.2009
+5		02 Dec 2009
 	+ 1120_all_glibc-2.11-longjmp-chk-fallback.patch
 	+ 6023_all_alpha-fcntl-updates.patch
 	+ 6024_all_alpha-settime-typo.patch
 	U 6026_all_alpha-fix-rtld-fPIC.patch
 
-4		01.12.2009
+4		01 Dec 2009
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
 	+ 0056_all_glibc-2.11-preadv-pwritev-fallocate-64bit.patch
@@ -37,15 +37,15 @@
 	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
 	+ 6610_all_glibc-r10k-workarounds.patch
 
-3		09.11.2009
+3		09 Nov 2009
 	+ 0077_all_i386-glibc-no-fallocate.patch
 
-2		06.11.2009
+2		06 Nov 2009
 	+ 0055_all_bug-regex29-add-missing-stdio.h-include.patch
 	+ 6130_all_ppc-glibc-2.11-cell-vector.patch
 	+ 6900_all_glibc-2.11-ia64-ifunc.patch
 
-1		05.11.2009
+1		05 Nov 2009
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0040_all_glibc-i586-chk.patch
 	+ 0070_all_glibc-i386-x86_64-revert-clone-cfi.patch

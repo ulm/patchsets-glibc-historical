@@ -1,8 +1,8 @@
-7		05.07.2012
+7		05 Jul 2011
 	+ 0050_all_glibc-make-3.82-rules.patch
 	U 1010_all_glibc-queue-header-updates.patch
 
-6		21.11.2009
+6		21 Nov 2009
 	- 0040_all_glibc-i586-chk.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch
 	+ 0063_all_glibc-2.10-output-int-overflow.patch
@@ -22,12 +22,12 @@
 	+ 0080_all_glibc-2.10.1-0097-Fix-preadv-pwritev-and-fallocate-for-D_FILE_OFFSET_B.patch
 	+ 0080_all_glibc-2.10.1-0098-Correct-readahead-syscall-wrapper-on-powerpc32.patch
 
-5		09.11.2009
+5		09 Nov 2009
 	M 6705_all_binutils-2.20-compat.patch -> 0060_all_binutils-2.20-compat.patch
 	+ 0077_all_i386-glibc-no-fallocate.patch
 	+ 1060_all_glibc-localedef-mmap.patch
 
-4		30.10.2009
+4		30 Oct 2009
 	+ 6020_all_alpha-fix-gcc-4.1-warnings.patch
 	+ 6021_all_alpha-add-dl-procinfo-support.patch
 	+ 6022_alpha_alpha-add-fdatasync-support.patch
@@ -38,10 +38,10 @@
 	+ 6027_all_alpha-fix-memchr.patch
 	+ 6028_all_alpha-fix-SOCK_NONBLOCK.patch
 
-3		18.09.2009
+3		18 Sep 2009
 	+ 6705_all_binutils-2.20-compat.patch
 
-2		06.09.2009
+2		06 Sep 2009
 	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
 	+ 1504_all_glibc-2.7-hppa-pie.patch
 	+ 1530_all_glibc-m68k-sys-user.patch
@@ -58,7 +58,7 @@
 	+ 6605_all_glibc-2.4-fpu-cw-mips.patch
 	+ 6610_all_glibc-r10k-workarounds.patch
 
-1		18.05.2009
+1		18 May 2009
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0040_all_glibc-i586-chk.patch
 	+ 0070_all_glibc-i386-x86_64-revert-clone-cfi.patch

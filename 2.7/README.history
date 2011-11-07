@@ -1,7 +1,7 @@
 1.8		[pending]
 	U 1010_all_glibc-queue-header-updates.patch
 
-1.7		03.23.2007
+1.7		23 Mar 2007
 	+ 0065_all_glibc-2.7-i386-new-binutils.patch
 	+ 0070_all_glibc-i386-x86_64-revert-clone-cfi.patch
 	+ 0080_all_glibc-nscd-overflow-BZ5382.patch
@@ -12,19 +12,19 @@
 	+ 6225_all_glibc-2.7-cargs6.patch
 	- 6650_all_glibc-mips_gnu-hash_support.patch
 
-1.6		12.29.2007
+1.6		29 Dec 2007
 	+ 1501_hppa_glibc-2.7-hppa-atomic_h.patch
 	+ 1502_hppa_glibc-2.7-hppa-fadvise64_64.patch
 	+ 1503_hppa_glibc-2.7-hppa-nptl-carlos.patch
 	+ 1504_hppa_glibc-2.7-hppa-pie.patch
 
-1.5		12.24.2007
+1.5		24 Dec 2007
 	+ 1050_all_glibc-posix-awk.patch
 
-1.4		10.12.2007
+1.4		10 Dec 2007
 	+ 6018_all_glibc-ptr-mangling.patch
 
-1.3		09.12.2007
+1.3		09 Dec 2007
 	+ 0040_all_glibc-i586-chk.patch
 	+ 0050_all_glibc-2.7-sscanf-as-BZ5441.patch
 	+ 0060_all_glibc-2.7-i386-makecontext-align-BZ5435.patch
@@ -33,14 +33,14 @@
 	+ 1085_all_glibc-omitfp-memmove.patch
 	+ 1515_all_glibc-hppa-tls-lock-build-fix.patch
 
-1.2		04.11.2007
+1.2		04 Nov 2007
 	+ 6417_all_sh-glibc-2.7-broken-nptl-lock-macros.patch
 
-1.1		24.10.2007
+1.1		24 Oct 2007
 	+ 1080_all_glibc-no-inline-gmon.patch
 	+ 1510_all_glibc-hppa-no-asm-elf-header.patch
 
-1.0		22.10.2007
+1.0		22 Oct 2007
 	+ 0010_all_glibc-2.7-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 1025_all_glibc-gcc-4.3-include-fixed.patch

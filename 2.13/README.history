@@ -1,8 +1,8 @@
-8		13.07.2011
+8		13 Jul 2011
 	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
 	+ 0062_all_glibc-2.13-dso-no-ld.so-deps.patch
 
-7		05.07.2011
+7		05 Jul 2011
 	+ 0043_all_glibc-2.12-broken-tls-init.patch
 	+ 0045_all_glibc-2.13-canonical-getaddrinfo.patch
 	+ 0046_all_glibc-2.13-dso-init-fini-order.patch
@@ -11,18 +11,18 @@
 	+ 6146_all_ppc-glibc-2.13-vsx-toc-O3.patch
 	+ 6610_all_glibc-r10k-workarounds.patch
 
-6		10.04.2011
+6		10 Apr 2011
 	+ 1508_all_glibc-2.13-hppa-DEFAULT_STACK_PERMS.patch
 
-5		03.04.2011
+5		03 Apr 2011
 	+ 6019_all_alpha-glibc-2.13-longjmp-chk.patch
 	+ 6021_all_alpha-glibc-2.13-ptr-mangle.patch
 	+ 6023_all_alpha-glibc-2.13-statfs64.patch
 
-4		11.03.2011
+4		11 Mar 2011
 	+ 1502_all_hppa-glibc-2.13-F_GET-SETPIPE_SZ.patch
 
-3		11.03.2011
+3		11 Mar 2011
 	+ 0061_all_glibc-2.13-static-memset.patch
 	+ 1005_all_glibc-sigaction.patch
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
@@ -35,11 +35,11 @@
 	+ 6532_all_sparc64-tls-cross-test.patch
 	- 6606_all_mips-glibc-delete-getpagesize.c.patch
 
-2		14.02.2011
+2		14 Feb 2011
 	+ 0050_all_glibc-2.13-ldso-prelink-segv.patch
 	+ 0060_all_glibc-2.13-static-memmove-ssse3.patch
 
-1		05.02.2011
+1		05 Feb 2011
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0055_all_glibc-2.12-static-shared-getpagesize.patch

@@ -3,14 +3,14 @@
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
 
-6		31.10.2010
+6		31 Oct 2010
 	+ 0061_all_glibc-double-expansion.patch
 	+ 0062_all_glibc-no-ORIGIN-setuid.patch
 
-5		26.10.2010
+5		26 Oct 2010
 	+ 0060_all_glibc-ld-audit-setuid.patch
 
-4		13.10.2010
+4		13 Oct 2010
 	+ 0010_all_glibc-locale-output-quote.patch
 	+ 0050_all_glibc-make-3.82-rules.patch
 	+ 1509_all_glibc-2.11-hppa-SOCK_CLOEXEC.patch
@@ -23,14 +23,14 @@
 	+ 6230_all_arm-glibc-hardened.patch
 	+ 6531_all_sparc-glibc-2.12-epoll_create1.patch
 
-3		26.07.2010
+3		26 Jul 2010
 	U 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 1505_hppa_glibc-2.11-hppa-nptl.patch
 
-2		29.06.2010
+2		29 Jun 2010
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
 
-1		08.06.2010
+1		08 Jun 2010
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0044_all_glibc-2.10-resolv-nameserver-fallback.patch

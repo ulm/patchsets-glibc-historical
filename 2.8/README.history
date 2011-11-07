@@ -2,13 +2,13 @@
 	- 0040_all_glibc-i586-chk.patch
 	U 1010_all_glibc-queue-header-updates.patch
 
-6		31.03.2008
+6		31 Mar 2009
 	+ 0085_all_glibc-disable-ldconfig.patch
 
-5		24.12.2008
+5		24 Dec 2008
 	+ 6700_s390_glibc-2.8-utmp-compat.patch
 
-4		07.12.2008
+4		07 Dec 2008
 	+ 1050_all_glibc-2.8-stdio-redirect.patch
 	+ 1051_all_glibc-2.8-__REPB_PREFIX.patch
 	+ 1052_all_glibc-2.8-mkfile-NUL.patch
@@ -21,14 +21,14 @@
 	+ 1053_all_glibc-2.8-optimize_utf8-Add-a-note-on-why-we-test-opr.ctx_t.patch
 	+ 1054_all_glibc-2.8-deb-cvs-getaddrinfo.patch
 
-3		26.10.2008
+3		26 Oct 2008
 	+ 6240_all_glibc-2.8-nptl-lowlevellock.patch
 
-2		16.07.2008
+2		16 Jul 2008
 	+ 6017_all_alpha-glibc-2.8-creat.patch
 	+ 6018_all_alpha-glibc-2.8-cache-shape.patch
 
-1		07.06.2008
+1		07 Jun 2008
 	+ 0010_all_glibc-2.7-ssp-compat.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
 	+ 0040_all_glibc-i586-chk.patch
