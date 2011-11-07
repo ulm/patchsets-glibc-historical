@@ -64,7 +64,7 @@ http://sourceware.org/ml/libc-alpha/2011-06/msg00006.html
 +  map->l_free_initfini = 1;
    if (l_reldeps != NULL)
      {
-       atomic_write_barrier ();diff --git a/include/link.h b/include/link.h
+       atomic_write_barrier ();
 @@ -686,5 +686,5 @@ Filters not supported with LD_TRACE_PRELINKING"));
        _dl_scope_free (old_l_reldeps);
      }
