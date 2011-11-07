@@ -1,0 +1,19 @@
+http://sourceware.org/ml/libc-ports/2011-03/msg00028.html
+
+2011-03-11  Aurelien Jarno  <aurelien@aurel32.net>
+
+	* sysdeps/hppa/stackinfo.h: Define DEFAULT_STACK_PERMS with PF_X.
+
+diff --git a/sysdeps/hppa/stackinfo.h b/sysdeps/hppa/stackinfo.h
+index 318de71..d0dac20 100644
+--- ports/sysdeps/hppa/stackinfo.h
++++ ports/sysdeps/hppa/stackinfo.h
+@@ -25,4 +25,8 @@
+ /* On PA the stack grows up.  */
+ #define _STACK_GROWS_UP	1
+ 
++/* Default to an executable stack.  PF_X can be overridden if PT_GNU_STACK is
++ * present, but it is presumed absent.  */
++#define DEFAULT_STACK_PERMS (PF_R|PF_W|PF_X)
++
+ #endif	/* stackinfo.h */
