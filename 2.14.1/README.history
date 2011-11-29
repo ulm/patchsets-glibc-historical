@@ -1,3 +1,6 @@
+2		[pending]
+	+ 0052_all_glibc-2.14-resolv-hp-assert.patch
+
 1		07 Nov 2011
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0030_all_glibc-respect-env-CPPFLAGS.patch
