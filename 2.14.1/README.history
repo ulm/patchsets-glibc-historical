@@ -1,5 +1,6 @@
-2		[pending]
+2		29 Nov 2011
 	+ 0052_all_glibc-2.14-resolv-hp-assert.patch
+	+ 1200_all_glibc-2.14.1-x32.patch
 
 1		07 Nov 2011
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
