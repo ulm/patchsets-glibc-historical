@@ -1,5 +1,10 @@
-3		[pending]
+3		01 Jan 2012
 	+ 0068_all_glibc-2.14-glibc-revert-fseek-on-fclose.patch
+	+ 0080_all_glibc-2.14-tzfile-bz13506.patch
+	+ 0090_all_glibc-2.14-fix-up-regcomp-regexec.patch
+	+ 6235_all_arm-sigreturn-cfi.patch
+	+ 6236_all_arm-sigreturn-cfi-2.patch
+	+ 6250_all_glibc-2.14-arm-unaligned-reloc.patch
 
 2		29 Nov 2011
 	+ 0052_all_glibc-2.14-resolv-hp-assert.patch
