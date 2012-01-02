@@ -1,4 +1,13 @@
-fix build errors with newer binutils:
+http://sourceware.org/ml/libc-ports/2012-01/msg00002.html
+
+From 16df464882693e90366a6f843a78536ec602051e Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 2 Jan 2012 17:33:28 -0500
+Subject: [PATCH] arm: fix cfi errors with newer binutils
+
+When building code that uses the PSEUDO() in sysdep-cancel.h with
+newer binutils, we hit many failures like this:
+
 ../sysdeps/unix/syscall-template.S: Assembler messages:
 ../sysdeps/unix/syscall-template.S:82: Error: CFI instruction used without previous .cfi_startproc
 ../sysdeps/unix/syscall-template.S:82: Error: CFI instruction used without previous .cfi_startproc
@@ -6,6 +15,21 @@ fix build errors with newer binutils:
 ../sysdeps/unix/syscall-template.S:82: Error: CFI instruction used without previous .cfi_startproc
 make[2]: *** [build/misc/select.o] Error 1
 
+Change the local nocancl version to use the ENTRY/END macros rather
+than open coding it so we get automatic cfi handling.
+
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2012-01-02  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h (PSEUDO): Change
+	.type/.globl/label to ENTRY().  Change .size to END().
+---
+ sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h b/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h
+index 9c80771..76d9677 100644
 --- a/ports/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h
 +++ b/ports/sysdeps/unix/sysv/linux/arm/nptl/sysdep-cancel.h
 @@ -28,12 +28,10 @@
@@ -23,3 +47,5 @@ make[2]: *** [build/misc/select.o] Error 1
    ENTRY (name);								\
      SINGLE_THREAD_P;							\
      DOARGS_##args;							\
+-- 
+1.7.6.1
