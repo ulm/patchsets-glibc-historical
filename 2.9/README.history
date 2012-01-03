@@ -1,5 +1,6 @@
-8		[pending]
+8		02 Jan 2012
 	- 0040_all_glibc-i586-chk.patch
+	+ 0050_all_glibc-make-3.82-rules.patch
 	U 1010_all_glibc-queue-header-updates.patch
 
 7		05 Nov 2009
