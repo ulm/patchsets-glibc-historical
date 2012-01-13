@@ -1,0 +1,67 @@
+Date: Sat, 26 Mar 2011 19:44:05 +0100
+From: Aurelien Jarno <aurelien@aurel32.net>
+To: libc-ports@sourceware.org
+Subject: [PATCH][alpha] Fix exception support
+
+All tests built with -fexceptions are not working, due to a bug in 
+pointer mangling. PTR_MANGLE and PTR_DEMANGLE are defined in 
+sysdeps/unix/alpha/sysdep.h for both ASSEMBLER and !ASSEMBLER cases, but
+within a !ASSEMBLER ifdef block. As a result pointer mangling is never
+done for assembler code.
+
+The patch below fixes the issues, and fixes the following tests of the
+testsuite:
+- tst-cancel24.out, Error 1
+- tst-cancelx16.out, Error 1
+- tst-cancelx17.out, Error 1
+- tst-cancelx18.out, Error 1
+- tst-cancelx20.out, Error 1
+- tst-cancelx21.out, Error 1
+- tst-cancelx4.out, Error 1
+- tst-cancelx5.out, Error 1
+- tst-cleanupx0.out, Error 1
+- tst-cleanupx1.out, Error 1
+- tst-cleanupx3.out, Error 1
+- tst-cleanupx4.out, Error 1
+- tst-mqueue8x.out, Error 1
+- tst-oncex3.out, Error 1
+- tst-oncex4.out, Error 1
+
+2011-03-26  Aurelien Jarno  <aurelien@aurel32.net>
+
+        * sysdeps/unix/alpha/sysdep.h (PTR_MANGLE): Move out of ASSEMBLER 
+	ifdef. 
+	(PTR_DEMANGLE): Likewise.
+
+diff --git a/sysdeps/unix/alpha/sysdep.h b/sysdeps/unix/alpha/sysdep.h
+index d9009c1..25979ad 100644
+--- ports/sysdeps/unix/alpha/sysdep.h
++++ ports/sysdeps/unix/alpha/sysdep.h
+@@ -157,6 +157,8 @@ __LABEL(name)						\
+ 
+ #else /* !ASSEMBLER */
+ 
++#include <stdint.h>
++
+ /* ??? Linux needs to be able to override INLINE_SYSCALL for one
+    particular special case.  Make this easy.  */
+ 
+@@ -399,11 +401,11 @@ __LABEL(name)						\
+ 	_sc_ret = _sc_0, _sc_err = _sc_19;			\
+ }
+ 
++#endif /* ASSEMBLER */
++
+ /* Pointer mangling support.  Note that tls access is slow enough that
+    we don't deoptimize things by placing the pointer check value there.  */
+ 
+-#include <stdint.h>
+-
+ #if defined NOT_IN_libc && defined IS_IN_rtld
+ # ifdef __ASSEMBLER__
+ #  define PTR_MANGLE(dst, src, tmp)				\
+@@ -447,4 +449,3 @@ extern const uintptr_t __pointer_chk_guard attribute_relro;
+ # endif
+ #endif
+ 
+-#endif /* ASSEMBLER */

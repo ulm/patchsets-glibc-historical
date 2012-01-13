@@ -1,0 +1,44 @@
+http://sourceware.org/ml/libc-ports/2012-01/msg00003.html
+
+From 86a3daff28268aec0c0907ab0a025dc28a35b27d Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sun, 1 Jan 2012 02:37:11 -0500
+Subject: [PATCH] arm: sigrestorer: fix cfi errors
+
+Building the sigrestorer code with newer binutils fails like so:
+.../arm/sigrestorer.S: Assembler messages:
+.../arm/sigrestorer.S:30: Error: previous CFI entry not closed (missing .cfi_endproc)
+.../arm/sigrestorer.S:31: Error: open CFI at the end of file; missing .cfi_endproc directive
+
+URL: http://sourceware.org/bugzilla/show_bug.cgi?id=12354
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2012-01-02  Mike Frysinger  <vapier@gentoo.org>
+
+	PR glibc/12354
+	* sysdeps/unix/sysv/linux/arm/sigrestorer.S (__default_sa_restorer):
+	Add END(__default_sa_restorer).
+	(__default_rt_sa_restorer): Add END(__default_rt_sa_restorer).
+---
+ sysdeps/unix/sysv/linux/arm/sigrestorer.S |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/arm/sigrestorer.S b/sysdeps/unix/sysv/linux/arm/sigrestorer.S
+index 98e33cb..2b811d1 100644
+--- a/ports/sysdeps/unix/sysv/linux/arm/sigrestorer.S
++++ b/ports/sysdeps/unix/sysv/linux/arm/sigrestorer.S
+@@ -24,10 +24,12 @@
+ 
+ ENTRY(__default_sa_restorer)
+ 	swi	SYS_ify(sigreturn)
++END(__default_sa_restorer)
+ 
+ #ifdef __NR_rt_sigreturn
+ 
+ ENTRY(__default_rt_sa_restorer)
+ 	swi	SYS_ify(rt_sigreturn)
++END(__default_rt_sa_restorer)
+ 
+ #endif
+-- 
+1.7.6.1
