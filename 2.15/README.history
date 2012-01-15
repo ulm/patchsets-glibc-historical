@@ -1,3 +1,9 @@
+2		14 Jan 2012
+	+ 0080_all_glibc-2.15-revert-x86_64-eagain-pthread_cond_wait.patch
+	+ 0081_all_glibc-2.15-math64crash.patch
+	+ 0082_all_glibc-2.16-scanf.patch
+	+ 6125_all_glibc-ppc32-getcontext-typo.patch
+
 1		13 Jan 2012
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0050_all_glibc-2.14-leak-revert-crash.patch

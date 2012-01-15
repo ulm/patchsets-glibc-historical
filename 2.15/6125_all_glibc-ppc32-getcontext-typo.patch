@@ -1,0 +1,45 @@
+From d1f741e9120669883c6fc0f6fc53b9d35e5015ce Mon Sep 17 00:00:00 2001
+From: Will Schmidt <will_schmidt@vnet.ibm.com>
+Date: Sun, 8 Jan 2012 21:32:57 -0500
+Subject: [PATCH] Fix typo in Linux/PPC32 getcontext
+
+2011-01-05  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	* sysdeps/unix/sysv/linux/powerpc/powerpc32/getcontext.S: Fix a
+	typo #include statement.
+
+---
+ ChangeLog                                          |    5 +++++
+ .../unix/sysv/linux/powerpc/powerpc32/getcontext.S |    8 ++++----
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/powerpc/powerpc32/getcontext.S b/sysdeps/unix/sysv/linux/powerpc/powerpc32/getcontext.S
+index dad1074..46f3dea 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/powerpc32/getcontext.S
++++ b/sysdeps/unix/sysv/linux/powerpc/powerpc32/getcontext.S
+@@ -1,5 +1,5 @@
+ /* Save current context.
+-   Copyright (C) 2002, 2004, 2005 Free Software Foundation, Inc.
++   Copyright (C) 2002, 2004, 2005, 2012 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -54,12 +54,12 @@ versioned_symbol (libc, __getcontext, getcontext, GLIBC_2_3_4)
+ 
+ #if SHLIB_COMPAT (libc, GLIBC_2_3_3, GLIBC_2_3_4)
+ 	compat_text_section
+-	
+-# undef __CONTEXT_FUNC_NAME	
++
++# undef __CONTEXT_FUNC_NAME
+ # define __CONTEXT_FUNC_NAME __novec_getcontext
+ # undef __CONTEXT_ENABLE_VRS
+ 
+-# clude "getcontext-common.S"
++# include "getcontext-common.S"
+ 
+ 	.previous
+ 
+-- 
+1.7.8.3
+
