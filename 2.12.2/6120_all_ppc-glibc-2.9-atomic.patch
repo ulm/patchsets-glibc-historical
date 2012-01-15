@@ -1,3 +1,5 @@
+http://sourceware.org/ml/libc-alpha/2011-07/msg00041.html
+
 sniped from suse
 
 Index: sysdeps/powerpc/bits/atomic.h
@@ -5,8 +7,8 @@ Index: sysdeps/powerpc/bits/atomic.h
 RCS file: /cvs/glibc/libc/sysdeps/powerpc/bits/atomic.h,v
 retrieving revision 1.17
 diff -u -a -p -r1.17 atomic.h
---- sysdeps/powerpc/bits/atomic.h	26 Mar 2007 20:15:28 -0000	1.17
-+++ sysdeps/powerpc/bits/atomic.h	31 May 2008 08:50:56 -0000
+--- a/sysdeps/powerpc/bits/atomic.h	26 Mar 2007 20:15:28 -0000	1.17
++++ b/sysdeps/powerpc/bits/atomic.h	31 May 2008 08:50:56 -0000
 @@ -85,14 +85,14 @@ typedef uintmax_t uatomic_max_t;
        __typeof (*(mem)) __tmp;						      \
        __typeof (mem)  __memp = (mem);					      \
@@ -154,8 +156,8 @@ Index: sysdeps/powerpc/powerpc32/bits/atomic.h
 RCS file: /cvs/glibc/libc/sysdeps/powerpc/powerpc32/bits/atomic.h,v
 retrieving revision 1.6
 diff -u -a -p -r1.6 atomic.h
---- sysdeps/powerpc/powerpc32/bits/atomic.h	26 Mar 2007 20:15:45 -0000	1.6
-+++ sysdeps/powerpc/powerpc32/bits/atomic.h	31 May 2008 08:50:56 -0000
+--- a/sysdeps/powerpc/powerpc32/bits/atomic.h	26 Mar 2007 20:15:45 -0000	1.6
++++ b/sysdeps/powerpc/powerpc32/bits/atomic.h	31 May 2008 08:50:56 -0000
 @@ -44,14 +44,14 @@
  ({									      \
    unsigned int __tmp;							      \
@@ -199,8 +201,8 @@ Index: sysdeps/powerpc/powerpc64/bits/atomic.h
 RCS file: /cvs/glibc/libc/sysdeps/powerpc/powerpc64/bits/atomic.h,v
 retrieving revision 1.8
 diff -u -a -p -r1.8 atomic.h
---- sysdeps/powerpc/powerpc64/bits/atomic.h	26 Mar 2007 20:16:03 -0000	1.8
-+++ sysdeps/powerpc/powerpc64/bits/atomic.h	31 May 2008 08:50:56 -0000
+--- a/sysdeps/powerpc/powerpc64/bits/atomic.h	26 Mar 2007 20:16:03 -0000	1.8
++++ b/sysdeps/powerpc/powerpc64/bits/atomic.h	31 May 2008 08:50:56 -0000
 @@ -44,14 +44,14 @@
  ({									      \
    unsigned int __tmp, __tmp2;						      \
