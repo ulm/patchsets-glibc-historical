@@ -1,54 +1,30 @@
 add x32 support; patch from https://github.com/hjl-tools/glibc
 
-diff --git a/ChangeLog.backport b/ChangeLog.backport
-new file mode 100644
-index 0000000..9e2ce2b
---- /dev/null
-+++ b/ChangeLog.backport
-@@ -0,0 +1,33 @@
-+2011-10-08  Roland McGrath  <roland@hack.frob.com>
-+
-+	* sysdeps/unix/sysv/linux/x86_64/time.c: Move #include <dl-vdso.h>
-+	inside [SHARED], where it is used.
-+
-+2011-09-06  Andreas Schwab  <schwab@redhat.com>
-+
-+	* sysdeps/unix/sysv/linux/x86_64/gettimeofday.c [!SHARED]: Include
-+	<errno.h>.
-+
-+2011-09-06  Ulrich Drepper  <drepper@gmail.com>
-+
-+	* sysdeps/unix/sysv/linux/kernel-features.h: Add entry for getcpu
-+	syscall on x86-64.
-+	* sysdeps/unix/sysv/linux/x86_64/gettimeofday.c [!SHARED]: Use real
-+	syscall.
-+	* sysdeps/unix/sysv/linux/x86_64/time.c: Likewise.
-+	* sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S [!SHARED]: Use real
-+	syscall if possible.
-+
-+2011-08-21  Ulrich Drepper  <drepper@gmail.com>
-+
-+	* sysdeps/unix/sysv/linux/x86_64/gettimeofday.S: Removed.
-+	* sysdeps/unix/sysv/linux/x86_64/time.S: Removed.
-+	* sysdeps/unix/sysv/linux/x86_64/gettimeofday.c: New file.
-+	* sysdeps/unix/sysv/linux/x86_64/time.c: New file.
-+	* sysdeps/unix/sysv/linux/x86_64/bits/libc-vdso.h: Remove declaration
-+	of __vdso_gettimeofday.
-+	* sysdeps/unix/sysv/linux/x86_64/init-first.c: Remove definition of
-+	__vdso_gettimeofday and __vdso_time.  Define __vdso_getcpu with
-+	attribute_hidden.
-+	(_libc_vdso_platform_setup): Remove initialization of
-+	__vdso_gettimeofday and __vdso_time.
 diff --git a/ChangeLog.x32 b/ChangeLog.x32
 new file mode 100644
-index 0000000..7a23b1b
+index 0000000..d1f0f92
 --- /dev/null
 +++ b/ChangeLog.x32
-@@ -0,0 +1,568 @@
-+2011-11-22  H.J. Lu  <hongjiu.lu@intel.com>
+@@ -0,0 +1,594 @@
++2012-01-09  H.J. Lu  <hongjiu.lu@intel.com>
 +
-+	* sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h: Support 
-+	!USE___THREAD.
++	* malloc/malloc.c (sYSMALLOc): Free the old top chunk with a
++	multiple of MALLOC_ALIGNMENT in size.
++	(_int_free): Check chunk size is a multiple of MALLOC_ALIGNMENT.
++
++2012-01-02  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* config.make.in (use-default-syscall-macros): Removed.
++	* configure.in (use_default_syscall_macros): Likewise.
++	* configure: Regenerated.
++
++	* sysdeps/unix/sysv/linux/Makefile: Don't check
++	use-default-syscall-macros.
++
++	* sysdeps/unix/sysv/linux/x86_64/Makefile
++	(syscall-list-64bit-options): Add -D__LP64__.
++
++	* sysdeps/x86_64/preconfigure: Don't set use_default_syscall_macros.
 +
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
@@ -148,12 +124,23 @@ index 0000000..7a23b1b
 +	<bits/wordsize.h>.
 +	(__signbitf): Check __x86_64__ instead of __WORDSIZE.
 +	(__signbit): Likwise.
++	(lrintf): Likwise.
++	(lrint): Likwise.
++	(llrintf): Likwise.
++	(llrint): Likwise.
++	(fmaxf): Likwise.
++	(fmax): Likwise.
++	(fminf): Likwise.
++	(fmin): Likwise.
 +
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
 +	* sysdeps/x86_64/fpu/math_private.h (EXTRACT_WORDS64): Use
 +	long long int instead of long int.
 +	(INSERT_WORDS64): Likwise.
++	(__isnan): Likwise.
++	(__isinf_ns): Likewise.
++	(__finite): Likewise.
 +
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
@@ -188,7 +175,7 @@ index 0000000..7a23b1b
 +
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
-+	* sysdeps/x86_64/multiarch/strcmp.S: Use RXX_LP.
++	* sysdeps/x86_64/multiarch/strcmp-sse42.S: Use RXX_LP.
 +
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
@@ -614,10 +601,10 @@ index 0000000..7a23b1b
 +	__LP64__.
 +	($(objpfx)syscall-%.h $(objpfx)syscall-%.d): New.
 diff --git a/Makeconfig b/Makeconfig
-index b34cacf..ad6354b 100644
+index 8195245..609a514 100644
 --- a/Makeconfig
 +++ b/Makeconfig
-@@ -885,7 +885,7 @@ postclean-generated += soversions.mk soversions.i \
+@@ -897,7 +897,7 @@ postclean-generated += soversions.mk soversions.i \
  before-compile += $(common-objpfx)gnu/lib-names.h
  ifeq ($(soversions.mk-done),t)
  $(common-objpfx)gnu/lib-names.h: $(common-objpfx)gnu/lib-names.stmp; @:
@@ -627,10 +614,10 @@ index b34cacf..ad6354b 100644
  	$(make-target-directory)
  	@rm -f ${@:stmp=T} $@
 diff --git a/Makefile b/Makefile
-index ea7a5b5..7c57213 100644
+index 08134e9..cd4c1c7 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -178,7 +178,7 @@ installed-stubs = $(inst_includedir)/gnu/stubs.h
+@@ -177,7 +177,7 @@ installed-stubs = $(inst_includedir)/gnu/stubs.h
  else
  installed-stubs = $(inst_includedir)/gnu/stubs-$(biarch).h
  
@@ -639,7 +626,7 @@ index ea7a5b5..7c57213 100644
  	$(make-target-directory)
  	$(INSTALL_DATA) $< $@
  
-@@ -260,13 +260,15 @@ tests-clean:
+@@ -259,13 +259,15 @@ tests-clean:
  
  tests: $(objpfx)c++-types-check.out $(objpfx)check-local-headers.out
  ifneq ($(CXX),no)
@@ -690,7 +677,7 @@ index e9226c4..63ef936 100644
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		1024
 diff --git a/config.make.in b/config.make.in
-index d722a8b..3656be3 100644
+index d2baf6d..cd0d1c8 100644
 --- a/config.make.in
 +++ b/config.make.in
 @@ -28,6 +28,7 @@ ldd-rewrite-script = @ldd_rewrite_script@
@@ -701,32 +688,30 @@ index d722a8b..3656be3 100644
  config-vendor = @host_vendor@
  config-os = @host_os@
  config-sysdirs = @sysnames@
-@@ -78,6 +79,10 @@ no-whole-archive = @no_whole_archive@
+@@ -79,6 +80,9 @@ oldest-abi = @oldest_abi@
  exceptions = @exceptions@
  multi-arch = @multi_arch@
  
 +stubs-biarch_h = @stubs_biarch_h@
 +lib-names_awk = @lib_names_awk@
-+use-default-syscall-macros = @use_default_syscall_macros@
 +
  mach-interface-list = @mach_interface_list@
  
  have-bash2 = @libc_cv_have_bash2@
 diff --git a/configure b/configure
-index 6cf85e5..91a514d 100755
+index c22ed38..de5a157 100755
 --- a/configure
 +++ b/configure
-@@ -599,6 +599,9 @@ ac_subst_vars='LTLIBOBJS
+@@ -607,6 +607,8 @@ ac_subst_vars='LTLIBOBJS
  LIBOBJS
  RELEASE
  VERSION
-+use_default_syscall_macros
 +lib_names_awk
 +stubs_biarch_h
  mach_interface_list
  DEFINES
  nopic_initfini
-@@ -679,6 +682,7 @@ sysdeps_add_ons
+@@ -690,6 +692,7 @@ sysdeps_add_ons
  sysnames
  submachine
  multi_arch
@@ -734,7 +719,7 @@ index 6cf85e5..91a514d 100755
  base_machine
  add_on_subdirs
  add_ons
-@@ -4106,6 +4110,17 @@ if test "$base_machine" = "i386"; then
+@@ -4087,6 +4090,17 @@ if test "$base_machine" = "i386"; then
  
  fi
  
@@ -752,7 +737,7 @@ index 6cf85e5..91a514d 100755
  # For the multi-arch option we need support in the assembler.
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for assembler gnu_indirect_function symbol type support" >&5
  $as_echo_n "checking for assembler gnu_indirect_function symbol type support... " >&6; }
-@@ -7732,6 +7747,21 @@ $as_echo "$libc_cv_pic_default" >&6; }
+@@ -7990,6 +8004,16 @@ $as_echo "$libc_cv_pic_default" >&6; }
  
  
  
@@ -766,19 +751,14 @@ index 6cf85e5..91a514d 100755
 +fi
 +
 +
-+if test -z "${use_default_syscall_macros}"; then
-+  use_default_syscall_macros=yes
-+fi
-+
-+
  if test "`(cd $srcdir; pwd)`" = "`pwd`"; then
    config_makefile=
  else
 diff --git a/configure.in b/configure.in
-index fbc64b9..3744d5c 100644
+index 2c4fc97..a9f4045 100644
 --- a/configure.in
 +++ b/configure.in
-@@ -600,6 +600,16 @@ if test "$base_machine" = "i386"; then
+@@ -574,6 +574,16 @@ if test "$base_machine" = "i386"; then
    AC_DEFINE(USE_REGPARMS)
  fi
  
@@ -795,7 +775,7 @@ index fbc64b9..3744d5c 100644
  # For the multi-arch option we need support in the assembler.
  AC_CACHE_CHECK([for assembler gnu_indirect_function symbol type support],
  	       libc_cv_asm_gnu_indirect_function, [dnl
-@@ -2266,6 +2276,21 @@ AC_SUBST(DEFINES)
+@@ -2382,6 +2392,16 @@ AC_SUBST(DEFINES)
  dnl See sysdeps/mach/configure.in for this variable.
  AC_SUBST(mach_interface_list)
  
@@ -809,16 +789,11 @@ index fbc64b9..3744d5c 100644
 +fi
 +AC_SUBST(lib_names_awk)
 +
-+if test -z "${use_default_syscall_macros}"; then
-+  use_default_syscall_macros=yes
-+fi
-+AC_SUBST(use_default_syscall_macros)
-+
  if test "`(cd $srcdir; pwd)`" = "`pwd`"; then
    config_makefile=
  else
 diff --git a/elf/cache.c b/elf/cache.c
-index 0988593..8881ccc 100644
+index 393b4e5..3d02c2d 100644
 --- a/elf/cache.c
 +++ b/elf/cache.c
 @@ -91,6 +91,10 @@ print_entry (const char *lib, int flag, unsigned int osversion,
@@ -833,10 +808,10 @@ index 0988593..8881ccc 100644
        break;
      default:
 diff --git a/elf/elf.h b/elf/elf.h
-index ca5abbf..0f87b4e 100644
+index 7c64120..dc899d0 100644
 --- a/elf/elf.h
 +++ b/elf/elf.h
-@@ -2712,8 +2712,9 @@ typedef Elf32_Addr Elf32_Conflict;
+@@ -2702,8 +2702,9 @@ typedef Elf32_Addr Elf32_Conflict;
  					   descriptor.  */
  #define R_X86_64_TLSDESC        36	/* TLS descriptor.  */
  #define R_X86_64_IRELATIVE	37	/* Adjust indirectly by program base */
@@ -968,7 +943,7 @@ index 388ed6e..d1bb9b0 100644
    __m128i xmm = _mm_set1_epi32 (-1);
    asm volatile ("movdqa %0, %%xmm0" : : "x" (xmm) : "xmm0" );
 diff --git a/elf/tst-auditmod4b.c b/elf/tst-auditmod4b.c
-index a6d3c6a..93f107f 100644
+index 761d97c..222f3b7 100644
 --- a/elf/tst-auditmod4b.c
 +++ b/elf/tst-auditmod4b.c
 @@ -94,8 +94,13 @@ la_symbind64 (Elf64_Sym *sym, unsigned int ndx, uintptr_t *refcook,
@@ -1028,7 +1003,7 @@ index 7e1e941..78fe838 100644
    __m128i xmm;
  
 diff --git a/elf/tst-auditmod6b.c b/elf/tst-auditmod6b.c
-index f756b50..048dd7a 100644
+index a7a60b9..016b07b 100644
 --- a/elf/tst-auditmod6b.c
 +++ b/elf/tst-auditmod6b.c
 @@ -94,8 +94,13 @@ la_symbind64 (Elf64_Sym *sym, unsigned int ndx, uintptr_t *refcook,
@@ -1058,7 +1033,7 @@ index f756b50..048dd7a 100644
  #ifdef __AVX__
    if (check_avx () && strcmp (symname, "audit_test") == 0)
 diff --git a/elf/tst-auditmod6c.c b/elf/tst-auditmod6c.c
-index 49cbf05..81cbaa1 100644
+index e0b5ac2..015be08 100644
 --- a/elf/tst-auditmod6c.c
 +++ b/elf/tst-auditmod6c.c
 @@ -94,8 +94,13 @@ la_symbind64 (Elf64_Sym *sym, unsigned int ndx, uintptr_t *refcook,
@@ -1088,7 +1063,7 @@ index 49cbf05..81cbaa1 100644
  #ifdef __AVX__
    if (check_avx () && strcmp (symname, "audit_test") == 0)
 diff --git a/elf/tst-auditmod7b.c b/elf/tst-auditmod7b.c
-index eb23758..91c4b7a 100644
+index a27d385..48b6626 100644
 --- a/elf/tst-auditmod7b.c
 +++ b/elf/tst-auditmod7b.c
 @@ -94,8 +94,13 @@ la_symbind64 (Elf64_Sym *sym, unsigned int ndx, uintptr_t *refcook,
@@ -1118,10 +1093,10 @@ index eb23758..91c4b7a 100644
  #ifdef __AVX__
    if (check_avx () && strcmp (symname, "audit_test") == 0)
 diff --git a/malloc/malloc.c b/malloc/malloc.c
-index dccb6cc..66a0e09 100644
+index 8608083..a9a2cff 100644
 --- a/malloc/malloc.c
 +++ b/malloc/malloc.c
-@@ -2157,18 +2157,23 @@ typedef struct malloc_chunk* mbinptr;
+@@ -1589,18 +1589,23 @@ typedef struct malloc_chunk* mbinptr;
  
      The bins top out around 1MB because we expect to service large
      requests via mmap.
@@ -1147,7 +1122,7 @@ index dccb6cc..66a0e09 100644
  
  #define largebin_index_32(sz)                                                \
  (((((unsigned long)(sz)) >>  6) <= 38)?  56 + (((unsigned long)(sz)) >>  6): \
-@@ -2178,6 +2183,14 @@ typedef struct malloc_chunk* mbinptr;
+@@ -1610,6 +1615,14 @@ typedef struct malloc_chunk* mbinptr;
   ((((unsigned long)(sz)) >> 18) <=  2)? 124 + (((unsigned long)(sz)) >> 18): \
  					126)
  
@@ -1162,7 +1137,7 @@ index dccb6cc..66a0e09 100644
  // XXX It remains to be seen whether it is good to keep the widths of
  // XXX the buckets the same or whether it should be scaled by a factor
  // XXX of two as well.
-@@ -2190,7 +2203,9 @@ typedef struct malloc_chunk* mbinptr;
+@@ -1622,7 +1635,9 @@ typedef struct malloc_chunk* mbinptr;
  					126)
  
  #define largebin_index(sz) \
@@ -1173,21 +1148,14 @@ index dccb6cc..66a0e09 100644
  
  #define bin_index(sz) \
   ((in_smallbin_range(sz)) ? smallbin_index(sz) : largebin_index(sz))
-@@ -3010,14 +3025,14 @@ static Void_t* sYSMALLOc(nb, av) INTERNAL_SIZE_T nb; mstate av;
-       Round up size to nearest page.  For mmapped chunks, the overhead
-       is one SIZE_SZ unit larger than for normal chunks, because there
+@@ -2390,8 +2405,12 @@ static void* sYSMALLOc(INTERNAL_SIZE_T nb, mstate av)
        is no following chunk whose prev_size field could be used.
-+
-+      See the front_misalign handling below, for glibc there is no
-+      need for further alignments unless we have have high alignment.
-     */
--#if 1
--    /* See the front_misalign handling below, for glibc there is no
--       need for further alignments.  */
+ 
+       See the front_misalign handling below, for glibc there is no
+-      need for further alignments.  */
 -    size = (nb + SIZE_SZ + pagemask) & ~pagemask;
--#else
--    size = (nb + SIZE_SZ + MALLOC_ALIGN_MASK + pagemask) & ~pagemask;
--#endif
++      need for further alignments unless we have have high alignment.
++    */
 +    if (MALLOC_ALIGNMENT == 2 * SIZE_SZ)
 +      size = (nb + SIZE_SZ + pagemask) & ~pagemask;
 +    else
@@ -1195,17 +1163,19 @@ index dccb6cc..66a0e09 100644
      tried_mmap = true;
  
      /* Don't try if size wraps around 0 */
-@@ -3035,13 +3050,16 @@ static Void_t* sYSMALLOc(nb, av) INTERNAL_SIZE_T nb; mstate av;
+@@ -2407,14 +2426,29 @@ static void* sYSMALLOc(INTERNAL_SIZE_T nb, mstate av)
+ 	  returned start address to meet alignment requirements here
+ 	  and in memalign(), and still be able to compute proper
  	  address argument for later munmap in free() and realloc().
- 	*/
++	*/
  
--#if 1
--	/* For glibc, chunk2mem increases the address by 2*SIZE_SZ and
--	   MALLOC_ALIGN_MASK is 2*SIZE_SZ-1.  Each mmap'ed area is page
--	   aligned and therefore definitely MALLOC_ALIGN_MASK-aligned.  */
+-	  For glibc, chunk2mem increases the address by 2*SIZE_SZ and
+-	  MALLOC_ALIGN_MASK is 2*SIZE_SZ-1.  Each mmap'ed area is page
+-	  aligned and therefore definitely MALLOC_ALIGN_MASK-aligned.  */
 -	assert (((INTERNAL_SIZE_T)chunk2mem(mm) & MALLOC_ALIGN_MASK) == 0);
--#else
--	front_misalign = (INTERNAL_SIZE_T)chunk2mem(mm) & MALLOC_ALIGN_MASK;
+-
+-	p = (mchunkptr)mm;
+-	set_head(p, size|IS_MMAPPED);
 +	if (MALLOC_ALIGNMENT == 2 * SIZE_SZ)
 +	  {
 +	    /* For glibc, chunk2mem increases the address by 2*SIZE_SZ and
@@ -1216,18 +1186,36 @@ index dccb6cc..66a0e09 100644
 +	  }
 +	else
 +	  front_misalign = (INTERNAL_SIZE_T)chunk2mem(mm) & MALLOC_ALIGN_MASK;
- 	if (front_misalign > 0) {
- 	  correction = MALLOC_ALIGNMENT - front_misalign;
- 	  p = (mchunkptr)(mm + correction);
-@@ -3049,7 +3067,6 @@ static Void_t* sYSMALLOc(nb, av) INTERNAL_SIZE_T nb; mstate av;
- 	  set_head(p, (size - correction) |IS_MMAPPED);
- 	}
- 	else
--#endif
- 	  {
- 	    p = (mchunkptr)mm;
- 	    set_head(p, size|IS_MMAPPED);
-@@ -3346,8 +3363,24 @@ static Void_t* sYSMALLOc(nb, av) INTERNAL_SIZE_T nb; mstate av;
++	if (front_misalign > 0) {
++	  correction = MALLOC_ALIGNMENT - front_misalign;
++	  p = (mchunkptr)(mm + correction);
++	  p->prev_size = correction;
++	  set_head(p, (size - correction) |IS_MMAPPED);
++	}
++	else
++	  {
++	    p = (mchunkptr)mm;
++	    set_head(p, size|IS_MMAPPED);
++	  }
+ 
+ 	/* update statistics */
+ 
+@@ -2479,11 +2513,12 @@ static void* sYSMALLOc(INTERNAL_SIZE_T nb, mstate av)
+       top(av) = chunk_at_offset(heap, sizeof(*heap));
+       set_head(top(av), (heap->size - sizeof(*heap)) | PREV_INUSE);
+ 
+-      /* Setup fencepost and free the old top chunk. */
++      /* Setup fencepost and free the old top chunk with a multiple of
++	 MALLOC_ALIGNMENT in size. */
+       /* The fencepost takes at least MINSIZE bytes, because it might
+ 	 become the top chunk again later.  Note that a footer is set
+ 	 up, too, although the chunk is marked in use. */
+-      old_size -= MINSIZE;
++      old_size = (old_size - MINSIZE) & ~MALLOC_ALIGN_MASK;
+       set_head(chunk_at_offset(old_top, old_size + 2*SIZE_SZ), 0|PREV_INUSE);
+       if (old_size >= MINSIZE) {
+ 	set_head(chunk_at_offset(old_top, old_size), (2*SIZE_SZ)|PREV_INUSE);
+@@ -2682,8 +2717,24 @@ static void* sYSMALLOc(INTERNAL_SIZE_T nb, mstate av)
  
        /* handle non-contiguous cases */
        else {
@@ -1254,40 +1242,19 @@ index dccb6cc..66a0e09 100644
  
  	/* Find out current end of memory */
  	if (snd_brk == (char*)(MORECORE_FAILURE)) {
-diff --git a/nptl/ChangeLog.backport b/nptl/ChangeLog.backport
-new file mode 100644
-index 0000000..dadb557
---- /dev/null
-+++ b/nptl/ChangeLog.backport
-@@ -0,0 +1,28 @@
-+2011-10-29  Ulrich Drepper  <drepper@gmail.com>
-+
-+	[BZ #13358]
-+	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
-+	(__pthread_cond_timedwait): Initialize %r15 correctly also for code
-+	path for kernels with FUTEX_CLOCK_REALTIME.
-+	Debugged by H.J. Lu <hjl.tools@gmail.com>.
-+
-+2011-09-08  Ulrich Drepper  <drepper@gmail.com>
-+
-+	[BZ #12403]
-+	* sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedwrlock.S
-+	(pthread_rwlock_timedwrlock): Use correct macro in test.
-+	Patch by H.J. Lu <hongjiu.lu@intel.com>.
-+
-+2011-09-06  Ulrich Drepper  <drepper@gmail.com>
-+
-+	* sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S (sem_timedwait): Don't
-+	use gettimeofday vsyscall, just call gettimeofday.
-+	* sysdeps/unix/sysv/linux/x86_64/lowlevellock.S: Likewise.
-+	* sysdeps/unix/sysv/linux/x86_64/lowlevelrobustlock.S: Likewise.
-+	* sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedrdlock.S:
-+	Likewise.
-+	* sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedwrlock.S:
-+	Likewise.
-+	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S: Likewise.
-+	Simplify __vdso_clock_gettime use.
-+
+@@ -3932,8 +3983,10 @@ _int_free(mstate av, mchunkptr p, int have_lock)
+       malloc_printerr (check_action, errstr, chunk2mem(p));
+       return;
+     }
+-  /* We know that each chunk is at least MINSIZE bytes in size.  */
+-  if (__builtin_expect (size < MINSIZE, 0))
++  /* We know that each chunk is at least MINSIZE bytes in size of a
++     multiple of MALLOC_ALIGNMENT.  */
++  if (__builtin_expect (size < MINSIZE
++			|| (size & MALLOC_ALIGN_MASK) != 0, 0))
+     {
+       errstr = "free(): invalid size";
+       goto errout;
 diff --git a/nptl/ChangeLog.x32 b/nptl/ChangeLog.x32
 new file mode 100644
 index 0000000..12cbb53
@@ -1367,10 +1334,10 @@ index 0000000..12cbb53
 +	__gcc_personality_v0.
 +	* sysdeps/unix/sysv/linux/x86_64/sem_wait.S: Likewise.
 diff --git a/nptl/pthread_create.c b/nptl/pthread_create.c
-index 34d83f9..174cec8 100644
+index 6250d03..232048d 100644
 --- a/nptl/pthread_create.c
 +++ b/nptl/pthread_create.c
-@@ -352,7 +352,7 @@ start_thread (void *arg)
+@@ -356,7 +356,7 @@ start_thread (void *arg)
  
  #ifndef __ASSUME_SET_ROBUST_LIST
    /* If this thread has any robust mutexes locked, handle them now.  */
@@ -1380,7 +1347,7 @@ index 34d83f9..174cec8 100644
  # else
    __pthread_slist_t *robust = pd->robust_list.__next;
 diff --git a/nptl/sysdeps/pthread/pthread.h b/nptl/sysdeps/pthread/pthread.h
-index 4c83665..d2172da 100644
+index a924281..1e645f0 100644
 --- a/nptl/sysdeps/pthread/pthread.h
 +++ b/nptl/sysdeps/pthread/pthread.h
 @@ -85,7 +85,7 @@ enum
@@ -1531,53 +1498,6 @@ index a06cd9b..fe33f69 100644
  	movl	$__NR_futex, %eax
  	xorq	%r10, %r10
  	addq	$CANCELHANDLING, %rdi
-diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.S b/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.S
-index 3195db2..018da0c 100644
---- a/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.S
-+++ b/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.S
-@@ -1,4 +1,4 @@
--/* Copyright (C) 2002-2006, 2007, 2009, 2010 Free Software Foundation, Inc.
-+/* Copyright (C) 2002-2007, 2009, 2010, 2011 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
-@@ -68,10 +68,6 @@
- #endif
- 
- 
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
--
- 	.globl	__lll_lock_wait_private
- 	.type	__lll_lock_wait_private,@function
- 	.hidden	__lll_lock_wait_private
-@@ -250,10 +246,9 @@ __lll_timedlock_wait:
- 	/* Get current time.  */
- 	movq	%rsp, %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	/* This is a regular function call, all caller-save registers
--	   might be clobbered.  */
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	8(%rsp), %rax
-@@ -402,8 +397,9 @@ __lll_timedwait_tid:
- 	/* Get current time.  */
- 2:	movq	%rsp, %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	8(%rsp), %rax
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.h b/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.h
 index 9b15bfb..023a675 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevellock.h
@@ -1631,40 +1551,6 @@ index 9b15bfb..023a675 100644
  		       "2:\tsubq $128, %%rsp\n"				      \
  		       "3:\tcallq __lll_robust_timedlock_wait\n"	      \
  		       "4:\taddq $128, %%rsp\n"				      \
-diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevelrobustlock.S b/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevelrobustlock.S
-index 5218a4f..b7b8b34 100644
---- a/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevelrobustlock.S
-+++ b/nptl/sysdeps/unix/sysv/linux/x86_64/lowlevelrobustlock.S
-@@ -1,4 +1,4 @@
--/* Copyright (C) 2002=2007, 2009, 2010 Free Software Foundation, Inc.
-+/* Copyright (C) 2002, 2011=2007, 2009, 2010 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
-@@ -50,9 +50,6 @@
- 	orl	$FUTEX_WAIT_BITSET | FUTEX_CLOCK_REALTIME, reg
- #endif
- 
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
- 
- 	.globl	__lll_robust_lock_wait
- 	.type	__lll_robust_lock_wait,@function
-@@ -219,10 +216,9 @@ __lll_robust_timedlock_wait:
- 	/* Get current time.  */
- 	movq	%rsp, %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	/* This is a regular function call, all caller-save registers
--	   might be clobbered.  */
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	8(%rsp), %rax
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S
 index 224a560..5c89c04 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S
@@ -1762,26 +1648,10 @@ index d1d83a8..9f05d28 100644
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
-index 48ea8b9..048d0ce 100644
+index acbd3fa..048d0ce 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
-@@ -1,4 +1,4 @@
--/* Copyright (C) 2002-2005, 2007, 2009, 2010, 2011 Free Software Foundation, Inc.
-+/* Copyright (C) 2002-2005,2007,2009,2010,2011 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
-@@ -26,9 +26,6 @@
- 
- #include <kernel-features.h>
- 
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
- 
- 	.text
- 
-@@ -93,7 +90,7 @@ __pthread_cond_timedwait:
+@@ -90,7 +90,7 @@ __pthread_cond_timedwait:
  		    +--------------------------+
  	*/
  
@@ -1790,7 +1660,7 @@ index 48ea8b9..048d0ce 100644
  
  	/* Prepare structure passed to cancellation handler.  */
  	movq	%rdi, 8(%rsp)
-@@ -101,9 +98,11 @@ __pthread_cond_timedwait:
+@@ -98,7 +98,7 @@ __pthread_cond_timedwait:
  	movq	%rdx, %r13
  
  	je	22f
@@ -1798,12 +1668,8 @@ index 48ea8b9..048d0ce 100644
 +	mov	%RSI_LP, dep_mutex(%rdi)
  
  22:
-+	xorl	%r15d, %r15d
-+
- #ifndef __ASSUME_FUTEX_CLOCK_REALTIME
- #  ifdef PIC
- 	cmpl	$0, __have_futex_clock_realtime(%rip)
-@@ -165,10 +164,10 @@ __pthread_cond_timedwait:
+ 	xorl	%r15d, %r15d
+@@ -164,10 +164,10 @@ __pthread_cond_timedwait:
  
  	movq	%r13, %r10
  	movl	$FUTEX_WAIT_BITSET, %esi
@@ -1816,7 +1682,7 @@ index 48ea8b9..048d0ce 100644
  	/* Requeue to a non-robust PI mutex if the PI bit is set and
  	the robust bit is not set.  */
  	movl	MUTEX_KIND(%r8), %eax
-@@ -270,7 +269,7 @@ __pthread_cond_timedwait:
+@@ -269,7 +269,7 @@ __pthread_cond_timedwait:
  	jne	55f
  
  	addq	$cond_nwaiters, %rdi
@@ -1825,7 +1691,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$1, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
-@@ -333,7 +332,7 @@ __pthread_cond_timedwait:
+@@ -332,7 +332,7 @@ __pthread_cond_timedwait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1834,7 +1700,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -345,7 +344,7 @@ __pthread_cond_timedwait:
+@@ -344,7 +344,7 @@ __pthread_cond_timedwait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1843,7 +1709,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -357,7 +356,7 @@ __pthread_cond_timedwait:
+@@ -356,7 +356,7 @@ __pthread_cond_timedwait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1852,7 +1718,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -372,7 +371,7 @@ __pthread_cond_timedwait:
+@@ -371,7 +371,7 @@ __pthread_cond_timedwait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1861,7 +1727,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -393,7 +392,7 @@ __pthread_cond_timedwait:
+@@ -392,7 +392,7 @@ __pthread_cond_timedwait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1870,51 +1736,20 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -405,8 +404,6 @@ __pthread_cond_timedwait:
- 
- #ifndef __ASSUME_FUTEX_CLOCK_REALTIME
- .Lreltmo:
--	xorl	%r15d, %r15d
--
- 	/* Get internal lock.  */
- 	movl	$1, %esi
- 	xorl	%eax, %eax
-@@ -450,16 +447,14 @@ __pthread_cond_timedwait:
+@@ -447,9 +447,9 @@ __pthread_cond_timedwait:
  	   kernel.  */
  	leaq	32(%rsp), %rsi
  #  ifdef SHARED
 -	movq	__vdso_clock_gettime@GOTPCREL(%rip), %rax
 -	movq	(%rax), %rax
 -	PTR_DEMANGLE (%rax)
--	jz	26f
 +	mov	__vdso_clock_gettime@GOTPCREL(%rip), %RAX_LP
 +	mov	(%rax), %RAX_LP
 +	PTR_DEMANGLE (%RAX_LP)
  	call	*%rax
--	jmp	27f
--#  endif
--26:	movl	$__NR_clock_gettime, %eax
-+#  else
-+	movl	$__NR_clock_gettime, %eax
- 	syscall
--27:
-+#  endif
- #  ifndef __ASSUME_POSIX_TIMERS
- 	cmpq	$-ENOSYS, %rax
- 	je	19f
-@@ -473,8 +468,9 @@ __pthread_cond_timedwait:
- # else
- 	leaq	24(%rsp), %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	40(%rsp), %rax
-@@ -513,7 +509,7 @@ __pthread_cond_timedwait:
+ #  else
+ 	movl	$__NR_clock_gettime, %eax
+@@ -509,7 +509,7 @@ __pthread_cond_timedwait:
  	movl	%eax, (%rsp)
  
  	leaq	32(%rsp), %r10
@@ -1923,7 +1758,7 @@ index 48ea8b9..048d0ce 100644
  	movq	%r12, %rdx
  # ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAIT, %eax
-@@ -573,7 +569,7 @@ __pthread_cond_timedwait:
+@@ -569,7 +569,7 @@ __pthread_cond_timedwait:
  # if cond_lock != 0
  	addq	$cond_lock, %rdi
  # endif
@@ -1932,7 +1767,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -585,7 +581,7 @@ __pthread_cond_timedwait:
+@@ -581,7 +581,7 @@ __pthread_cond_timedwait:
  # if cond_lock != 0
  	addq	$cond_lock, %rdi
  # endif
@@ -1941,7 +1776,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -597,7 +593,7 @@ __pthread_cond_timedwait:
+@@ -593,7 +593,7 @@ __pthread_cond_timedwait:
  # if cond_lock != 0
  	addq	$cond_lock, %rdi
  # endif
@@ -1950,19 +1785,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -611,8 +607,9 @@ __pthread_cond_timedwait:
- 	/* clock_gettime not available.  */
- 19:	leaq	32(%rsp), %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	40(%rsp), %rax
-@@ -679,7 +676,7 @@ __condvar_cleanup2:
+@@ -676,7 +676,7 @@ __condvar_cleanup2:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1971,7 +1794,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -712,7 +709,7 @@ __condvar_cleanup2:
+@@ -709,7 +709,7 @@ __condvar_cleanup2:
  	andl	$~((1 << nwaiters_shift) - 1), %eax
  	jne	4f
  
@@ -1980,7 +1803,7 @@ index 48ea8b9..048d0ce 100644
  	leaq	cond_nwaiters(%rdi), %rdi
  	movl	$1, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
-@@ -740,7 +737,7 @@ __condvar_cleanup2:
+@@ -737,7 +737,7 @@ __condvar_cleanup2:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -1989,7 +1812,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -750,7 +747,7 @@ __condvar_cleanup2:
+@@ -747,7 +747,7 @@ __condvar_cleanup2:
  2:	testq	%r12, %r12
  	jnz	5f
  	addq	$cond_futex, %rdi
@@ -1998,7 +1821,7 @@ index 48ea8b9..048d0ce 100644
  	movl	$0x7fffffff, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
-@@ -809,9 +806,9 @@ __condvar_cleanup2:
+@@ -806,9 +806,9 @@ __condvar_cleanup2:
  	.hidden	DW.ref.__gcc_personality_v0
  	.weak	DW.ref.__gcc_personality_v0
  	.section .gnu.linkonce.d.DW.ref.__gcc_personality_v0,"aw",@progbits
@@ -2012,10 +1835,10 @@ index 48ea8b9..048d0ce 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S
-index 7535baa..275e045 100644
+index d837d15..33b7e3a 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S
-@@ -65,14 +65,14 @@ __pthread_cond_wait:
+@@ -66,14 +66,14 @@ __pthread_cond_wait:
  	            +--------------------------+
  	*/
  
@@ -2032,7 +1855,7 @@ index 7535baa..275e045 100644
  
  	/* Get internal lock.  */
  15:	movl	$1, %esi
-@@ -120,12 +120,12 @@ __pthread_cond_wait:
+@@ -121,12 +121,12 @@ __pthread_cond_wait:
  	movl	%eax, (%rsp)
  
  	xorq	%r10, %r10
@@ -2047,7 +1870,7 @@ index 7535baa..275e045 100644
  	/* Requeue to a non-robust PI mutex if the PI bit is set and
  	the robust bit is not set.  */
  	movl	MUTEX_KIND(%r8), %eax
-@@ -203,7 +203,7 @@ __pthread_cond_wait:
+@@ -207,7 +207,7 @@ __pthread_cond_wait:
  	jne	17f
  
  	addq	$cond_nwaiters, %rdi
@@ -2056,7 +1879,7 @@ index 7535baa..275e045 100644
  	movl	$1, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
-@@ -252,7 +252,7 @@ __pthread_cond_wait:
+@@ -256,7 +256,7 @@ __pthread_cond_wait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -2065,7 +1888,7 @@ index 7535baa..275e045 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -264,7 +264,7 @@ __pthread_cond_wait:
+@@ -268,7 +268,7 @@ __pthread_cond_wait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -2074,7 +1897,7 @@ index 7535baa..275e045 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -280,7 +280,7 @@ __pthread_cond_wait:
+@@ -284,7 +284,7 @@ __pthread_cond_wait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -2083,7 +1906,7 @@ index 7535baa..275e045 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -295,7 +295,7 @@ __pthread_cond_wait:
+@@ -299,7 +299,7 @@ __pthread_cond_wait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -2092,7 +1915,7 @@ index 7535baa..275e045 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -316,7 +316,7 @@ __pthread_cond_wait:
+@@ -320,7 +320,7 @@ __pthread_cond_wait:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -2101,7 +1924,7 @@ index 7535baa..275e045 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -367,7 +367,7 @@ __condvar_cleanup1:
+@@ -435,7 +435,7 @@ __condvar_cleanup1:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
@@ -2110,25 +1933,7 @@ index 7535baa..275e045 100644
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
-@@ -400,7 +400,7 @@ __condvar_cleanup1:
- 	andl	$~((1 << nwaiters_shift) - 1), %eax
- 	jne	4f
- 
--	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
- 	leaq	cond_nwaiters(%rdi), %rdi
- 	movl	$1, %edx
- #ifdef __ASSUME_PRIVATE_FUTEX
-@@ -428,7 +428,7 @@ __condvar_cleanup1:
- #if cond_lock != 0
- 	addq	$cond_lock, %rdi
- #endif
--	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
- 	movl	$LLL_PRIVATE, %eax
- 	movl	$LLL_SHARED, %esi
- 	cmovne	%eax, %esi
-@@ -439,7 +439,7 @@ __condvar_cleanup1:
+@@ -507,7 +507,7 @@ __condvar_cleanup1:
  2:	testl	%ecx, %ecx
  	jnz	5f
  	addq	$cond_futex, %rdi
@@ -2137,7 +1942,7 @@ index 7535baa..275e045 100644
  	movl	$0x7fffffff, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
-@@ -488,9 +488,9 @@ __condvar_cleanup1:
+@@ -560,9 +560,9 @@ __condvar_cleanup1:
  	.hidden	DW.ref.__gcc_personality_v0
  	.weak	DW.ref.__gcc_personality_v0
  	.section .gnu.linkonce.d.DW.ref.__gcc_personality_v0,"aw",@progbits
@@ -2167,75 +1972,8 @@ index ccc1849..4b28743 100644
 -	.quad	__gcc_personality_v0
 +	ASM_ADDR __gcc_personality_v0
  #endif
-diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedrdlock.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedrdlock.S
-index f5d055c..0e6a6ee 100644
---- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedrdlock.S
-+++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedrdlock.S
-@@ -1,4 +1,4 @@
--/* Copyright (C) 2002-2005, 2007, 2009, 2010 Free Software Foundation, Inc.
-+/* Copyright (C) 2002-2005,2007,2009,2010,2011 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
-@@ -23,10 +23,6 @@
- #include <pthread-errnos.h>
- #include <kernel-features.h>
- 
--
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
- 	.text
- 
- 	.globl	pthread_rwlock_timedrdlock
-@@ -123,8 +119,9 @@ pthread_rwlock_timedrdlock:
- 	/* Get current time.  */
- 	movq	%rsp, %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	8(%rsp), %rax
-diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedwrlock.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedwrlock.S
-index 6ed8b49..16bf920 100644
---- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedwrlock.S
-+++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_rwlock_timedwrlock.S
-@@ -1,4 +1,5 @@
--/* Copyright (C) 2002, 2003, 2005, 2007, 2009, 2010 Free Software Foundation, Inc.
-+/* Copyright (C) 2002, 2003, 2005, 2007, 2009, 2010, 2011
-+   Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
-@@ -23,10 +24,6 @@
- #include <pthread-errnos.h>
- #include <kernel-features.h>
- 
--
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
- 	.text
- 
- 	.globl	pthread_rwlock_timedwrlock
-@@ -120,8 +117,9 @@ pthread_rwlock_timedwrlock:
- 	/* Get current time.  */
- 	movq	%rsp, %rdi
- 	xorl	%esi, %esi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	callq	*%rax
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	8(%rsp), %rax
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S
-index 979b1bf..2a631cf 100644
+index 4691e4d..99f4ec0 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S
 @@ -46,7 +46,7 @@ sem_post:
@@ -2248,27 +1986,10 @@ index 979b1bf..2a631cf 100644
  
  	movl	$SYS_futex, %eax
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S
-index ca49cb8..b8db189 100644
+index 576a494..78c7c0c 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S
-@@ -1,4 +1,4 @@
--/* Copyright (C) 2002,2003,2005,2007,2009,2010 Free Software Foundation, Inc.
-+/* Copyright (C) 2002,2003,2005,2007,2009,2010,2011 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
-    Contributed by Ulrich Drepper <drepper@redhat.com>, 2002.
- 
-@@ -24,10 +24,6 @@
- #include <pthread-errnos.h>
- #include <structsem.h>
- 
--
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
- 	.text
- 
- 	.globl	sem_timedwait
-@@ -88,7 +84,7 @@ sem_timedwait:
+@@ -84,7 +84,7 @@ sem_timedwait:
  	movq	%rsi, %r10
  
  	LOCK
@@ -2277,7 +1998,7 @@ index ca49cb8..b8db189 100644
  
  .LcleanupSTART:
  13:	call	__pthread_enable_asynccancel
-@@ -139,7 +135,7 @@ sem_timedwait:
+@@ -135,7 +135,7 @@ sem_timedwait:
  	xorl	%eax, %eax
  
  15:	LOCK
@@ -2286,7 +2007,7 @@ index ca49cb8..b8db189 100644
  
  	leaq	8(%rsp), %rsp
  	cfi_adjust_cfa_offset(-8)
-@@ -209,12 +205,13 @@ sem_timedwait:
+@@ -190,7 +190,7 @@ sem_timedwait:
  	movq	%rsi, %r13
  
  	LOCK
@@ -2294,17 +2015,8 @@ index ca49cb8..b8db189 100644
 +	ADD_LP	$1, NWAITERS(%r12)
  
  7:	xorl	%esi, %esi
--	movq	%rsp, %rdi
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--	callq	*%rax
-+	movq	%rsp,%rdi
-+	/* This call works because we directly jump to a system call entry
-+	   which preserves all the registers.  */
-+	call	JUMPTARGET(__gettimeofday)
- 
- 	/* Compute relative timeout.  */
- 	movq	8(%rsp), %rax
-@@ -285,7 +282,7 @@ sem_timedwait:
+ 	movq	%rsp,%rdi
+@@ -267,7 +267,7 @@ sem_timedwait:
  	xorl	%eax, %eax
  
  45:	LOCK
@@ -2313,7 +2025,7 @@ index ca49cb8..b8db189 100644
  
  	addq	$STACKFRAME, %rsp
  	cfi_adjust_cfa_offset(-STACKFRAME)
-@@ -328,7 +325,7 @@ sem_timedwait_cleanup:
+@@ -305,7 +305,7 @@ sem_timedwait_cleanup:
  
  	movq	(%rsp), %rdi
  	LOCK
@@ -2322,7 +2034,7 @@ index ca49cb8..b8db189 100644
  	movq	%rax, %rdi
  .LcallUR:
  	call	_Unwind_Resume@PLT
-@@ -348,7 +345,7 @@ sem_timedwait_cleanup2:
+@@ -325,7 +325,7 @@ sem_timedwait_cleanup2:
  	cfi_rel_offset(%r14, STACKFRAME)
  
  	LOCK
@@ -2331,7 +2043,7 @@ index ca49cb8..b8db189 100644
  	movq	%rax, %rdi
  	movq	STACKFRAME(%rsp), %r14
  	movq	STACKFRAME+8(%rsp), %r13
-@@ -396,9 +393,9 @@ sem_timedwait_cleanup2:
+@@ -373,9 +373,9 @@ sem_timedwait_cleanup2:
  	.hidden	DW.ref.__gcc_personality_v0
  	.weak	DW.ref.__gcc_personality_v0
  	.section .gnu.linkonce.d.DW.ref.__gcc_personality_v0,"aw",@progbits
@@ -2345,7 +2057,7 @@ index ca49cb8..b8db189 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S
-index 2cf6ec1..12d9e93 100644
+index 3ea714a..a13fffd 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S
 @@ -67,7 +67,7 @@ sem_wait:
@@ -2366,7 +2078,7 @@ index 2cf6ec1..12d9e93 100644
  
  	leaq	8(%rsp), %rsp
  	cfi_adjust_cfa_offset(-8)
-@@ -143,7 +143,7 @@ sem_wait:
+@@ -137,7 +137,7 @@ sem_wait:
  sem_wait_cleanup:
  	movq	(%rsp), %rdi
  	LOCK
@@ -2375,7 +2087,7 @@ index 2cf6ec1..12d9e93 100644
  	movq	%rax, %rdi
  .LcallUR:
  	call	_Unwind_Resume@PLT
-@@ -175,9 +175,9 @@ sem_wait_cleanup:
+@@ -169,9 +169,9 @@ sem_wait_cleanup:
  	.hidden	DW.ref.__gcc_personality_v0
  	.weak	DW.ref.__gcc_personality_v0
  	.section .gnu.linkonce.d.DW.ref.__gcc_personality_v0,"aw",@progbits
@@ -2389,10 +2101,10 @@ index 2cf6ec1..12d9e93 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/x86_64/pthreaddef.h b/nptl/sysdeps/x86_64/pthreaddef.h
-index 8ec135c..1dbc0cf 100644
+index 9de4af2..ea5de38 100644
 --- a/nptl/sysdeps/x86_64/pthreaddef.h
 +++ b/nptl/sysdeps/x86_64/pthreaddef.h
-@@ -34,7 +34,7 @@
+@@ -42,7 +42,7 @@
  
  /* Location of current stack frame.  The frame pointer is not usable.  */
  #define CURRENT_STACK_FRAME \
@@ -2402,7 +2114,7 @@ index 8ec135c..1dbc0cf 100644
  
  /* XXX Until we have a better place keep the definitions here.  */
 diff --git a/nptl/sysdeps/x86_64/tls.h b/nptl/sysdeps/x86_64/tls.h
-index 41b5e6d..0b45844 100644
+index 95e022b..d818da5 100644
 --- a/nptl/sysdeps/x86_64/tls.h
 +++ b/nptl/sysdeps/x86_64/tls.h
 @@ -28,7 +28,6 @@
@@ -2439,7 +2151,7 @@ index 41b5e6d..0b45844 100644
  # endif
  } tcbhead_t;
  
-@@ -274,7 +278,7 @@ typedef struct
+@@ -269,7 +273,7 @@ typedef struct
  	   abort ();							      \
  									      \
  	 asm volatile ("movq %q0,%%fs:%P1" :				      \
@@ -2448,7 +2160,7 @@ index 41b5e6d..0b45844 100644
  			 "i" (offsetof (struct pthread, member)));	      \
         }})
  
-@@ -299,7 +303,7 @@ typedef struct
+@@ -294,7 +298,7 @@ typedef struct
  	   abort ();							      \
  									      \
  	 asm volatile ("movq %q0,%%fs:%P1(,%q2,8)" :			      \
@@ -2599,7 +2311,7 @@ index 0000000..0a89e27
 +ushort:t
 +u_short:t
 diff --git a/shlib-versions b/shlib-versions
-index d3e8407..75e0365 100644
+index a7839de..82fc846 100644
 --- a/shlib-versions
 +++ b/shlib-versions
 @@ -28,7 +28,6 @@
@@ -2988,10 +2700,10 @@ index 09a961d..689798f 100644
    return bp;
  }
 diff --git a/stdlib/longlong.h b/stdlib/longlong.h
-index 1bab76d..d5c0cd9 100644
+index 60b35a3..f4ef222 100644
 --- a/stdlib/longlong.h
 +++ b/stdlib/longlong.h
-@@ -430,8 +430,8 @@ UDItype __umulsidi3 (USItype, USItype);
+@@ -431,8 +431,8 @@ UDItype __umulsidi3 (USItype, USItype);
  	   : "0" ((UDItype) (n0)),					\
  	     "1" ((UDItype) (n1)),					\
  	     "rm" ((UDItype) (dv)))
@@ -3015,7 +2727,7 @@ index fadd5ec..57ead17 100644
  /* Name of auxiliary cache.  */
  #define _PATH_LDCONFIG_AUX_CACHE "/var/cache/ldconfig/aux-cache"
 diff --git a/sysdeps/generic/ldsodefs.h b/sysdeps/generic/ldsodefs.h
-index d040590..3f8264a 100644
+index b24bff3..ef3cd11 100644
 --- a/sysdeps/generic/ldsodefs.h
 +++ b/sysdeps/generic/ldsodefs.h
 @@ -230,6 +230,10 @@ struct audit_ifaces
@@ -3237,28 +2949,8 @@ index c0e267f..26ea5a6 100644
  
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		1024
-diff --git a/sysdeps/unix/sysv/linux/Makefile b/sysdeps/unix/sysv/linux/Makefile
-index 05834e3..9087230 100644
---- a/sysdeps/unix/sysv/linux/Makefile
-+++ b/sysdeps/unix/sysv/linux/Makefile
-@@ -37,6 +37,7 @@ install-others += $(inst_includedir)/bits/syscall.h
- 
- tests += tst-clone
- 
-+ifeq (yes,$(use-default-syscall-macros))
- # Generate the list of SYS_* macros for the system calls (__NR_* macros).
- # For bi-arch platforms, the CPU/Makefile defines {32,64}bit-predefine and
- # we generate a file that uses <bits/wordsize.h>.
-@@ -81,6 +82,7 @@ else
- endif
- 	rm -f $(@:.h=.d)-t1 $(@:.h=.d)-t2
- 	mv -f $(@:.h=.d)-t3 $(@:.h=.d)
-+endif
- 
- $(inst_includedir)/bits/syscall.h: $(objpfx)syscall-list.h $(+force)
- 	$(make-target-directory)
 diff --git a/sysdeps/unix/sysv/linux/configure b/sysdeps/unix/sysv/linux/configure
-index d05bd13..e8b3e45 100644
+index a8ebcf2..f28c835 100644
 --- a/sysdeps/unix/sysv/linux/configure
 +++ b/sysdeps/unix/sysv/linux/configure
 @@ -332,6 +332,9 @@ case "$machine" in
@@ -3281,7 +2973,7 @@ index d05bd13..e8b3e45 100644
      if test "$libdir" = '${exec_prefix}/lib'; then
        libdir='${exec_prefix}/lib64';
 diff --git a/sysdeps/unix/sysv/linux/configure.in b/sysdeps/unix/sysv/linux/configure.in
-index 8f00407..617622c 100644
+index 3f1daab..44ad90d 100644
 --- a/sysdeps/unix/sysv/linux/configure.in
 +++ b/sysdeps/unix/sysv/linux/configure.in
 @@ -89,6 +89,9 @@ case "$machine" in
@@ -3328,19 +3020,6 @@ index a6374e6..6e39b3d 100644
    else
      {
        switch (elf_header->e_machine)
-diff --git a/sysdeps/unix/sysv/linux/kernel-features.h b/sysdeps/unix/sysv/linux/kernel-features.h
-index d91f581..58f833e 100644
---- a/sysdeps/unix/sysv/linux/kernel-features.h
-+++ b/sysdeps/unix/sysv/linux/kernel-features.h
-@@ -546,3 +546,8 @@
- #if __LINUX_KERNEL_VERSION >= 0x020627
- # define __ASSUME_SENDMMSG	1
- #endif
-+
-+/* getcpu is a syscall for x86-64 since 3.1.  */
-+#if defined __x86_64__ && __LINUX_KERNEL_VERSION >= 0x030100
-+# define __ASSUME_GETCPU_SYSCALL	1
-+#endif
 diff --git a/sysdeps/unix/sysv/linux/s390/bits/typesizes.h b/sysdeps/unix/sysv/linux/s390/bits/typesizes.h
 index 2d9cd87..b97f42a 100644
 --- a/sysdeps/unix/sysv/linux/s390/bits/typesizes.h
@@ -3380,17 +3059,22 @@ index 8d91c80..0000000
 @@ -1 +0,0 @@
 -unix/sysv/linux/wordsize-64
 diff --git a/sysdeps/unix/sysv/linux/x86_64/Makefile b/sysdeps/unix/sysv/linux/x86_64/Makefile
-index 6e2741a..326a617 100644
+index 9c9e615..fcf835d 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/Makefile
 +++ b/sysdeps/unix/sysv/linux/x86_64/Makefile
-@@ -1,5 +1,5 @@
- 32bit-predefine = __i386__
--64bit-predefine = __x86_64__
-+64bit-predefine = __x86_64__ __LP64__
+@@ -1,8 +1,8 @@
+ syscall-list-variants := 32bit 64bit
+ syscall-list-32bit-options := -D__i386__ -U__x86_64__
+-syscall-list-32bit-condition := __WORDSIZE == 32
+-syscall-list-64bit-options := -U__i386__ -D__x86_64__
+-syscall-list-64bit-condition := __WORDSIZE == 64
++syscall-list-32bit-condition := !defined __x86_64__
++syscall-list-64bit-options := -U__i386__ -D__x86_64__ -D__LP64__
++syscall-list-64bit-condition := defined __x86_64__
  
  ifeq ($(subdir),misc)
  sysdep_routines += ioperm iopl
-@@ -14,6 +14,55 @@ ifeq ($(subdir),csu)
+@@ -17,6 +17,10 @@ ifeq ($(subdir),csu)
  gen-as-const-headers += ucontext_i.sym
  endif
  
@@ -3401,53 +3085,8 @@ index 6e2741a..326a617 100644
  ifeq ($(subdir),elf)
  sysdep_routines += dl-vdso
  endif
-+
-+# Generate the list of SYS_* macros for the system calls (__NR_* macros).
-+# For bi-arch platforms, the CPU/Makefile defines {32,64}bit-predefine and
-+# we generate a file that uses <bits/wordsize.h>.
-+$(objpfx)syscall-%.h $(objpfx)syscall-%.d: ../sysdeps/unix/sysv/linux/sys/syscall.h
-+	$(make-target-directory)
-+	{ \
-+	 echo '/* Generated at libc build time from kernel syscall list.  */';\
-+	 echo ''; \
-+	 echo '#ifndef _SYSCALL_H'; \
-+	 echo '# error "Never use <bits/syscall.h> directly; include <sys/syscall.h> instead."'; \
-+	 echo '#endif'; \
-+	 echo ''; \
-+	 $(CC) -E -MD -MP -MF $(@:.h=.d)-t1 -MT '$(@:.d=.h) $(@:.h=.d)' \
-+	       -x c $(sysincludes) $< $(addprefix -U,$(64bit-predefine)) \
-+	       $(addprefix -D,$(32bit-predefine)) -D_LIBC -dM | \
-+	 sed -n 's@^#define __NR_\([^ ]*\) .*$$@#define SYS_\1 __NR_\1@p' | \
-+	 LC_ALL=C sort > $(@:.d=.h).new32; \
-+	 $(CC) -E -MD -MP -MF $(@:.h=.d)-t2 -MT '$(@:.d=.h) $(@:.h=.d)' \
-+	       -x c $(sysincludes) $< $(addprefix -U,$(32bit-predefine)) \
-+	       $(addprefix -D,$(64bit-predefine)) -D_LIBC -dM | \
-+	       grep -i -v _x32_ | grep -v "COMMON_SYSCALL(n)" | \
-+	 sed -n 's@^#define __NR_\([^ ]*\) .*$$@#define SYS_\1 __NR_\1@p' | \
-+	 LC_ALL=C sort > $(@:.d=.h).new64; \
-+	 if cmp -s $(@:.d=.h).new32 $(@:.d=.h).new64; then \
-+	   cat $(@:.d=.h).new32; \
-+	 else \
-+	   echo ''; \
-+	   LC_ALL=C comm -12 $(@:.d=.h).new32 $(@:.d=.h).new64; \
-+	   echo '#ifdef __x86_64__'; \
-+	   LC_ALL=C comm -13 $(@:.d=.h).new32 $(@:.d=.h).new64; \
-+	   echo '#else'; \
-+	   LC_ALL=C comm -23 $(@:.d=.h).new32 $(@:.d=.h).new64; \
-+	   echo '#endif'; \
-+	 fi; \
-+	 rm -f $(@:.d=.h).new32 $(@:.d=.h).new64; \
-+	} > $(@:.d=.h).new
-+	mv -f $(@:.d=.h).new $(@:.d=.h)
-+ifneq (,$(objpfx))
-+	sed $(sed-remove-objpfx) $(@:.h=.d)-t1 $(@:.h=.d)-t2 > $(@:.h=.d)-t3
-+else
-+	cat $(@:.h=.d)-t1 $(@:.h=.d)-t2 > $(@:.h=.d)-t3
-+endif
-+	rm -f $(@:.h=.d)-t1 $(@:.h=.d)-t2
-+	mv -f $(@:.h=.d)-t3 $(@:.h=.d)
 diff --git a/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S b/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S
-index 3881082..98a3e66 100644
+index d8cbe06..fd7e6b7 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S
 +++ b/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S
 @@ -20,6 +20,8 @@
@@ -3652,27 +3291,6 @@ index 0000000..f8101b1
 +typedef __pid_t __ipc_pid_t;
 +
 +#endif /* bits/ipctypes.h */
-diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/libc-vdso.h b/sysdeps/unix/sysv/linux/x86_64/bits/libc-vdso.h
-index d7123c9..f9bf84e 100644
---- a/sysdeps/unix/sysv/linux/x86_64/bits/libc-vdso.h
-+++ b/sysdeps/unix/sysv/linux/x86_64/bits/libc-vdso.h
-@@ -1,5 +1,5 @@
- /* Resolve function pointers to VDSO functions.
--   Copyright (C) 2005, 2007 Free Software Foundation, Inc.
-+   Copyright (C) 2005, 2007, 2011 Free Software Foundation, Inc.
-    This file is part of the GNU C Library.
- 
-    The GNU C Library is free software; you can redistribute it and/or
-@@ -25,9 +25,6 @@
- 
- #ifdef SHARED
- 
--extern long int (*__vdso_gettimeofday) (struct timeval *, void *)
--  attribute_hidden;
--
- extern long int (*__vdso_clock_gettime) (clockid_t, struct timespec *);
- 
- #endif
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h b/sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h
 new file mode 100644
 index 0000000..3c2c006
@@ -4092,7 +3710,7 @@ index 0000000..dea74be
 +
 +__END_DECLS
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/sem.h b/sysdeps/unix/sysv/linux/x86_64/bits/sem.h
-index 9b1d993..61fcfd8 100644
+index e86c357..b57a156 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/sem.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/sem.h
 @@ -40,12 +40,12 @@ struct semid_ds
@@ -5123,151 +4741,26 @@ index cb647ab..1f400eb 100644
 +    } while (0)
 +
 +#include <sysdeps/generic/dl-cache.h>
-diff --git a/sysdeps/unix/sysv/linux/x86_64/gettimeofday.S b/sysdeps/unix/sysv/linux/x86_64/gettimeofday.S
-deleted file mode 100644
-index f618e73..0000000
---- a/sysdeps/unix/sysv/linux/x86_64/gettimeofday.S
-+++ /dev/null
-@@ -1,49 +0,0 @@
--/* Copyright (C) 2002, 2003, 2007 Free Software Foundation, Inc.
--   This file is part of the GNU C Library.
--
--   The GNU C Library is free software; you can redistribute it and/or
--   modify it under the terms of the GNU Lesser General Public
--   License as published by the Free Software Foundation; either
--   version 2.1 of the License, or (at your option) any later version.
--
--   The GNU C Library is distributed in the hope that it will be useful,
--   but WITHOUT ANY WARRANTY; without even the implied warranty of
--   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
--   Lesser General Public License for more details.
--
--   You should have received a copy of the GNU Lesser General Public
--   License along with the GNU C Library; if not, write to the Free
--   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
--   02111-1307 USA.  */
--
--#include <sysdep.h>
--#define _ERRNO_H	1
--#include <bits/errno.h>
--
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
--
--
--ENTRY (__gettimeofday)
--	/* Align stack.  */
--	sub	$0x8, %rsp
--	cfi_adjust_cfa_offset(8)
--#ifdef SHARED
--	movq	__vdso_gettimeofday(%rip), %rax
--	PTR_DEMANGLE (%rax)
--#else
--	movq	$VSYSCALL_ADDR_vgettimeofday, %rax
--#endif
--	callq	*%rax
--	/* Check error return.  */
--	cmpl	$-4095, %eax
--	jae	SYSCALL_ERROR_LABEL
--
--L(pseudo_end):
--	add	$0x8, %rsp
--	cfi_adjust_cfa_offset(-8)
--	ret
--PSEUDO_END(__gettimeofday)
--
--strong_alias (__gettimeofday, __gettimeofday_internal)
--weak_alias (__gettimeofday, gettimeofday)
 diff --git a/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c b/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
-new file mode 100644
-index 0000000..0b06133
---- /dev/null
+index 3aba81c..0b06133 100644
+--- a/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
 +++ b/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
-@@ -0,0 +1,47 @@
-+/* Copyright (C) 2002, 2003, 2007, 2011 Free Software Foundation, Inc.
-+   This file is part of the GNU C Library.
-+
-+   The GNU C Library is free software; you can redistribute it and/or
-+   modify it under the terms of the GNU Lesser General Public
-+   License as published by the Free Software Foundation; either
-+   version 2.1 of the License, or (at your option) any later version.
-+
-+   The GNU C Library is distributed in the hope that it will be useful,
-+   but WITHOUT ANY WARRANTY; without even the implied warranty of
-+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+   Lesser General Public License for more details.
-+
-+   You should have received a copy of the GNU Lesser General Public
-+   License along with the GNU C Library; if not, write to the Free
-+   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-+   02111-1307 USA.  */
-+
-+#include <dl-vdso.h>
-+
-+#ifdef SHARED
-+void *gettimeofday_ifunc (void) __asm__ ("__gettimeofday");
-+
-+void *
-+gettimeofday_ifunc (void)
-+{
-+  PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
-+
-+  /* If the vDSO is not available we fall back on the old vsyscall.  */
-+  return (_dl_vdso_vsym ("gettimeofday", &linux26)
-+	  ?: (void *) VSYSCALL_ADDR_vgettimeofday);
-+}
-+__asm (".type __gettimeofday, %gnu_indirect_function");
-+#else
-+# include <sys/time.h>
-+# include <sysdep.h>
-+# include <errno.h>
-+
-+int
-+__gettimeofday (struct timeval *tv, struct timezone *tz)
-+{
-+  return INLINE_SYSCALL (gettimeofday, 2, tv, tz);
-+}
-+#endif
-+
-+weak_alias (__gettimeofday, gettimeofday)
-+strong_alias (__gettimeofday, __gettimeofday_internal)
+@@ -18,10 +18,6 @@
+ 
+ #include <dl-vdso.h>
+ 
+-
+-#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000ul
+-
+-
+ #ifdef SHARED
+ void *gettimeofday_ifunc (void) __asm__ ("__gettimeofday");
+ 
 diff --git a/sysdeps/unix/sysv/linux/x86_64/init-first.c b/sysdeps/unix/sysv/linux/x86_64/init-first.c
-index e676f62..ac977a8 100644
+index cb39aca..c331e12 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/init-first.c
 +++ b/sysdeps/unix/sysv/linux/x86_64/init-first.c
-@@ -20,15 +20,11 @@
- # include <dl-vdso.h>
- # include <bits/libc-vdso.h>
- 
--long int (*__vdso_gettimeofday) (struct timeval *, void *) attribute_hidden;
--
- long int (*__vdso_clock_gettime) (clockid_t, struct timespec *)
-   __attribute__ ((nocommon));
- strong_alias (__vdso_clock_gettime, __GI___vdso_clock_gettime attribute_hidden)
- 
--long int (*__vdso_getcpu) (unsigned *, unsigned *, void *);
--
--long int (*__vdso_time) (time_t *) attribute_hidden;
-+long int (*__vdso_getcpu) (unsigned *, unsigned *, void *) attribute_hidden;
- 
- 
- static inline void
-@@ -36,33 +32,16 @@ _libc_vdso_platform_setup (void)
- {
-   PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
- 
--  void *p = _dl_vdso_vsym ("gettimeofday", &linux26);
--  /* If the vDSO is not available we fall back on the old vsyscall.  */
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000ul
--  if (p == NULL)
--    p = (void *) VSYSCALL_ADDR_vgettimeofday;
--  PTR_MANGLE (p);
--  __vdso_gettimeofday = p;
--
--  p = _dl_vdso_vsym ("clock_gettime", &linux26);
-+  void *p = _dl_vdso_vsym ("clock_gettime", &linux26);
-   PTR_MANGLE (p);
-   __GI___vdso_clock_gettime = p;
+@@ -45,7 +45,6 @@ _libc_vdso_platform_setup (void)
  
    p = _dl_vdso_vsym ("getcpu", &linux26);
    /* If the vDSO is not available we fall back on the old vsyscall.  */
@@ -5275,18 +4768,6 @@ index e676f62..ac977a8 100644
    if (p == NULL)
      p = (void *) VSYSCALL_ADDR_vgetcpu;
    PTR_MANGLE (p);
-   __vdso_getcpu = p;
--
--  p = _dl_vdso_vsym ("time", &linux26);
--  /* If the vDSO is not available we fall back on the old vsyscall.  */
--#define VSYSCALL_ADDR_vtime	0xffffffffff600400
--  if (p == NULL)
--    p = (void *) VSYSCALL_ADDR_vtime;
--  PTR_MANGLE (p);
--  __vdso_time = p;
- }
- 
- # define VDSO_SETUP _libc_vdso_platform_setup
 diff --git a/sysdeps/unix/sysv/linux/x86_64/ldconfig.h b/sysdeps/unix/sysv/linux/x86_64/ldconfig.h
 index f7f64eb..69f77dd 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/ldconfig.h
@@ -5406,49 +4887,20 @@ index 5a49af3..65d3ed7 100644
      {
        ret = process_elf64_file (file_name, lib, flag, osversion, soname,
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S b/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
-index 8ec7d3f..2053bfd 100644
+index 246c955..2053bfd 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
 +++ b/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
-@@ -20,10 +20,7 @@
- #include <tls.h>
- #define _ERRNO_H	1
+@@ -22,10 +22,6 @@
  #include <bits/errno.h>
--
+ #include <kernel-features.h>
+ 
 -/* For the calculation see asm/vsyscall.h.  */
 -#define VSYSCALL_ADDR_vgetcpu	0xffffffffff600800
 -
-+#include <kernel-features.h>
- 
+-
  ENTRY (sched_getcpu)
  	/* Align stack and create local variable for result.  */
-@@ -38,10 +35,26 @@ ENTRY (sched_getcpu)
- #ifdef SHARED
- 	movq	__vdso_getcpu(%rip), %rax
- 	PTR_DEMANGLE (%rax)
-+	callq	*%rax
- #else
-+# ifdef __NR_getcpu
-+	movl	$__NR_getcpu, %eax
-+	syscall
-+#  ifndef __ASSUME_GETCPU_SYSCALL
-+	cmpq	$-ENOSYS, %rax
-+	jne	1f
-+#  endif
-+# endif
-+# ifndef __ASSUME_GETCPU_SYSCALL
- 	movq	$VSYSCALL_ADDR_vgetcpu, %rax
--#endif
- 	callq	*%rax
-+1:
-+# else
-+#  ifndef __NR_getcpu
-+#   error "cannot happen"
-+#  endif
-+# endif
-+#endif
- 
- 	cmpq	$-4095, %rax
- 	jae	SYSCALL_ERROR_LABEL
+ 	sub	$0x8, %rsp
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sigaction.c b/sysdeps/unix/sysv/linux/x86_64/sigaction.c
 index ab10123..a97e072 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sigaction.c
@@ -5857,10 +5309,10 @@ index e4423cf..d09a420 100644
  #define PAGE_SHIFT		12
  #define PAGE_SIZE		(1UL << PAGE_SHIFT)
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sysdep.h b/sysdeps/unix/sysv/linux/x86_64/sysdep.h
-index 2b9ea85..376a98e 100644
+index 6436230..1e68cf1 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sysdep.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/sysdep.h
-@@ -218,6 +218,11 @@
+@@ -190,6 +190,11 @@
  # define DOARGS_5 DOARGS_4
  # define DOARGS_6 DOARGS_5
  
@@ -5872,7 +5324,7 @@ index 2b9ea85..376a98e 100644
  #else	/* !__ASSEMBLER__ */
  /* Define a macro which expands inline into the wrapper code for a system
     call.  */
-@@ -366,6 +371,11 @@
+@@ -335,6 +340,11 @@
    LOAD_REGS_5
  # define ASM_ARGS_6	ASM_ARGS_5, "r" (_a6)
  
@@ -5884,113 +5336,19 @@ index 2b9ea85..376a98e 100644
  #endif	/* __ASSEMBLER__ */
  
  
-diff --git a/sysdeps/unix/sysv/linux/x86_64/time.S b/sysdeps/unix/sysv/linux/x86_64/time.S
-deleted file mode 100644
-index 66d7498..0000000
---- a/sysdeps/unix/sysv/linux/x86_64/time.S
-+++ /dev/null
-@@ -1,47 +0,0 @@
--/* Copyright (C) 2001,02, 2003, 2011 Free Software Foundation, Inc.
--   This file is part of the GNU C Library.
--
--   The GNU C Library is free software; you can redistribute it and/or
--   modify it under the terms of the GNU Lesser General Public
--   License as published by the Free Software Foundation; either
--   version 2.1 of the License, or (at your option) any later version.
--
--   The GNU C Library is distributed in the hope that it will be useful,
--   but WITHOUT ANY WARRANTY; without even the implied warranty of
--   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
--   Lesser General Public License for more details.
--
--   You should have received a copy of the GNU Lesser General Public
--   License along with the GNU C Library; if not, write to the Free
--   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
--   02111-1307 USA.  */
--
--#include <sysdep.h>
--#define _ERRNO_H	1
--#include <bits/errno.h>
--
--/* For the calculation see asm/vsyscall.h.  */
+diff --git a/sysdeps/unix/sysv/linux/x86_64/time.c b/sysdeps/unix/sysv/linux/x86_64/time.c
+index a613eb0..7b4a0c8 100644
+--- a/sysdeps/unix/sysv/linux/x86_64/time.c
++++ b/sysdeps/unix/sysv/linux/x86_64/time.c
+@@ -19,8 +19,6 @@
+ #ifdef SHARED
+ #include <dl-vdso.h>
+ 
 -#define VSYSCALL_ADDR_vtime	0xffffffffff600400
 -
--
--/* Return the current time as a `time_t' and also put it in *T if T is
--   not NULL.  Time is represented as seconds from Jan 1 00:00:00 1970.  */
--
--ENTRY (time)
--	/* Align stack.  */
--	sub	$0x8, %rsp
--	cfi_adjust_cfa_offset(8)
--
--#ifdef SHARED
--	movq	__vdso_time(%rip), %rax
--	PTR_DEMANGLE (%rax)
--#else
--	movq	$VSYSCALL_ADDR_vtime, %rax
--#endif
--	callq	*%rax
--
--	add	$0x8, %rsp
--	cfi_adjust_cfa_offset(-8)
--	ret
--PSEUDO_END_NOERRNO(time)
--libc_hidden_def (time)
-diff --git a/sysdeps/unix/sysv/linux/x86_64/time.c b/sysdeps/unix/sysv/linux/x86_64/time.c
-new file mode 100644
-index 0000000..7b4a0c8
---- /dev/null
-+++ b/sysdeps/unix/sysv/linux/x86_64/time.c
-@@ -0,0 +1,48 @@
-+/* Copyright (C) 2001,02,2003,2011 Free Software Foundation, Inc.
-+   This file is part of the GNU C Library.
-+
-+   The GNU C Library is free software; you can redistribute it and/or
-+   modify it under the terms of the GNU Lesser General Public
-+   License as published by the Free Software Foundation; either
-+   version 2.1 of the License, or (at your option) any later version.
-+
-+   The GNU C Library is distributed in the hope that it will be useful,
-+   but WITHOUT ANY WARRANTY; without even the implied warranty of
-+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+   Lesser General Public License for more details.
-+
-+   You should have received a copy of the GNU Lesser General Public
-+   License along with the GNU C Library; if not, write to the Free
-+   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-+   02111-1307 USA.  */
-+
-+#ifdef SHARED
-+#include <dl-vdso.h>
-+
-+void *time_ifunc (void) __asm__ ("time");
-+
-+void *
-+time_ifunc (void)
-+{
-+  PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
-+
-+  /* If the vDSO is not available we fall back on the old vsyscall.  */
-+  return _dl_vdso_vsym ("time", &linux26) ?: (void *) VSYSCALL_ADDR_vtime;
-+}
-+__asm (".type time, %gnu_indirect_function");
-+
-+#else
-+
-+# include <time.h>
-+# include <sysdep.h>
-+
-+time_t
-+time (time_t *t)
-+{
-+  INTERNAL_SYSCALL_DECL (err);
-+  return INTERNAL_SYSCALL (time, err, 1, t);
-+}
-+
-+#endif
-+
-+strong_alias (time, __GI_time)
+ void *time_ifunc (void) __asm__ ("time");
+ 
+ void *
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/Implies b/sysdeps/unix/sysv/linux/x86_64/x32/Implies
 new file mode 100644
 index 0000000..8d91c80
@@ -7032,10 +6390,10 @@ index 0000000..634c289
 +/* X32 doesn't have _sysctl.  */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h b/sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h
 new file mode 100644
-index 0000000..486c30d
+index 0000000..81b2dbe
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,102 @@
 +/* Copyright (C) 2011 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
 +
@@ -7081,7 +6439,7 @@ index 0000000..486c30d
 +  movl %edx, (%rcx);				\
 +  SYSCALL_SET_ERROR_RETURN;			\
 +  jmp L(pseudo_end);
-+# elif USE___THREAD
++# else
 +#  undef SYSCALL_ERROR_HANDLER
 +#  define SYSCALL_ERROR_HANDLER			\
 +0:						\
@@ -7089,36 +6447,6 @@ index 0000000..486c30d
 +  xorl %edx, %edx;				\
 +  subl %eax, %edx;				\
 +  movl %edx, %fs:(%rcx);			\
-+  SYSCALL_SET_ERROR_RETURN;			\
-+  jmp L(pseudo_end);
-+# elif defined _LIBC_REENTRANT
-+/* Store (- %eax) into errno through the GOT.
-+   Note that errno occupies only 4 bytes.  */
-+#  undef SYSCALL_ERROR_HANDLER
-+#  define SYSCALL_ERROR_HANDLER			\
-+0:						\
-+  xorl %edx, %edx;				\
-+  subl %eax, %edx;				\
-+  pushq %rdx;					\
-+  cfi_adjust_cfa_offset(8);			\
-+  PUSH_ERRNO_LOCATION_RETURN;			\
-+  call BP_SYM (__errno_location)@PLT;		\
-+  POP_ERRNO_LOCATION_RETURN;			\
-+  popq %rdx;					\
-+  cfi_adjust_cfa_offset(-8);			\
-+  movl %edx, (%rax);				\
-+  SYSCALL_SET_ERROR_RETURN;			\
-+  jmp L(pseudo_end);
-+
-+/* A quick note: it is assumed that the call to `__errno_location' does
-+   not modify the stack!  */
-+# else /* Not _LIBC_REENTRANT.  */
-+#  undef SYSCALL_ERROR_HANDLER
-+#  define SYSCALL_ERROR_HANDLER			\
-+0:movq errno@GOTPCREL(%rip), %rcx;		\
-+  xorl %edx, %edx;				\
-+  subl %eax, %edx;				\
-+  movl %edx, (%rcx);				\
 +  SYSCALL_SET_ERROR_RETURN;			\
 +  jmp L(pseudo_end);
 +# endif	/* PIC */
@@ -7412,7 +6740,7 @@ index 7c138eb..2ded147 100644
  
  
 diff --git a/sysdeps/x86_64/bits/byteswap.h b/sysdeps/x86_64/bits/byteswap.h
-index e350fb8..fa0e863 100644
+index c6db93c..4015f9c 100644
 --- a/sysdeps/x86_64/bits/byteswap.h
 +++ b/sysdeps/x86_64/bits/byteswap.h
 @@ -25,8 +25,6 @@
@@ -7443,8 +6771,8 @@ index e350fb8..fa0e863 100644
     `bswap' opcode.  On i386 we have to use three instructions.  */
  #  define __bswap_32(x) \
 @@ -108,10 +105,10 @@
-       | (((x) & 0x000000000000ff00ull) << 40)				      \
-       | (((x) & 0x00000000000000ffull) << 56))
+ 		     | (((x) & 0x000000000000ff00ull) << 40)		      \
+ 		     | (((x) & 0x00000000000000ffull) << 56)))
  
 -# if __WORDSIZE == 64
 +# ifdef __x86_64__ 
@@ -7546,10 +6874,22 @@ index a40a0d8..0000000
 -# define __WORDSIZE	32
 -#endif
 diff --git a/sysdeps/x86_64/dl-irel.h b/sysdeps/x86_64/dl-irel.h
-index d2d5c06..ac90c94 100644
+index 19f9457..db03827 100644
 --- a/sysdeps/x86_64/dl-irel.h
 +++ b/sysdeps/x86_64/dl-irel.h
-@@ -28,14 +28,14 @@
+@@ -26,23 +26,23 @@
+ 
+ #define ELF_MACHINE_IRELA	1
+ 
+-static inline Elf64_Addr
++static inline ElfW(Addr)
+ __attribute ((always_inline))
+-elf_ifunc_invoke (Elf64_Addr addr)
++elf_ifunc_invoke (ElfW(Addr) addr)
+ {
+-  return ((Elf64_Addr (*) (void)) (addr)) ();
++  return ((ElfW(Addr) (*) (void)) (addr)) ();
+ }
  
  static inline void
  __attribute ((always_inline))
@@ -7563,13 +6903,13 @@ index d2d5c06..ac90c94 100644
  
    if (__builtin_expect (r_type == R_X86_64_IRELATIVE, 1))
      {
--      Elf64_Addr value = ((Elf64_Addr (*) (void)) reloc->r_addend) ();
-+      ElfW(Addr) value = ((ElfW(Addr) (*) (void)) reloc->r_addend) ();
+-      Elf64_Addr value = elf_ifunc_invoke(reloc->r_addend);
++      ElfW(Addr) value = elf_ifunc_invoke(reloc->r_addend);
        *reloc_addr = value;
      }
    else
 diff --git a/sysdeps/x86_64/dl-machine.h b/sysdeps/x86_64/dl-machine.h
-index f615e95..74a8109 100644
+index a8fbc16..5539ce3 100644
 --- a/sysdeps/x86_64/dl-machine.h
 +++ b/sysdeps/x86_64/dl-machine.h
 @@ -30,7 +30,7 @@
@@ -7674,16 +7014,16 @@ index f615e95..74a8109 100644
  
    return lazy;
  }
-@@ -213,7 +214,7 @@ _dl_start_user:\n\
- /* A reloc type used for ld.so cmdline arg lookups to reject PLT entries.  */
- #define ELF_MACHINE_JMP_SLOT	R_X86_64_JUMP_SLOT
+@@ -211,7 +212,7 @@ _dl_start_user:\n\
+ // XXX This is a work-around for a broken linker.  Remove!
+ #define ELF_MACHINE_IRELATIVE	R_X86_64_IRELATIVE
  
 -/* The x86-64 never uses Elf64_Rel relocations.  */
 +/* The x86-64 never uses Elf64_Rel/Elf32_Rel relocations.  */
  #define ELF_MACHINE_NO_REL 1
  
- /* We define an initialization functions.  This is called very early in
-@@ -228,19 +229,19 @@ dl_platform_init (void)
+ /* We define an initialization function.  This is called very early in
+@@ -226,19 +227,19 @@ dl_platform_init (void)
      GLRO(dl_platform) = NULL;
  }
  
@@ -7698,8 +7038,8 @@ index f615e95..74a8109 100644
    return *reloc_addr = value;
  }
  
- /* Return the final value of a plt relocation.  On x86-64 the
-    JUMP_SLOT relocation ignores the addend. */
+ /* Return the final value of a PLT relocation.  On x86-64 the
+    JUMP_SLOT relocation ignores the addend.  */
 -static inline Elf64_Addr
 -elf_machine_plt_value (struct link_map *map, const Elf64_Rela *reloc,
 -		       Elf64_Addr value)
@@ -7709,7 +7049,7 @@ index f615e95..74a8109 100644
  {
    return value;
  }
-@@ -259,12 +260,12 @@ elf_machine_plt_value (struct link_map *map, const Elf64_Rela *reloc,
+@@ -257,12 +258,12 @@ elf_machine_plt_value (struct link_map *map, const Elf64_Rela *reloc,
  
  auto inline void
  __attribute__ ((always_inline))
@@ -7717,7 +7057,7 @@ index f615e95..74a8109 100644
 -		  const Elf64_Sym *sym, const struct r_found_version *version,
 +elf_machine_rela (struct link_map *map, const ElfW(Rela) *reloc,
 +		  const ElfW(Sym) *sym, const struct r_found_version *version,
- 		  void *const reloc_addr_arg)
+ 		  void *const reloc_addr_arg, int skip_ifunc)
  {
 -  Elf64_Addr *const reloc_addr = reloc_addr_arg;
 -  const unsigned long int r_type = ELF64_R_TYPE (reloc->r_info);
@@ -7726,7 +7066,7 @@ index f615e95..74a8109 100644
  
  # if !defined RTLD_BOOTSTRAP || !defined HAVE_Z_COMBRELOC
    if (__builtin_expect (r_type == R_X86_64_RELATIVE, 0))
-@@ -285,22 +286,28 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+@@ -283,23 +284,29 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
      }
    else
  # endif
@@ -7753,13 +7093,14 @@ index f615e95..74a8109 100644
        if (sym != NULL
  	  && __builtin_expect (ELFW(ST_TYPE) (sym->st_info) == STT_GNU_IFUNC,
  			       0)
- 	  && __builtin_expect (sym->st_shndx != SHN_UNDEF, 1))
+ 	  && __builtin_expect (sym->st_shndx != SHN_UNDEF, 1)
+ 	  && __builtin_expect (!skip_ifunc, 1))
 -	value = ((Elf64_Addr (*) (void)) value) ();
 +	value = ((ElfW(Addr) (*) (void)) value) ();
  
- # if defined RTLD_BOOTSTRAP && !USE___THREAD
-       assert (r_type == R_X86_64_GLOB_DAT || r_type == R_X86_64_JUMP_SLOT);
-@@ -333,7 +340,13 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+       switch (r_type)
+ 	{
+@@ -328,7 +335,13 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
  	  /* During relocation all TLS symbols are defined and used.
  	     Therefore the offset is already correct.  */
  	  if (sym != NULL)
@@ -7773,7 +7114,7 @@ index f615e95..74a8109 100644
  #  endif
  	  break;
  	case R_X86_64_TLSDESC:
-@@ -383,15 +396,27 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+@@ -378,15 +391,27 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
  	      /* We know the offset of the object the symbol is contained in.
  		 It is a negative value which will be added to the
  		 thread pointer.  */
@@ -7801,7 +7142,7 @@ index f615e95..74a8109 100644
  	  break;
  	case R_X86_64_32:
  	  value += reloc->r_addend;
-@@ -417,7 +442,7 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+@@ -412,7 +437,7 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
  #  ifndef RESOLVE_CONFLICT_FIND_MAP
  	  /* Not needed for dl-conflict.c.  */
  	case R_X86_64_PC32:
@@ -7810,7 +7151,7 @@ index f615e95..74a8109 100644
  	  *(unsigned int *) reloc_addr = value;
  	  if (__builtin_expect (value != (int) value, 0))
  	    {
-@@ -445,7 +470,7 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+@@ -440,7 +465,7 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
  #  endif
  	case R_X86_64_IRELATIVE:
  	  value = map->l_addr + reloc->r_addend;
@@ -7819,7 +7160,7 @@ index f615e95..74a8109 100644
  	  *reloc_addr = value;
  	  break;
  	default:
-@@ -459,21 +484,21 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+@@ -453,22 +478,22 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
  
  auto inline void
  __attribute ((always_inline))
@@ -7837,8 +7178,9 @@ index f615e95..74a8109 100644
  auto inline void
  __attribute ((always_inline))
  elf_machine_lazy_rel (struct link_map *map,
--		      Elf64_Addr l_addr, const Elf64_Rela *reloc)
-+		      ElfW(Addr) l_addr, const ElfW(Rela) *reloc)
+-		      Elf64_Addr l_addr, const Elf64_Rela *reloc,
++		      ElfW(Addr) l_addr, const ElfW(Rela) *reloc,
+ 		      int skip_ifunc)
  {
 -  Elf64_Addr *const reloc_addr = (void *) (l_addr + reloc->r_offset);
 -  const unsigned long int r_type = ELF64_R_TYPE (reloc->r_info);
@@ -7847,7 +7189,7 @@ index f615e95..74a8109 100644
  
    /* Check for unexpected PLT reloc type.  */
    if (__builtin_expect (r_type == R_X86_64_JUMP_SLOT, 1))
-@@ -483,7 +508,7 @@ elf_machine_lazy_rel (struct link_map *map,
+@@ -478,7 +503,7 @@ elf_machine_lazy_rel (struct link_map *map,
        else
  	*reloc_addr =
  	  map->l_mach.plt
@@ -7856,14 +7198,15 @@ index f615e95..74a8109 100644
      }
    else if (__builtin_expect (r_type == R_X86_64_TLSDESC, 1))
      {
-@@ -496,8 +521,8 @@ elf_machine_lazy_rel (struct link_map *map,
+@@ -491,9 +516,9 @@ elf_machine_lazy_rel (struct link_map *map,
      }
    else if (__builtin_expect (r_type == R_X86_64_IRELATIVE, 0))
      {
 -      Elf64_Addr value = map->l_addr + reloc->r_addend;
--      value = ((Elf64_Addr (*) (void)) value) ();
 +      ElfW(Addr) value = map->l_addr + reloc->r_addend;
-+      value = ((ElfW(Addr) (*) (void)) value) ();
+       if (__builtin_expect (!skip_ifunc, 1))
+-	value = ((Elf64_Addr (*) (void)) value) ();
++	value = ((ElfW(Addr) (*) (void)) value) ();
        *reloc_addr = value;
      }
    else
@@ -7909,7 +7252,7 @@ index 9e64aab..dcff33e 100644
  
  /* Type used as the argument in a TLS descriptor for a symbol that
 diff --git a/sysdeps/x86_64/dl-trampoline.S b/sysdeps/x86_64/dl-trampoline.S
-index 258c609..01a41de 100644
+index 6523c92..9a1cfac 100644
 --- a/sysdeps/x86_64/dl-trampoline.S
 +++ b/sysdeps/x86_64/dl-trampoline.S
 @@ -21,6 +21,10 @@
@@ -8044,7 +7387,7 @@ index 7213c03..f243cf7 100644
  weak_alias (ffsll, ffsl)
 +#endif
 diff --git a/sysdeps/x86_64/fpu/bits/fenv.h b/sysdeps/x86_64/fpu/bits/fenv.h
-index 11859f0..9027d40 100644
+index 8bc2450..de47cac 100644
 --- a/sysdeps/x86_64/fpu/bits/fenv.h
 +++ b/sysdeps/x86_64/fpu/bits/fenv.h
 @@ -20,9 +20,6 @@
@@ -8067,58 +7410,132 @@ index 11859f0..9027d40 100644
  #endif
    }
 diff --git a/sysdeps/x86_64/fpu/bits/mathinline.h b/sysdeps/x86_64/fpu/bits/mathinline.h
-index dc58f67..5a31052 100644
+index 1a2c1ee..7692ebc 100644
 --- a/sysdeps/x86_64/fpu/bits/mathinline.h
 +++ b/sysdeps/x86_64/fpu/bits/mathinline.h
-@@ -22,8 +22,6 @@
+@@ -21,8 +21,6 @@
  # error "Never use <bits/mathinline.h> directly; include <math.h> instead."
  #endif
  
 -#include <bits/wordsize.h>
 -
- #ifndef __extern_inline
+ #ifndef __extern_always_inline
  # define __MATH_INLINE __inline
  #else
-@@ -37,7 +35,7 @@
+@@ -39,7 +37,7 @@ __BEGIN_NAMESPACE_C99
  __MATH_INLINE int
  __NTH (__signbitf (float __x))
  {
--#if __WORDSIZE == 32
-+#ifndef __x86_64__
+-# if __WORDSIZE == 32
++# ifndef __x86_64__
    __extension__ union { float __f; int __i; } __u = { __f: __x };
    return __u.__i < 0;
- #else
-@@ -49,7 +47,7 @@ __NTH (__signbitf (float __x))
+ # else
+@@ -51,7 +49,7 @@ __NTH (__signbitf (float __x))
  __MATH_INLINE int
  __NTH (__signbit (double __x))
  {
--#if __WORDSIZE == 32
-+#ifndef __x86_64__
+-# if __WORDSIZE == 32
++# ifndef __x86_64__
    __extension__ union { double __d; int __i[2]; } __u = { __d: __x };
    return __u.__i[1] < 0;
- #else
+ # else
+@@ -78,7 +76,7 @@ __END_NAMESPACE_C99
+ __BEGIN_NAMESPACE_C99
+ 
+ /* Round to nearest integer.  */
+-#  if __WORDSIZE == 64 || defined __SSE_MATH__
++#  if defined __x86_64__ || defined __SSE_MATH__
+ __MATH_INLINE long int
+ __NTH (lrintf (float __x))
+ {
+@@ -87,7 +85,7 @@ __NTH (lrintf (float __x))
+   return __res;
+ }
+ #  endif
+-#  if __WORDSIZE == 64 || defined __SSE2_MATH__
++#  if defined __x86_64__ || defined __SSE_MATH__
+ __MATH_INLINE long int
+ __NTH (lrint (double __x))
+ {
+@@ -96,7 +94,7 @@ __NTH (lrint (double __x))
+   return __res;
+ }
+ #  endif
+-#  if __WORDSIZE == 64
++#  ifdef __x86_64__
+ __MATH_INLINE long long int
+ __NTH (llrintf (float __x))
+ {
+@@ -114,7 +112,7 @@ __NTH (llrint (double __x))
+ #  endif
+ 
+ #  if defined __FINITE_MATH_ONLY__ && __FINITE_MATH_ONLY__ > 0 \
+-      && (__WORDSIZE == 64 || defined __SSE2_MATH__)
++      && (defined __x86_64__ || defined __SSE2_MATH__)
+ /* Determine maximum of two values.  */
+ __MATH_INLINE float
+ __NTH (fmaxf (float __x, float __y))
+@@ -147,7 +145,7 @@ __NTH (fmin (double __x, double __y))
+ __END_NAMESPACE_C99
+ # endif
+ 
+-# if defined __SSE4_1__ && (__WORDSIZE == 64 || defined __SSE2_MATH__)
++# if defined __SSE4_1__ && (defined __x86_64__ || defined __SSE2_MATH__)
+ #  if defined __USE_MISC || defined __USE_XOPEN_EXTENDED || defined __USE_ISOC99
+ __BEGIN_NAMESPACE_C99
+ 
 diff --git a/sysdeps/x86_64/fpu/math_private.h b/sysdeps/x86_64/fpu/math_private.h
-index 4be7536..a85deb4 100644
+index 7f52d5e..ded64a8 100644
 --- a/sysdeps/x86_64/fpu/math_private.h
 +++ b/sysdeps/x86_64/fpu/math_private.h
-@@ -25,7 +25,7 @@ while (0)
+@@ -29,7 +29,7 @@
  #undef EXTRACT_WORDS64
- #define EXTRACT_WORDS64(i,d)					\
- do {								\
--  long int i_;							\
-+  long long int i_;						\
-   asm ("movd %1, %0" : "=rm" (i_) : "x" (d));			\
-   (i) = i_;							\
- } while (0)
-@@ -34,7 +34,7 @@ do {								\
+ #define EXTRACT_WORDS64(i, d)						      \
+   do {									      \
+-    long int i_;							      \
++    long long int i_;							      \
+     asm (MOVD " %1, %0" : "=rm" (i_) : "x" ((double) (d)));		      \
+     (i) = i_;								      \
+   } while (0)
+@@ -38,7 +38,7 @@
  #undef INSERT_WORDS64
- #define INSERT_WORDS64(d,i) \
- do {								\
--  long int i_ = i;						\
-+  long long int i_ = i;						\
-   asm ("movd %1, %0" : "=x" (d) : "rm" (i_));			\
- } while (0)
+ #define INSERT_WORDS64(d, i) \
+   do {									      \
+-    long int i_ = i;							      \
++    long long int i_ = i;						      \
+     double d__;								      \
+     asm (MOVD " %1, %0" : "=x" (d__) : "rm" (i_));			      \
+     d = d__;								      \
+@@ -66,22 +66,22 @@
+ #endif
  
+ #define __isnan(d) \
+-  ({ long int __di; EXTRACT_WORDS64 (__di, (double) (d));		      \
+-     (__di & 0x7fffffffffffffffl) > 0x7ff0000000000000l; })
++  ({ long long int __di; EXTRACT_WORDS64 (__di, (double) (d));		      \
++     (__di & 0x7fffffffffffffffll) > 0x7ff0000000000000ll; })
+ #define __isnanf(d) \
+   ({ int __di; GET_FLOAT_WORD (__di, (float) d);			      \
+      (__di & 0x7fffffff) > 0x7f800000; })
+ 
+ #define __isinf_ns(d) \
+-  ({ long int __di; EXTRACT_WORDS64 (__di, (double) (d));		      \
+-     (__di & 0x7fffffffffffffffl) == 0x7ff0000000000000l; })
++  ({ long long int __di; EXTRACT_WORDS64 (__di, (double) (d));		      \
++     (__di & 0x7fffffffffffffffll) == 0x7ff0000000000000ll; })
+ #define __isinf_nsf(d) \
+   ({ int __di; GET_FLOAT_WORD (__di, (float) d);			      \
+      (__di & 0x7fffffff) == 0x7f800000; })
+ 
+ #define __finite(d) \
+-  ({ long int __di; EXTRACT_WORDS64 (__di, (double) (d));		      \
+-     (__di & 0x7fffffffffffffffl) < 0x7ff0000000000000l; })
++  ({ long long int __di; EXTRACT_WORDS64 (__di, (double) (d));		      \
++     (__di & 0x7fffffffffffffffll) < 0x7ff0000000000000ll; })
+ #define __finitef(d) \
+   ({ int __di; GET_FLOAT_WORD (__di, (float) d);			      \
+      (__di & 0x7fffffff) < 0x7f800000; })
 diff --git a/sysdeps/x86_64/jmpbuf-unwind.h b/sysdeps/x86_64/jmpbuf-unwind.h
 index 299a4a8..ce31ea5 100644
 --- a/sysdeps/x86_64/jmpbuf-unwind.h
@@ -8277,31 +7694,31 @@ index 724d44e..5511e04 100644
  	cmovaq	%rdx, %r8		/* remaining bytes and 1/2 L2 */
  
 diff --git a/sysdeps/x86_64/multiarch/memcmp-sse4.S b/sysdeps/x86_64/multiarch/memcmp-sse4.S
-index fc439bb..1b951d6 100644
+index 28dd505..12d9e00 100644
 --- a/sysdeps/x86_64/multiarch/memcmp-sse4.S
 +++ b/sysdeps/x86_64/multiarch/memcmp-sse4.S
-@@ -309,9 +309,9 @@ L(less32bytesin256):
+@@ -320,9 +320,9 @@ L(less32bytesin256):
  	ALIGN (4)
  L(512bytesormore):
- #ifdef DATA_CACHE_SIZE_HALF
+ # ifdef DATA_CACHE_SIZE_HALF
 -	mov	$DATA_CACHE_SIZE_HALF, %r8
 +	mov	$DATA_CACHE_SIZE_HALF, %R8_LP
- #else
+ # else
 -	mov	__x86_64_data_cache_size_half(%rip), %r8
 +	mov	__x86_64_data_cache_size_half(%rip), %R8_LP
- #endif
+ # endif
  	mov	%r8, %r9
  	shr	$1, %r8
-@@ -625,9 +625,9 @@ L(less32bytesin256in2alinged):
+@@ -636,9 +636,9 @@ L(less32bytesin256in2alinged):
  	ALIGN (4)
  L(512bytesormorein2aligned):
- #ifdef DATA_CACHE_SIZE_HALF
+ # ifdef DATA_CACHE_SIZE_HALF
 -	mov	$DATA_CACHE_SIZE_HALF, %r8
 +	mov	$DATA_CACHE_SIZE_HALF, %R8_LP
- #else
+ # else
 -	mov	__x86_64_data_cache_size_half(%rip), %r8
 +	mov	__x86_64_data_cache_size_half(%rip), %R8_LP
- #endif
+ # endif
  	mov	%r8, %r9
  	shr	$1, %r8
 diff --git a/sysdeps/x86_64/multiarch/memcpy-ssse3-back.S b/sysdeps/x86_64/multiarch/memcpy-ssse3-back.S
@@ -8444,63 +7861,62 @@ index cd7e45f..0c5a82b 100644
  #endif
  	lea	-128(%rdx), %rdx
  	jae	L(shl_0_gobble_mem_bwd_loop)
-diff --git a/sysdeps/x86_64/multiarch/strcmp.S b/sysdeps/x86_64/multiarch/strcmp.S
-index 8879855..9049b07 100644
---- a/sysdeps/x86_64/multiarch/strcmp.S
-+++ b/sysdeps/x86_64/multiarch/strcmp.S
-@@ -170,7 +170,7 @@ weak_alias (__strncasecmp, strncasecmp)
- # ifdef USE_AS_STRCASECMP_L
- ENTRY (__strcasecmp_sse42)
+diff --git a/sysdeps/x86_64/multiarch/strcmp-sse42.S b/sysdeps/x86_64/multiarch/strcmp-sse42.S
+index 7a50ff0..c0dbf8c 100644
+--- a/sysdeps/x86_64/multiarch/strcmp-sse42.S
++++ b/sysdeps/x86_64/multiarch/strcmp-sse42.S
+@@ -52,7 +52,7 @@
+ #ifdef USE_AS_STRCASECMP_L
+ ENTRY (GLABEL(__strcasecmp))
  	movq	__libc_tsd_LOCALE@gottpoff(%rip),%rax
 -	movq	%fs:(%rax),%rdx
 +	mov	%fs:(%rax),%RDX_LP
  
  	// XXX 5 byte should be before the function
  	/* 5-byte NOP.  */
-@@ -181,7 +181,7 @@ END (__strcasecmp_sse42)
- # ifdef USE_AS_STRNCASECMP_L
- ENTRY (__strncasecmp_sse42)
+@@ -63,7 +63,7 @@ END (GLABEL(__strcasecmp))
+ #ifdef USE_AS_STRNCASECMP_L
+ ENTRY (GLABEL(__strncasecmp))
  	movq	__libc_tsd_LOCALE@gottpoff(%rip),%rax
 -	movq	%fs:(%rax),%rcx
 +	mov	%fs:(%rax),%RCX_LP
  
  	// XXX 5 byte should be before the function
  	/* 5-byte NOP.  */
-@@ -201,9 +201,9 @@ STRCMP_SSE42:
+@@ -100,9 +100,9 @@ STRCMP_SSE42:
  	/* We have to fall back on the C implementation for locales
  	   with encodings not matching ASCII for single bytes.  */
- #  if LOCALE_T___LOCALES != 0 || LC_CTYPE != 0
+ # if LOCALE_T___LOCALES != 0 || LC_CTYPE != 0
 -	movq	LOCALE_T___LOCALES+LC_CTYPE*8(%rdx), %rax
 +	mov	LOCALE_T___LOCALES+LC_CTYPE*LP_SIZE(%rdx), %RAX_LP
- #  else
+ # else
 -	movq	(%rdx), %rax
 +	mov	(%rdx), %RAX_LP
- #  endif
- 	testl	$0, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
+ # endif
+ 	testl	$1, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
  	jne	__strcasecmp_l_nonascii
-@@ -212,9 +212,9 @@ STRCMP_SSE42:
+@@ -111,9 +111,9 @@ STRCMP_SSE42:
  	/* We have to fall back on the C implementation for locales
  	   with encodings not matching ASCII for single bytes.  */
- #  if LOCALE_T___LOCALES != 0 || LC_CTYPE != 0
+ # if LOCALE_T___LOCALES != 0 || LC_CTYPE != 0
 -	movq	LOCALE_T___LOCALES+LC_CTYPE*8(%rcx), %rax
 +	mov	LOCALE_T___LOCALES+LC_CTYPE*LP_SIZE(%rcx), %RAX_LP
- #  else
+ # else
 -	movq	(%rcx), %rax
 +	mov	(%rcx), %RAX_LP
- #  endif
- 	testl	$0, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
+ # endif
+ 	testl	$1, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
  	jne	__strncasecmp_l_nonascii
 diff --git a/sysdeps/x86_64/preconfigure b/sysdeps/x86_64/preconfigure
 new file mode 100644
-index 0000000..c54eeab
+index 0000000..d8df7ba
 --- /dev/null
 +++ b/sysdeps/x86_64/preconfigure
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,17 @@
 +case "$base_machine" in
 +x86_64)
 +  stubs_biarch_h=sysdeps/x86_64/stubs-biarch.h
 +  lib_names_awk=sysdeps/x86_64/lib-names.awk
-+  use_default_syscall_macros=no
 +  if echo __LP64__ | ${CC-cc} $CFLAGS $CPPFLAGS -E - | grep __LP64__ > /dev/null; then
 +    machine=x86_64/x32
 +    data_machine=x32
@@ -8560,7 +7976,7 @@ index d4fc25f..179e421 100644
  
  #endif	/* stackinfo.h */
 diff --git a/sysdeps/x86_64/strcmp.S b/sysdeps/x86_64/strcmp.S
-index 165073e..9849fb6 100644
+index 6e5bdaa..d08666b 100644
 --- a/sysdeps/x86_64/strcmp.S
 +++ b/sysdeps/x86_64/strcmp.S
 @@ -97,7 +97,7 @@
@@ -8591,7 +8007,7 @@ index 165073e..9849fb6 100644
 -	movq	(%rdx), %rax
 +	mov	(%rdx), %RAX_LP
  #  endif
- 	testl	$0, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
+ 	testl	$1, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
  	jne	__strcasecmp_l_nonascii
 @@ -163,9 +163,9 @@ END (BP_SYM (STRCMP))
  	/* We have to fall back on the C implementation for locales
@@ -8603,7 +8019,7 @@ index 165073e..9849fb6 100644
 -	movq	(%rcx), %rax
 +	mov	(%rcx), %RAX_LP
  #  endif
- 	testl	$0, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
+ 	testl	$1, LOCALE_DATA_VALUES+_NL_CTYPE_NONASCII_CASE*SIZEOF_VALUES(%rax)
  	jne	__strncasecmp_l_nonascii
 diff --git a/sysdeps/x86_64/stubs-biarch.h b/sysdeps/x86_64/stubs-biarch.h
 new file mode 100644
@@ -8620,12 +8036,12 @@ index 0000000..2579ec6
 +# include <gnu/stubs-32.h>
 +#endif
 diff --git a/sysdeps/x86_64/sysdep.h b/sysdeps/x86_64/sysdep.h
-index 1d35f8f..d02ad9a 100644
+index d61e126..b9da915 100644
 --- a/sysdeps/x86_64/sysdep.h
 +++ b/sysdeps/x86_64/sysdep.h
-@@ -114,4 +114,66 @@ lose:									      \
- # endif
- #endif
+@@ -116,4 +116,66 @@ lose:									      \
+ 
+ #define atom_text_section .section ".text.atom", "ax"
  
 +/* Long and pointer size in bytes.  */
 +#define LP_SIZE	8

@@ -1,3 +1,7 @@
+3		16 Jan 2012
+	- 1200_all_glibc-2.14.1-x32.patch
+	+ 1200_all_glibc-2.15-x32.patch
+
 2		14 Jan 2012
 	+ 0080_all_glibc-2.15-revert-x86_64-eagain-pthread_cond_wait.patch
 	+ 0081_all_glibc-2.15-math64crash.patch
