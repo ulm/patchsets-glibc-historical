@@ -1,3 +1,6 @@
+9		14 Feb 2012
+	+ 1510_all_glibc-2.13-hppa-libm.patch
+
 8		13 Jul 2011
 	+ 0059_all_glibc-2.13-dlclose-search-reset.patch
 	+ 0062_all_glibc-2.13-dso-no-ld.so-deps.patch

@@ -1,0 +1,76 @@
+https://bugs.gentoo.org/401675
+
+From 5ce24e77ed89f2a6c11175e3798050246dfd9c04 Mon Sep 17 00:00:00 2001
+From: Carlos O'Donell <carlos@systemhalted.org>
+Date: Thu, 20 Oct 2011 14:30:56 -0400
+Subject: [PATCH] Add hidden aliases for fenv.h functions.
+
+Add hidden aliases for fegetenv, feupdateenv, and
+ftestexcept. This avoids libc needing to go through
+the PLT for these functions.
+
+Signed-off-by: Carlos O'Donell <carlos@codesourcery.com>
+---
+ ChangeLog.hppa                 |    6 ++++++
+ sysdeps/hppa/fpu/fegetenv.c    |    3 ++-
+ sysdeps/hppa/fpu/feupdateenv.c |    3 ++-
+ sysdeps/hppa/fpu/ftestexcept.c |    3 ++-
+ 4 files changed, 12 insertions(+), 3 deletions(-)
+
+2011-10-20  Carlos O'Donell  <carlos@systemhalted.org>
+
+	* sysdeps/hppa/fpu/fegetenv.c: Add hidden alias.
+	* sysdeps/hppa/fpu/feupdateenv.c: Likewise.
+	* sysdeps/hppa/fpu/ftestexcept.c: Likewise.
+
+diff --git a/ports/sysdeps/hppa/fpu/fegetenv.c b/ports/sysdeps/hppa/fpu/fegetenv.c
+index fcf5d2d..aab3431 100644
+--- a/ports/sysdeps/hppa/fpu/fegetenv.c
++++ b/ports/sysdeps/hppa/fpu/fegetenv.c
+@@ -1,5 +1,5 @@
+ /* Store current floating-point environment.
+-   Copyright (C) 2000 Free Software Foundation, Inc.
++   Copyright (C) 2000, 2011 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by David Huggins-Daines <dhd@debian.org>, 2000
+ 
+@@ -33,3 +33,4 @@ fegetenv (fenv_t *envp)
+   memcpy(envp, buf, sizeof (*envp));
+   return 0;
+ }
++libm_hidden_def (fegetenv)
+diff --git a/ports/sysdeps/hppa/fpu/feupdateenv.c b/ports/sysdeps/hppa/fpu/feupdateenv.c
+index 1714006..6e1d5d4 100644
+--- a/ports/sysdeps/hppa/fpu/feupdateenv.c
++++ b/ports/sysdeps/hppa/fpu/feupdateenv.c
+@@ -1,5 +1,5 @@
+ /* Install given floating-point environment and raise exceptions.
+-   Copyright (C) 2000 Free Software Foundation, Inc.
++   Copyright (C) 2000, 2011 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by David Huggins-Daines <dhd@debian.org>, 2000
+ 
+@@ -38,3 +38,4 @@ feupdateenv (const fenv_t *envp)
+   /* Success.  */
+   return 0;
+ }
++libm_hidden_def (feupdateenv)
+diff --git a/ports/sysdeps/hppa/fpu/ftestexcept.c b/ports/sysdeps/hppa/fpu/ftestexcept.c
+index ac6d4b2..c031ffe 100644
+--- a/ports/sysdeps/hppa/fpu/ftestexcept.c
++++ b/ports/sysdeps/hppa/fpu/ftestexcept.c
+@@ -1,5 +1,5 @@
+ /* Test exception in current environment.
+-   Copyright (C) 2000 Free Software Foundation, Inc.
++   Copyright (C) 2000, 2011 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+    Contributed by David Huggins-Daines <dhd@debian.org>, 2000
+ 
+@@ -32,3 +32,4 @@ fetestexcept (int excepts)
+ 
+   return (s.sw[0] >> 27) & excepts & FE_ALL_EXCEPT;
+ }
++libm_hidden_def (fetestexcept)
+-- 
+1.7.8.4
+
