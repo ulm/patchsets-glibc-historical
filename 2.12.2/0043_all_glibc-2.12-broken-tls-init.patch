@@ -64,9 +64,9 @@ index 8d9657d..6efb86c 100644
  	 tst-dlmodcount tst-dlopenrpath tst-deep1 \
  	 tst-dlmopen1 tst-dlmopen2 tst-dlmopen3 \
 @@ -240,6 +241,7 @@ modules-names = testobj1 testobj2 testobj3 testobj4 testobj5 testobj6 \
- 		tst-tlsmod13 tst-tlsmod13a tst-tlsmod14a tst-tlsmod14b \
- 		tst-tlsmod15a tst-tlsmod15b tst-tlsmod16a tst-tlsmod16b \
- 		$(tlsmod17a-modules) tst-tlsmod17b $(tlsmod18a-modules) \
+ 		$(patsubst %,tst-tlsmod17a%,$(tlsmod17a-suffixes)) \
+ 		tst-tlsmod17b \
+ 		$(patsubst %,tst-tlsmod18a%,$(tlsmod18a-suffixes)) \
 +		tst-tls19mod1 tst-tls19mod2 tst-tls19mod3 \
  		circlemod1 circlemod1a circlemod2 circlemod2a \
  		circlemod3 circlemod3a \
