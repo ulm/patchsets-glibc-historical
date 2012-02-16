@@ -1,3 +1,6 @@
+8		[pending]
+	+ 6305_all_glibc-2.11-s390-older-binutils.patch
+
 7		31 Aug 2011
 	+ 0070_all_glibc-2.14-rpc-export.patch
 

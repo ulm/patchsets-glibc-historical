@@ -1,6 +1,7 @@
-4		[pending]
+4		15 Feb 2012
 	+ 0043_all_glibc-2.12-broken-tls-init.patch
 	+ 0059_all_glibc-2.12-dlclose-search-reset.patch
+	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 	+ 6610_all_glibc-r10k-workarounds.patch
 
 3		23 May 2011

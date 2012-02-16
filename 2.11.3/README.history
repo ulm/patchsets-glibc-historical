@@ -1,5 +1,6 @@
-3		[pending]
+3		15 Feb 2012
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
+	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
 
 2		01 Mar 2011

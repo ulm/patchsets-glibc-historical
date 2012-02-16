@@ -1,5 +1,6 @@
 2		[pending]
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
+	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 	+ 6532_all_sparc64-tls-cross-test.patch
 
 1		25 Apr 2010
