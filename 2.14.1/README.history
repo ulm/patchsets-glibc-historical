@@ -1,3 +1,7 @@
+5		[pending]
+	+ 1510_all_hppa-Define-TLS_DTV_UNALLOCATED.patch
+	+ 6035_all_alpha-Define-TLS_DTV_UNALLOCATED.patch
+
 4		15 Feb 2012
 	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 

@@ -1,0 +1,37 @@
+From 2ab0965cb022dfdbd397eb88f96447393b4118b7 Mon Sep 17 00:00:00 2001
+From: Carlos O'Donell <carlos@systemhalted.org>
+Date: Thu, 20 Oct 2011 14:21:00 -0400
+Subject: [PATCH] Define TLS_DTV_UNALLOCATED for hppa.
+
+Signed-off-by: Carlos O'Donell <carlos@systemhalted.org>
+---
+ ChangeLog.hppa        |    5 +++++
+ sysdeps/hppa/dl-tls.h |    5 ++++-
+ 2 files changed, 9 insertions(+), 1 deletions(-)
+
+2011-10-20  Carlos O'Donell  <carlos@systemhalted.org>
+
+	* sysdeps/hppa/dl-tls.h: Update copyright year.
+	Define TLS_DTV_UNALLOCATED.
+
+diff --git a/sysdeps/hppa/dl-tls.h b/sysdeps/hppa/dl-tls.h
+index 1bc9aae..91c3d44 100644
+--- a/ports/sysdeps/hppa/dl-tls.h
++++ b/ports/sysdeps/hppa/dl-tls.h
+@@ -1,5 +1,5 @@
+ /* Thread-local storage handling in the ELF dynamic linker.  hppa version.
+-   Copyright (C) 2003 Free Software Foundation, Inc.
++   Copyright (C) 2003, 2011 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -27,3 +27,6 @@ typedef struct
+ 
+ 
+ extern void *__tls_get_addr (tls_index *ti);
++
++/* Value used for dtv entries for which the allocation is delayed.  */
++#define TLS_DTV_UNALLOCATED	((void *) -1l)
+-- 
+1.7.8.5
+
