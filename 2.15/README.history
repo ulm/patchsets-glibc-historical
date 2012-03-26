@@ -1,3 +1,6 @@
+7		26 Mar 2012
+	+ 6237_all_arm-libmemusage.patch
+
 6		22 Mar 2012
 	- 0090_all_glibc-2.14-fix-up-regcomp-regexec.patch
 

@@ -1,0 +1,34 @@
+https://bugs.gentoo.org/409721
+
+From 2d80bda39073a35af4b904d27fa1511cd309b26f Mon Sep 17 00:00:00 2001
+From: Nathan Sidwell <nathan@codesourcery.com>
+Date: Fri, 6 Jan 2012 20:14:44 +0000
+Subject: [PATCH] Add ARM dependency of libmemusage.so on libc_nonshared.a.
+
+---
+ ChangeLog.arm        |    6 ++++++
+ sysdeps/arm/Makefile |    5 +++++
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+2012-01-05  Nathan Sidwell  <nathan@codesourcery.com>
+	    Tom de Vries  <tom@codesourcery.com>
+
+	* sysdeps/arm/Makefile (libmemusage.so): Add libc_nonshared.a
+	dependency.
+
+diff --git a/sysdeps/arm/Makefile b/sysdeps/arm/Makefile
+index 5651161..1a88430 100644
+--- a/ports/sysdeps/arm/Makefile
++++ b/ports/sysdeps/arm/Makefile
+@@ -7,3 +7,8 @@ endif
+ ifeq ($(subdir),csu)
+ gen-as-const-headers += tlsdesc.sym
+ endif
++
++# to pull in __aeabi_read_tp, needed for tls
++ifeq ($(subdir),malloc)
++$(objpfx)libmemusage.so: $(common-objpfx)libc_nonshared.a
++endif
+-- 
+1.7.8.5
+
