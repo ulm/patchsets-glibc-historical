@@ -1,5 +1,6 @@
 1.8		[pending]
 	U 1010_all_glibc-queue-header-updates.patch
+	- 1103_all_glibc-new-valencian-locale.patch
 
 1.7		23 Mar 2007
 	+ 0065_all_glibc-2.7-i386-new-binutils.patch

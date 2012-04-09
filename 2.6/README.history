@@ -1,3 +1,6 @@
+1.7		[pending]
+	- 1103_all_glibc-new-valencian-locale.patch
+
 1.6		28 Jul 2007
 	+ 1505_all_glibc-hppa-elf-relocs.patch
 

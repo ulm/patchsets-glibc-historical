@@ -1,3 +1,6 @@
+6		[pending]
+	- 1103_all_glibc-new-valencian-locale.patch
+
 5		24 Mar 2012
 	+ 1510_all_hppa-Define-TLS_DTV_UNALLOCATED.patch
 	+ 6033_all_alpha-support-__NR_fstatat64.patch

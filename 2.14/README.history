@@ -1,4 +1,5 @@
 8		[pending]
+	- 1103_all_glibc-new-valencian-locale.patch
 	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 
 7		31 Aug 2011
