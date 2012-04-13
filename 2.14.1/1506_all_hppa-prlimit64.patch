@@ -1,0 +1,30 @@
+From dac3a9c0e6d6b127beda1fe4799abe2ffe0cfd4c Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 12 Apr 2012 18:58:35 -0400
+Subject: [PATCH] hppa: add missing prlimit64 symbol
+
+All other arches have this in their syscall list.  Looks like hppa
+is missing it though and breaks one or two apps that try to call it.
+
+URL: https://bugs.gentoo.org/411745
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2012-04-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/unix/sysv/linux/hppa/syscalls.list: Add prlimit64.
+---
+ sysdeps/unix/sysv/linux/hppa/syscalls.list |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/hppa/syscalls.list b/sysdeps/unix/sysv/linux/hppa/syscalls.list
+index 0f7537c..1b6b311 100644
+--- a/ports/sysdeps/unix/sysv/linux/hppa/syscalls.list
++++ b/ports/sysdeps/unix/sysv/linux/hppa/syscalls.list
+@@ -35,3 +35,4 @@ socketpair	-	socketpair	i:iiif	__socketpair	socketpair
+ 
+ setrlimit	-	setrlimit	i:ip	__setrlimit	setrlimit	
+ getrlimit	-	getrlimit	i:ip	__getrlimit	getrlimit	
++prlimit64	EXTRA	prlimit64	i:iipp	prlimit64
+-- 
+1.7.8.5
+

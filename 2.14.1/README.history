@@ -1,6 +1,7 @@
 6		[pending]
 	+ 0091_all_glibc-2.14-regex-buffer-checks.patch
 	- 1103_all_glibc-new-valencian-locale.patch
+	+ 1506_all_hppa-prlimit64.patch
 
 5		24 Mar 2012
 	+ 1510_all_hppa-Define-TLS_DTV_UNALLOCATED.patch
