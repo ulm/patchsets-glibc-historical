@@ -1,6 +1,7 @@
 8		[pending]
 	- 1103_all_glibc-new-valencian-locale.patch
 	- 1120_all_glibc-2.11-longjmp-chk-fallback.patch
+	+ 1506_all_hppa-prlimit64.patch
 
 7		26 Mar 2012
 	+ 6237_all_arm-libmemusage.patch
