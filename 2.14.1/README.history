@@ -1,4 +1,4 @@
-6		[pending]
+6		13 Apr 2012
 	+ 0091_all_glibc-2.14-regex-buffer-checks.patch
 	- 1103_all_glibc-new-valencian-locale.patch
 	+ 1506_all_hppa-prlimit64.patch
