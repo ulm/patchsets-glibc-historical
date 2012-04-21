@@ -1,0 +1,82 @@
+http://sourceware.org/ml/libc-alpha/2012-04/msg00438.html
+
+From c2ab400d7ed42f164497767fd69057172bbf84ad Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 12 Apr 2012 11:18:39 -0400
+Subject: [PATCH] tftp.h: rework layout to work with fortification
+
+The current tftp structure does not work when fortification is enabled.
+Starting with gcc-4.5, more size checking was added to trigger these.
+Older versions just didn't have enough information, so they returned -1
+as the sizes.
+
+First, the tu_stuff field is declared as 1 byte (when it's really an
+arbitrary length C string), so attempting to strcpy() with it results
+in crashes.  This fails with _FORTIFY_SOURCE=1.
+
+Second, even if we change that to [0] (since gcc does not allow flexible
+array members in an union), gcc is not smart enough to see that they are
+two overlapping flexible arrays (tu_stuff and tu_data), so it will still
+trigger an abort with _FORTIFY_SOURCE=2.  This is because it thinks that
+tu_stuff is 0 bytes and tu_data comes after it.
+
+Talking to upstream gcc, they don't seem terribly inclined to fix the
+2nd issue, but even if they did, we still have plenty of 4.5 and 4.6
+installs that would hit problems.
+
+So, let's re-order with a few more anonymous structs & unions so that
+the fields are laid out with a zero-length array always as the last
+field.  This seems to fix things with gcc-4.6, and the tftp-hpa pkg
+continues to build & work.
+
+URL: https://bugs.launchpad.net/ubuntu/+source/tftp-hpa/+bug/691345
+URL: https://bugs.archlinux.org/task/28103
+URL: https://bugs.gentoo.org/357083
+URL: http://gcc.gnu.org/PR52944
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2012-04-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* inet/arpa/tftp.h (struct tftphdr): Add a struct inside the union,
+	and move tu_block/tu_code into a union of th_block/th_code inside
+	of that.  Move th_data[1] to the inner struct as th_data[0].
+	Change tu_stuff[1] to th_stuff[0].  Delete th_u union name.
+	(th_block): Delete
+	(th_code, th_stuff): Likewise.
+---
+ inet/arpa/tftp.h |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/inet/arpa/tftp.h b/inet/arpa/tftp.h
+index 21b0559..f1baa30 100644
+--- a/inet/arpa/tftp.h
++++ b/inet/arpa/tftp.h
+@@ -49,16 +49,17 @@
+ struct	tftphdr {
+ 	short	th_opcode;			/* packet type */
+ 	union {
+-		unsigned short	tu_block;	/* block # */
+-		short	tu_code;		/* error code */
+-		char	tu_stuff[1];		/* request packet stuff */
+-	} __attribute__ ((__packed__)) th_u;
+-	char	th_data[1];			/* data or error string */
++		struct {
++			union {
++				unsigned short	th_block;	/* block # */
++				short	th_code;		/* error code */
++			} __attribute__ ((__packed__));
++			char th_data[0];	/* data or error string */
++		} __attribute__ ((__packed__));
++		char	th_stuff[0];		/* request packet stuff */
++	} __attribute__ ((__packed__));
+ } __attribute__ ((__packed__));
+ 
+-#define	th_block	th_u.tu_block
+-#define	th_code		th_u.tu_code
+-#define	th_stuff	th_u.tu_stuff
+ #define	th_msg		th_data
+ 
+ /*
+-- 
+1.7.8.5
+
