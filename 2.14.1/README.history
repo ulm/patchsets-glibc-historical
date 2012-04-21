@@ -1,3 +1,6 @@
+7		21 Apr 2012
+	+ 1510_all_glibc-2.13-hppa-libm.patch
+
 6		13 Apr 2012
 	+ 0091_all_glibc-2.14-regex-buffer-checks.patch
 	- 1103_all_glibc-new-valencian-locale.patch
