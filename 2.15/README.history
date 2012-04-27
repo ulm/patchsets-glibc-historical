@@ -1,3 +1,6 @@
+10		[pending]
+	+ 0095_all_glibc-2.15-ctors-dtors-test.patch
+
 9		21 Apr 2012
 	+ 0090_all_glibc-tftp-fortify.patch
 
