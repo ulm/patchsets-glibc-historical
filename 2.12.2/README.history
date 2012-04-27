@@ -1,5 +1,6 @@
 5		[pending]
 	- 1103_all_glibc-new-valencian-locale.patch
+	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
 
 4		15 Feb 2012
 	+ 0043_all_glibc-2.12-broken-tls-init.patch

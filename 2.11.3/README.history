@@ -1,5 +1,6 @@
 4		[pending]
 	- 1103_all_glibc-new-valencian-locale.patch
+	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
 
 3		15 Feb 2012
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch

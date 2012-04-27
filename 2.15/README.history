@@ -1,3 +1,6 @@
+11		[pending]
+	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
+
 10		26 Apr 2012
 	+ 0095_all_glibc-2.15-ctors-dtors-test.patch
 
