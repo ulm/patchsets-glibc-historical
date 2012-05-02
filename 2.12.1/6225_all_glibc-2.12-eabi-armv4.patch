@@ -1,0 +1,47 @@
+fix building on armv4 eabi (no thumb)
+
+http://sources.redhat.com/bugzilla/show_bug.cgi?id=12097
+http://bugs.gentoo.org/414061
+
+From 3fdf1316ac44fb22cc1ffca1bcc1c9e722504445 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Wed, 15 Feb 2012 22:09:44 +0000
+Subject: [PATCH] Only build libc-do-syscall.S in Thumb mode.
+
+---
+ ChangeLog.arm                                      |    5 +++++
+ sysdeps/unix/sysv/linux/arm/eabi/libc-do-syscall.S |    5 ++++-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+2012-02-15  Khem Raj  <raj.khem@gmail.com>
+
+	* sysdeps/unix/sysv/linux/arm/eabi/libc-do-syscall.S: Disable
+	contents unless __thumb__.
+
+diff --git a/sysdeps/unix/sysv/linux/arm/eabi/libc-do-syscall.S b/sysdeps/unix/sysv/linux/arm/eabi/libc-do-syscall.S
+index 0fca969..3d3792a 100644
+--- a/ports/sysdeps/unix/sysv/linux/arm/eabi/libc-do-syscall.S
++++ b/ports/sysdeps/unix/sysv/linux/arm/eabi/libc-do-syscall.S
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 2010 Free Software Foundation, Inc.
++/* Copyright (C) 2010-2012 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -25,6 +25,7 @@
+    ARM unwind tables for register to register moves, the actual opcodes
+    are not defined.  */
+ 
++#if defined(__thumb__)
+ 	.thumb
+ 	.syntax unified
+ 	.hidden __libc_do_syscall
+@@ -44,3 +45,5 @@ ENTRY (__libc_do_syscall)
+ 	pop	{r7, pc}
+ 	.fnend
+ END (__libc_do_syscall)
++
++#endif /* __thumb__ */
+-- 
+1.7.9.7
+

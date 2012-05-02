@@ -2,6 +2,7 @@
 	- 1103_all_glibc-new-valencian-locale.patch
 	+ 1510_all_glibc-2.13-hppa-libm.patch
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
+	+ 6225_all_glibc-2.12-eabi-armv4.patch
 	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 
 7		31 Aug 2011

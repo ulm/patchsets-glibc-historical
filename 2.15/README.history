@@ -1,5 +1,6 @@
-11		[pending]
+11		02 May 2012
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
+	+ 6225_all_glibc-2.12-eabi-armv4.patch
 
 10		26 Apr 2012
 	+ 0095_all_glibc-2.15-ctors-dtors-test.patch
