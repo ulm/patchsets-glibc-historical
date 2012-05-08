@@ -1,0 +1,49 @@
+fix hardened builds
+
+From f5cf58f7947db6681b0084afd248e5f601434fb3 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 7 May 2012 23:17:48 -0400
+Subject: [PATCH] ia64: include errno.h in sysdep.h
+
+This header uses __set_errno(), so make sure we include errno.h for it.
+Otherwise, if INLINE_SYSCALL() is used and errno.h isn't included, we
+hit warnings like so:
+In file included from libc-start.c:36:0:
+../sysdeps/unix/sysv/linux/dl-osinfo.h: In function '_dl_setup_stack_chk_guard':
+../sysdeps/unix/sysv/linux/dl-osinfo.h:79:7: warning: implicit declaration of function '__set_errno'
+
+Which culminate in errors like so:
+libc-start.c:(.text+0x692): undefined reference to '__set_errno'
+libc-start.c:(.text+0x752): undefined reference to '__set_errno'
+collect2: ld returned 1 exit status
+
+Reported-by: Dennis Schridde <devurandom@gmx.net>
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+---
+ ChangeLog.ia64                        |    4 ++++
+ sysdeps/unix/sysv/linux/ia64/sysdep.h |    5 +++++
+ 2 files changed, 9 insertions(+)
+
+2012-05-07  Mike Frysinger  <vapier@gentoo.org>
+
+	* sysdeps/unix/sysv/linux/ia64/sysdep.h: Include errno.h.
+
+diff --git a/sysdeps/unix/sysv/linux/ia64/sysdep.h b/sysdeps/unix/sysv/linux/ia64/sysdep.h
+index ebaec95..5d02429 100644
+--- a/sysdeps/unix/sysv/linux/ia64/sysdep.h
++++ b/sysdeps/unix/sysv/linux/ia64/sysdep.h
+@@ -25,6 +25,11 @@
+ #include <dl-sysdep.h>
+ #include <tls.h>
+ 
++/* In order to get __set_errno() definition in INLINE_SYSCALL.  */
++#ifndef __ASSEMBLER__
++#include <errno.h>
++#endif
++
+ /* As of GAS v2.4.90.0.7, including a ".align" directive inside a
+    function will cause bad unwind info to be emitted (GAS doesn't know
+    how to account for the padding introduced by the .align directive).
+-- 
+1.7.9.7
+
