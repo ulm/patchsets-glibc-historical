@@ -1,3 +1,6 @@
+13		09 May 2012
+	+ 6226_all_arm-glibc-2.15-hardfp.patch
+
 12		08 May 2012
 	+ 6901_all_ia64-sysdep-errno.patch
 
