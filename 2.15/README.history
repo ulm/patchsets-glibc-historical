@@ -1,3 +1,6 @@
+14		18 May 2012
+	+ 0094_all_glibc-2.15-nscd-race.patch
+
 13		09 May 2012
 	+ 6226_all_arm-glibc-2.15-hardfp.patch
 
