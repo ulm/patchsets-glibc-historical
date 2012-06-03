@@ -1,3 +1,6 @@
+15		03 Jun 2012
+	U 1200_all_glibc-2.15-x32.patch
+
 14		18 May 2012
 	+ 0094_all_glibc-2.15-nscd-race.patch
 

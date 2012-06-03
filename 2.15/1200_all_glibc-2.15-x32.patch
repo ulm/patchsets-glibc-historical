@@ -1,30 +1,254 @@
-add x32 support; patch from https://github.com/hjl-tools/glibc
+g d remotes/origin/release/2.15/master...remotes/origin/hjl/x32/release/2.15
 
 diff --git a/ChangeLog.x32 b/ChangeLog.x32
 new file mode 100644
-index 0000000..d1f0f92
+index 0000000..e088046
 --- /dev/null
 +++ b/ChangeLog.x32
-@@ -0,0 +1,594 @@
+@@ -0,0 +1,813 @@
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S: Use R*_LP
++	to operate on SP, PC and pointers.  Don't use PTR_DEMANGLE on
++	rbp.
++	* sysdeps/x86_64/__longjmp.S: Don't use PTR_DEMANGLE on rbp.
++	Use R*_LP on SP.
++	* sysdeps/x86_64/setjmp.S: Don't use PTR_MANGLE on rbp. Use
++	R*_LP on SP and PC.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/64/bits/wordsize.h: Check __ILP32__ instead
++	of __LP64__.
++	* sysdeps/x86_64/x32/bits/wordsize.h: Likewise.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/dl-machine.h (elf_machine_rela_relative): Handle
++	R_X86_64_RELATIVE64 if RTLD_BOOTSTRAP isn't defined.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/llseek.S: Renamed to ...
++	* sysdeps/unix/sysv/linux/x86_64/x32/lseek.S: This.
++	* sysdeps/unix/sysv/linux/x86_64/x32/llseek.S: New dummy file.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/fallocate.c: Removed.
++	* sysdeps/unix/sysv/linux/x86_64/x32/posix_fadvise.c: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/x32/preadv.c: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/x32/pwritev.c: Likewise.
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/syscalls.list: New file.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/x32/shlib-versions: Replace GLIBC_2.11 with
++	GLIBC_2.16.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/ipctypes.h: Don't
++	include <bits/types.h>.
++	(__ipc_pid_t): Properly define.
++
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/Makefile (sysdep_routines):
++	Add arch_prctl.
++	* sysdeps/unix/sysv/linux/x86_64/x32/arch_prctl.c: New file.
++
++2012-03-20  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/bits/setjmp.h: Include <bits/wordsize.h>.
++	(__jmp_buf): Use long long int for x32.
++
++2012-03-19  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/i386/bits/byteswap.h: Include <features.h>.
++	(__bswap_32): Use __builtin_bswap32 if GCC >= 4.2.
++	(__bswap_64): Use __builtin_bswap64 if GCC >= 4.2.
++
++	* sysdeps/x86_64/bits/byteswap.h: Include <features.h>.
++	(__bswap_32): Use __builtin_bswap32 if GCC >= 4.2.
++	(__bswap_64): Use __builtin_bswap64 if GCC >= 4.2.
++
++2012-03-17  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/64/bits/wordsize.h (__GNUC_PREREQ): Removed.
++	(__WORDSIZE): Check __GNUC__ directly.
++	* sysdeps/x86_64/x32/bits/wordsize.h: Likewise.
++
++2012-03-17  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/sysdep.h (MOVE_LP): Removed.
++	(ADD_LP): Likewise.
++	(SUB_LP): Likewise.
++	(CMP_LP): Likewise.
++	(LP_OP): New.
++
++	* sysdeps/x86_64/x32/sysdep.h (MOVE_LP): Removed.
++	(ADD_LP): Likewise.
++	(SUB_LP): Likewise.
++	(CMP_LP): Likewise.
++	(LP_OP): New.
++
++2012-03-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/sysdep.h (PTR_MANGLE): Use
++	$2*LP_SIZE+1 instead of $17.
++	(PTR_DEMANGLE): Likewise.
++
++2012-03-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* bits/types.h (__syscall_slong_t): New type.
++	(__syscall_ulong_t): Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/ipc.h: Replace
++	__USYSCALL_LONG_TYPE/__USYSCALL_LONG_TYPE with
++	__syscall_slong_t/__syscall_ulong_t.
++	* sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/msq.: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/sem.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/shm.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/stat.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/statfs.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/timex.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/sys/msg.h: Likewise.
++
++	* bits/typesizes.h (__SYSCALL_SLONG_TYPE): New macro.
++	(__SYSCALL_ULONG_TYPE): Likewise.
++	* sysdeps/unix/bsd/bsd4.4/freebsd/bits/typesizes.h
++	(__SYSCALL_SLONG_TYPE): Likewise.
++	(__SYSCALL_ULONG_TYPE): Likewise.
++	* sysdeps/unix/sysv/linux/s390/bits/typesizes.h
++	(__SYSCALL_SLONG_TYPE): Likewise.
++	(__SYSCALL_ULONG_TYPE): Likewise.
++	* sysdeps/unix/sysv/linux/sparc/bits/typesizes.h
++	(__SYSCALL_SLONG_TYPE): Likewise.
++	(__SYSCALL_ULONG_TYPE): Likewise.
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h
++	(__SSYSCALL_LONG_TYPE): Renamed to ...
++	(__SYSCALL_SLONG_TYPE): This.
++	(__SSYSCALL_LONG_TYPE): Renamed to ...
++	(__SYSCALL_ULONG_TYPE): This.
++
++2012-03-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/i386/readelflib.c (process_elf_file):
++	Move e_machine check before EI_CLASS check.  Check EM_IA_64 only
++	if SKIP_EM_IA_64 isn't defined.
++	* sysdeps/unix/sysv/linux/x86_64/readelflib.c: Just define
++	SKIP_EM_IA_64 and include <sysdeps/unix/sysv/linux/i386/readelflib.c>.
++
++2012-03-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/makecontext.c (__makecontext):
++	Use greg_t instead of unsigned long long int and long long int.
++
++2012-03-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/sysdep.h
++	(VSYSCALL_ADDR_vgettimeofday): Removed.
++	(VSYSCALL_ADDR_vtime): Likewise.
++	(VSYSCALL_ADDR_vgetcpu): Likewise.
++
++	* sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
++	(VSYSCALL_ADDR_vgettimeofday): Restored.
++	* sysdeps/unix/sysv/linux/x86_64/init-first.c
++	(VSYSCALL_ADDR_vgetcpu): Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
++	(VSYSCALL_ADDR_vgetcpu): Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/time.c (VSYSCALL_ADDR_vtime):
++	Likewise.
++
++2012-03-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/sigcontext.h: Include
++	<bits/wordsize.h>.
++	(sigcontext): Check __WORDSIZE instead of __LP64__.
++
++	* sysdeps/unix/sysv/linux/x86_64/sys/user.h: Include
++	<bits/wordsize.h>.
++	(user): Check __WORDSIZE instead of __LP64__.
++
++2012-03-15  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* time/offtime.c (__offtime): Use time_t on days, rem, y and yg.
++
++2012-03-15  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* time/mktime.c: Sync with gnulib mktime.c at commit
++	a7967a2cf0998b6c157c7cf8e1d8d9d11dab30b0.
++
++2012-03-15  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/getcpu.c (getcpu_ifunc):
++	Replace getcpu with __vdso_getcpu.
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/gettimeofday.c
++	(gettimeofday_ifunc): Replace gettimeofday with
++	__vdso_gettimeofday.
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/init-first.c
++	(_libc_vdso_platform_setup): Replace clock_gettime with
++	__vdso_clock_gettime.
++
++	* sysdeps/unix/sysv/linux/x86_64/x32/time.c (time_ifunc): Replace
++	time with __vdso_time.
++
++2012-03-15  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/sys/msg.h (msgbuf): Replace
++	__SNATIVE_LONG_TYPE with __SSYSCALL_LONG_TYPE.
++
++2012-03-14  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/siginfo.h: New.
++
++2012-03-14  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h: Replace
++	__SNATIVE_LONG_TYPE and __UNATIVE_LONG_TYPE with
++	__SSYSCALL_LONG_TYPE and __USYSCALL_LONG_TYPE.
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/ipc.h: Updated.
++	* sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/msq.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/sem.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/shm.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/stat.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/statfs.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/timex.h: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h: Likewise.
++
++2012-03-13  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* scripts/data/c++-types-x32-linux-gnu.data: Update clock_t.
++
++	* sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h (__CLOCK_T_TYPE):
++	Set to __SQUAD_TYPE for x32.
++
++2012-03-01  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/sys/ucontext.h (ucontext): Restore
++	unsigned long int on uc_flags.
++
++2012-02-25  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/sysdep.h (PTR_MANGLE): Remove
++	the `q' suffix from xor/rol instructions.
++	(PTR_DEMANGLE): Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h (PTR_MANGLE): Removed.
++	(PTR_DEMANGLE): Likewise.
++
 +2012-01-09  H.J. Lu  <hongjiu.lu@intel.com>
 +
 +	* malloc/malloc.c (sYSMALLOc): Free the old top chunk with a
 +	multiple of MALLOC_ALIGNMENT in size.
 +	(_int_free): Check chunk size is a multiple of MALLOC_ALIGNMENT.
-+
-+2012-01-02  H.J. Lu  <hongjiu.lu@intel.com>
-+
-+	* config.make.in (use-default-syscall-macros): Removed.
-+	* configure.in (use_default_syscall_macros): Likewise.
-+	* configure: Regenerated.
-+
-+	* sysdeps/unix/sysv/linux/Makefile: Don't check
-+	use-default-syscall-macros.
-+
-+	* sysdeps/unix/sysv/linux/x86_64/Makefile
-+	(syscall-list-64bit-options): Add -D__LP64__.
-+
-+	* sysdeps/x86_64/preconfigure: Don't set use_default_syscall_macros.
 +
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
@@ -378,7 +602,7 @@ index 0000000..d1f0f92
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
 +	* sysdeps/unix/sysv/linux/x86_64/Implies: Moved to ...
-+	* sysdeps/unix/sysv/linux/x86_64/64/Implies: Here. 
++	* sysdeps/unix/sysv/linux/x86_64/64/Implies: Here.
 +
 +	* sysdeps/x86_64/Implies: Moved to ...
 +	* sysdeps/x86_64/64/Implies: Here.  Prepend x86_64/fpu.
@@ -568,15 +792,12 @@ index 0000000..d1f0f92
 +	* config.make.in (data-machine): New.
 +	(stubs-biarch_h): Likewise.
 +	(lib-names_awk): Likewise.
-+	(use-default-syscall-macros): Likewise.
 +
 +	* configure.in: Add sysdeps preconfigure fragment support.
 +	(data_machine): Substitute.
 +	(stubs_biarch_h): Set to include/stubs-biarch.h if not set.
 +	Substitute.
 +	(lib_names_awk): Set to scripts/lib-names.awk if not set.
-+	Substitute.
-+	(use_default_syscall_macros): Set to yes if not set.
 +	Substitute.
 +	* configure: Regenerated.
 +
@@ -586,10 +807,6 @@ index 0000000..d1f0f92
 +	* sysdeps/x86_64/preconfigure: Likewise.
 +	* sysdeps/x86_64/stubs-biarch.h: Likewise.
 +
-+	* sysdeps/unix/sysv/linux/Makefile ($(objpfx)syscall-%.h
-+	$(objpfx)syscall-%.d): Defined only if
-+	$(use-default-syscall-macros) is set to yes.
-+
 +	* sysdeps/unix/sysv/linux/configure.in: Require kernel 2.6.35
 +	or above for x32.  Check x86_64/x64 instead of x86_64.
 +	* sysdeps/unix/sysv/linux/configure: Regenerated.
@@ -597,9 +814,11 @@ index 0000000..d1f0f92
 +	* sysdeps/x86_64/preconfigure (stubs_biarch_h): Set to
 +	sysdeps/x86_64/stubs-biarch.h.
 +
-+	* sysdeps/unix/sysv/linux/x86_64/Makefile (64bit-predefine): Add
-+	__LP64__.
-+	($(objpfx)syscall-%.h $(objpfx)syscall-%.d): New.
++	* sysdeps/unix/sysv/linux/x86_64/Makefile
++	(syscall-list-32bit-condition): Check __x86_64__ instead of
++	__WORDSIZE.
++	(syscall-list-64bit-condition): Likewise.
++	(syscall-list-64bit-options): Add __LP64__.
 diff --git a/Makeconfig b/Makeconfig
 index 8195245..609a514 100644
 --- a/Makeconfig
@@ -645,7 +864,7 @@ index 08134e9..cd4c1c7 100644
  $(objpfx)c++-types-check.out: $(check-data) scripts/check-c++-types.sh
  	scripts/check-c++-types.sh $< $(CXX) $(filter-out -std=gnu99 -Wstrict-prototypes,$(CFLAGS)) $(CPPFLAGS) > $@
 diff --git a/bits/types.h b/bits/types.h
-index 3ebe82f..d6915d7 100644
+index 3ebe82f..542a61e 100644
 --- a/bits/types.h
 +++ b/bits/types.h
 @@ -149,6 +149,7 @@ __STD_TYPE __ID_T_TYPE __id_t;		/* General type for IDs.  */
@@ -656,8 +875,20 @@ index 3ebe82f..d6915d7 100644
  
  __STD_TYPE __DADDR_T_TYPE __daddr_t;	/* The type of a disk address.  */
  __STD_TYPE __SWBLK_T_TYPE __swblk_t;	/* Type of a swap block maybe?  */
+@@ -179,6 +180,11 @@ __STD_TYPE __FSFILCNT64_T_TYPE __fsfilcnt64_t;
+ 
+ __STD_TYPE __SSIZE_T_TYPE __ssize_t; /* Type of a byte count, or error.  */
+ 
++/* Signed long type used in system calls.  */
++__STD_TYPE __SYSCALL_SLONG_TYPE __syscall_slong_t;
++/* Unsigned long type used in system calls.  */
++__STD_TYPE __SYSCALL_ULONG_TYPE __syscall_ulong_t;
++
+ /* These few don't really vary by system, they always correspond
+    to one of the other defined types.  */
+ typedef __off64_t __loff_t;	/* Type of file sizes and offsets (LFS).  */
 diff --git a/bits/typesizes.h b/bits/typesizes.h
-index e9226c4..63ef936 100644
+index e9226c4..17ff797 100644
 --- a/bits/typesizes.h
 +++ b/bits/typesizes.h
 @@ -1,5 +1,6 @@
@@ -668,11 +899,13 @@ index e9226c4..63ef936 100644
     This file is part of the GNU C Library.
  
     The GNU C Library is free software; you can redistribute it and/or
-@@ -58,6 +59,7 @@
+@@ -58,6 +59,9 @@
  #define __BLKSIZE_T_TYPE	__SLONGWORD_TYPE
  #define __FSID_T_TYPE		struct { int __val[2]; }
  #define __SSIZE_T_TYPE		__SWORD_TYPE
 +#define __SNSECONDS_T_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_SLONG_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_ULONG_TYPE	__ULONGWORD_TYPE
  
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		1024
@@ -1257,10 +1490,33 @@ index 8608083..a9a2cff 100644
        goto errout;
 diff --git a/nptl/ChangeLog.x32 b/nptl/ChangeLog.x32
 new file mode 100644
-index 0000000..12cbb53
+index 0000000..d3f48cf
 --- /dev/null
 +++ b/nptl/ChangeLog.x32
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,95 @@
++2012-05-26  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/x86_64/x32/shlib-versions: Replace GLIBC_2.11 with
++	GLIBC_2.16.
++
++2012-03-17  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/cancellation.S: Replace ADD_LP,
++	CMP_LP, MOVE_LP, SUB_LP with LP_OP(add), LP_OP(cmp), LP_OP(mov),
++	LP_OP(sub).
++	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_signal.S: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/sem_post.S: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S: Likewise.
++	* sysdeps/unix/sysv/linux/x86_64/sem_wait.S: Likewise.
++
++2012-03-14  H.J. Lu  <hongjiu.lu@intel.com>
++
++	* sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S: Use CMP_LP
++	and R8_LP on dep_mutex.
++
 +2011-11-21  H.J. Lu  <hongjiu.lu@intel.com>
 +
 +	* pthread_create.c (start_thread): Check __PTHREAD_MUTEX_HAVE_PREV
@@ -1279,7 +1535,7 @@ index 0000000..12cbb53
 +	__SIZEOF_PTHREAD_XXX_T.
 +	(__pthread_internal_list): Check __x86_64__ instead of __WORDSIZE.
 +	(pthread_mutex_t): Likewise.
-+	(pthread_rwlock_t): Likewise. 
++	(pthread_rwlock_t): Likewise.
 +	(__PTHREAD_RWLOCK_INT_FLAGS_SHARED): New.  Defined if __x86_64__
 +	is defined.
 +
@@ -1473,7 +1729,7 @@ index 7a09c81..43e5119 100644
  # define __cleanup_fct_attribute __attribute__ ((__regparm__ (1)))
  #endif
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/cancellation.S b/nptl/sysdeps/unix/sysv/linux/x86_64/cancellation.S
-index a06cd9b..fe33f69 100644
+index a06cd9b..a0dce33 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/cancellation.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/cancellation.S
 @@ -73,10 +73,10 @@ ENTRY(__pthread_enable_asynccancel)
@@ -1481,7 +1737,7 @@ index a06cd9b..fe33f69 100644
  3:	subq	$8, %rsp
  	cfi_adjust_cfa_offset(8)
 -	movq	$TCB_PTHREAD_CANCELED, %fs:RESULT
-+	MOVE_LP	$TCB_PTHREAD_CANCELED, %fs:RESULT
++	LP_OP(mov) $TCB_PTHREAD_CANCELED, %fs:RESULT
  	lock
  	orl	$TCB_EXITING_BITMASK, %fs:CANCELHANDLING
 -	movq	%fs:CLEANUP_JMP_BUF, %rdi
@@ -1552,7 +1808,7 @@ index 9b15bfb..023a675 100644
  		       "3:\tcallq __lll_robust_timedlock_wait\n"	      \
  		       "4:\taddq $128, %%rsp\n"				      \
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S
-index 224a560..5c89c04 100644
+index 224a560..61d450f 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_broadcast.S
 @@ -60,14 +60,14 @@ __pthread_cond_broadcast:
@@ -1568,7 +1824,7 @@ index 224a560..5c89c04 100644
  	jne	7f
  
 -8:	cmpq	$-1, %r8
-+8:	CMP_LP	$-1, %R8_LP
++8:	cmp	$-1, %R8_LP
  	je	9f
  
  	/* Do not use requeue for pshared condvars.  */
@@ -1577,7 +1833,7 @@ index 224a560..5c89c04 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1586,7 +1842,7 @@ index 224a560..5c89c04 100644
  	/* Unlock in loop requires wakeup.  */
  5:	addq	$cond_lock-cond_futex, %rdi
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1595,7 +1851,7 @@ index 224a560..5c89c04 100644
  	/* Unlock in loop requires wakeup.  */
  7:	addq	$cond_lock-cond_futex, %rdi
 -	cmpq	$-1, %r8
-+	CMP_LP	$-1, %R8_LP
++	cmp	$-1, %R8_LP
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1604,12 +1860,12 @@ index 224a560..5c89c04 100644
  
  9:	/* The futex requeue functionality is not available.  */
 -	cmpq	$-1, %r8
-+	CMP_LP	$-1, %R8_LP
++	cmp	$-1, %R8_LP
  	movl	$0x7fffffff, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_signal.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_signal.S
-index d1d83a8..9f05d28 100644
+index d1d83a8..c750115 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_signal.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_signal.S
 @@ -56,14 +56,14 @@ __pthread_cond_signal:
@@ -1617,7 +1873,7 @@ index d1d83a8..9f05d28 100644
  
  	/* Wake up one thread.  */
 -	cmpq	$-1, dep_mutex(%r8)
-+	CMP_LP	$-1, dep_mutex(%r8)
++	LP_OP(cmp) $-1, dep_mutex(%r8)
  	movl	$FUTEX_WAKE_OP, %esi
  	movl	$1, %edx
  	movl	$SYS_futex, %eax
@@ -1634,7 +1890,7 @@ index d1d83a8..9f05d28 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1643,12 +1899,12 @@ index d1d83a8..9f05d28 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
-index acbd3fa..048d0ce 100644
+index acbd3fa..b50576b 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_timedwait.S
 @@ -90,7 +90,7 @@ __pthread_cond_timedwait:
@@ -1656,7 +1912,7 @@ index acbd3fa..048d0ce 100644
  	*/
  
 -	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
  
  	/* Prepare structure passed to cancellation handler.  */
  	movq	%rdi, 8(%rsp)
@@ -1674,7 +1930,7 @@ index acbd3fa..048d0ce 100644
  	movq	%r13, %r10
  	movl	$FUTEX_WAIT_BITSET, %esi
 -	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
  	je	60f
  
 -	movq	dep_mutex(%rdi), %r8
@@ -1687,7 +1943,7 @@ index acbd3fa..048d0ce 100644
  
  	addq	$cond_nwaiters, %rdi
 -	cmpq	$-1, dep_mutex-cond_nwaiters(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_nwaiters(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_nwaiters(%rdi)
  	movl	$1, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
@@ -1696,7 +1952,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1705,7 +1961,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1714,7 +1970,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1723,7 +1979,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1732,7 +1988,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1754,7 +2010,7 @@ index acbd3fa..048d0ce 100644
  
  	leaq	32(%rsp), %r10
 -	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
  	movq	%r12, %rdx
  # ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAIT, %eax
@@ -1763,7 +2019,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  # endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1772,7 +2028,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  # endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1781,7 +2037,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  # endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1790,7 +2046,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1799,7 +2055,7 @@ index acbd3fa..048d0ce 100644
  	jne	4f
  
 -	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
  	leaq	cond_nwaiters(%rdi), %rdi
  	movl	$1, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
@@ -1808,7 +2064,7 @@ index acbd3fa..048d0ce 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1817,7 +2073,7 @@ index acbd3fa..048d0ce 100644
  	jnz	5f
  	addq	$cond_futex, %rdi
 -	cmpq	$-1, dep_mutex-cond_futex(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_futex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_futex(%rdi)
  	movl	$0x7fffffff, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
@@ -1835,7 +2091,7 @@ index acbd3fa..048d0ce 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S
-index d837d15..33b7e3a 100644
+index d837d15..e28a0a7 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/pthread_cond_wait.S
 @@ -66,14 +66,14 @@ __pthread_cond_wait:
@@ -1843,7 +2099,7 @@ index d837d15..33b7e3a 100644
  	*/
  
 -	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
  
  		/* Prepare structure passed to cancellation handler.  */
  	movq	%rdi, 8(%rsp)
@@ -1860,7 +2116,7 @@ index d837d15..33b7e3a 100644
  
  	xorq	%r10, %r10
 -	cmpq	$-1, dep_mutex(%rdi)
-+	CMP_LP	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
  	leaq	cond_futex(%rdi), %rdi
  	movl	$FUTEX_WAIT, %esi
  	je	60f
@@ -1875,7 +2131,7 @@ index d837d15..33b7e3a 100644
  
  	addq	$cond_nwaiters, %rdi
 -	cmpq	$-1, dep_mutex-cond_nwaiters(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_nwaiters(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_nwaiters(%rdi)
  	movl	$1, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
@@ -1884,7 +2140,7 @@ index d837d15..33b7e3a 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1893,7 +2149,7 @@ index d837d15..33b7e3a 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1902,7 +2158,7 @@ index d837d15..33b7e3a 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1911,7 +2167,7 @@ index d837d15..33b7e3a 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1920,16 +2176,61 @@ index d837d15..33b7e3a 100644
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
+@@ -349,7 +349,7 @@ __pthread_cond_wait:
+ #if cond_lock != 0
+ 	addq	$cond_lock, %rdi
+ #endif
+-	cmpq	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
+ 	movl	$LLL_PRIVATE, %eax
+ 	movl	$LLL_SHARED, %esi
+ 	cmovne	%eax, %esi
+@@ -375,7 +375,7 @@ __pthread_cond_wait:
+ #if cond_lock != 0
+ 	addq	$cond_lock, %rdi
+ #endif
+-	cmpq	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
+ 	movl	$LLL_PRIVATE, %eax
+ 	movl	$LLL_SHARED, %esi
+ 	cmovne	%eax, %esi
+@@ -387,7 +387,7 @@ __pthread_cond_wait:
+ 93:
+ 	/* Set the rest of SYS_futex args for FUTEX_WAIT_REQUEUE_PI. */
+ 	xorq	%r10, %r10
+-	movq	dep_mutex(%rdi), %r8
++	mov	dep_mutex(%rdi), %R8_LP
+ 	leaq	cond_futex(%rdi), %rdi
+ 	jmp	90b
+ .LcleanupEND2:
 @@ -435,7 +435,7 @@ __condvar_cleanup1:
  #if cond_lock != 0
  	addq	$cond_lock, %rdi
  #endif
 -	cmpq	$-1, dep_mutex-cond_lock(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
+ 	movl	$LLL_PRIVATE, %eax
+ 	movl	$LLL_SHARED, %esi
+ 	cmovne	%eax, %esi
+@@ -468,7 +468,7 @@ __condvar_cleanup1:
+ 	andl	$~((1 << nwaiters_shift) - 1), %eax
+ 	jne	4f
+ 
+-	cmpq	$-1, dep_mutex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex(%rdi)
+ 	leaq	cond_nwaiters(%rdi), %rdi
+ 	movl	$1, %edx
+ #ifdef __ASSUME_PRIVATE_FUTEX
+@@ -496,7 +496,7 @@ __condvar_cleanup1:
+ #if cond_lock != 0
+ 	addq	$cond_lock, %rdi
+ #endif
+-	cmpq	$-1, dep_mutex-cond_lock(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_lock(%rdi)
  	movl	$LLL_PRIVATE, %eax
  	movl	$LLL_SHARED, %esi
  	cmovne	%eax, %esi
@@ -1938,7 +2239,7 @@ index d837d15..33b7e3a 100644
  	jnz	5f
  	addq	$cond_futex, %rdi
 -	cmpq	$-1, dep_mutex-cond_futex(%rdi)
-+	CMP_LP	$-1, dep_mutex-cond_futex(%rdi)
++	LP_OP(cmp) $-1, dep_mutex-cond_futex(%rdi)
  	movl	$0x7fffffff, %edx
  #ifdef __ASSUME_PRIVATE_FUTEX
  	movl	$FUTEX_WAKE, %eax
@@ -1973,7 +2274,7 @@ index ccc1849..4b28743 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S
-index 4691e4d..99f4ec0 100644
+index 4691e4d..df68319 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_post.S
 @@ -46,7 +46,7 @@ sem_post:
@@ -1981,12 +2282,12 @@ index 4691e4d..99f4ec0 100644
  	jnz	0b
  
 -	cmpq	$0, NWAITERS(%rdi)
-+	CMP_LP	$0, NWAITERS(%rdi)
++	LP_OP(cmp) $0, NWAITERS(%rdi)
  	je	2f
  
  	movl	$SYS_futex, %eax
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S
-index 576a494..78c7c0c 100644
+index 576a494..80d44c3 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_timedwait.S
 @@ -84,7 +84,7 @@ sem_timedwait:
@@ -1994,7 +2295,7 @@ index 576a494..78c7c0c 100644
  
  	LOCK
 -	addq	$1, NWAITERS(%rdi)
-+	ADD_LP	$1, NWAITERS(%rdi)
++	LP_OP(add) $1, NWAITERS(%rdi)
  
  .LcleanupSTART:
  13:	call	__pthread_enable_asynccancel
@@ -2003,7 +2304,7 @@ index 576a494..78c7c0c 100644
  
  15:	LOCK
 -	subq	$1, NWAITERS(%rdi)
-+	SUB_LP	$1, NWAITERS(%rdi)
++	LP_OP(sub) $1, NWAITERS(%rdi)
  
  	leaq	8(%rsp), %rsp
  	cfi_adjust_cfa_offset(-8)
@@ -2012,7 +2313,7 @@ index 576a494..78c7c0c 100644
  
  	LOCK
 -	addq	$1, NWAITERS(%r12)
-+	ADD_LP	$1, NWAITERS(%r12)
++	LP_OP(add) $1, NWAITERS(%r12)
  
  7:	xorl	%esi, %esi
  	movq	%rsp,%rdi
@@ -2021,7 +2322,7 @@ index 576a494..78c7c0c 100644
  
  45:	LOCK
 -	subq	$1, NWAITERS(%r12)
-+	SUB_LP	$1, NWAITERS(%r12)
++	LP_OP(sub) $1, NWAITERS(%r12)
  
  	addq	$STACKFRAME, %rsp
  	cfi_adjust_cfa_offset(-STACKFRAME)
@@ -2030,7 +2331,7 @@ index 576a494..78c7c0c 100644
  	movq	(%rsp), %rdi
  	LOCK
 -	subq	$1, NWAITERS(%rdi)
-+	SUB_LP	$1, NWAITERS(%rdi)
++	LP_OP(sub) $1, NWAITERS(%rdi)
  	movq	%rax, %rdi
  .LcallUR:
  	call	_Unwind_Resume@PLT
@@ -2039,7 +2340,7 @@ index 576a494..78c7c0c 100644
  
  	LOCK
 -	subq	$1, NWAITERS(%r12)
-+	SUB_LP	$1, NWAITERS(%r12)
++	LP_OP(sub) $1, NWAITERS(%r12)
  	movq	%rax, %rdi
  	movq	STACKFRAME(%rsp), %r14
  	movq	STACKFRAME+8(%rsp), %r13
@@ -2057,7 +2358,7 @@ index 576a494..78c7c0c 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S
-index 3ea714a..a13fffd 100644
+index 3ea714a..9d12b42 100644
 --- a/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S
 +++ b/nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S
 @@ -67,7 +67,7 @@ sem_wait:
@@ -2065,7 +2366,7 @@ index 3ea714a..a13fffd 100644
  
  	LOCK
 -	addq	$1, NWAITERS(%rdi)
-+	ADD_LP	$1, NWAITERS(%rdi)
++	LP_OP(add) $1, NWAITERS(%rdi)
  
  .LcleanupSTART:
  6:	call	__pthread_enable_asynccancel
@@ -2074,7 +2375,7 @@ index 3ea714a..a13fffd 100644
  
  9:	LOCK
 -	subq	$1, NWAITERS(%rdi)
-+	SUB_LP	$1, NWAITERS(%rdi)
++	LP_OP(sub) $1, NWAITERS(%rdi)
  
  	leaq	8(%rsp), %rsp
  	cfi_adjust_cfa_offset(-8)
@@ -2083,7 +2384,7 @@ index 3ea714a..a13fffd 100644
  	movq	(%rsp), %rdi
  	LOCK
 -	subq	$1, NWAITERS(%rdi)
-+	SUB_LP	$1, NWAITERS(%rdi)
++	LP_OP(sub) $1, NWAITERS(%rdi)
  	movq	%rax, %rdi
  .LcallUR:
  	call	_Unwind_Resume@PLT
@@ -2101,7 +2402,7 @@ index 3ea714a..a13fffd 100644
 +	ASM_ADDR __gcc_personality_v0
  #endif
 diff --git a/nptl/sysdeps/x86_64/pthreaddef.h b/nptl/sysdeps/x86_64/pthreaddef.h
-index 9de4af2..ea5de38 100644
+index 9de4af2..23da637 100644
 --- a/nptl/sysdeps/x86_64/pthreaddef.h
 +++ b/nptl/sysdeps/x86_64/pthreaddef.h
 @@ -42,7 +42,7 @@
@@ -2109,7 +2410,7 @@ index 9de4af2..ea5de38 100644
  /* Location of current stack frame.  The frame pointer is not usable.  */
  #define CURRENT_STACK_FRAME \
 -  ({ char *frame; asm ("movq %%rsp, %0" : "=r" (frame)); frame; })
-+  ({ char *frame; asm ("mov %%" RSP_LP ", %0" : "=r" (frame)); frame; })
++  ({ register char *frame __asm__("rsp"); frame; })
  
  
  /* XXX Until we have a better place keep the definitions here.  */
@@ -2169,6 +2470,13 @@ index 95e022b..d818da5 100644
  			 "i" (offsetof (struct pthread, member[0])),	      \
  			 "r" (idx));					      \
         }})
+diff --git a/nptl/sysdeps/x86_64/x32/shlib-versions b/nptl/sysdeps/x86_64/x32/shlib-versions
+new file mode 100644
+index 0000000..80ff581
+--- /dev/null
++++ b/nptl/sysdeps/x86_64/x32/shlib-versions
+@@ -0,0 +1 @@
++x86_64-.*-linux.*	libpthread=0		GLIBC_2.16
 diff --git a/nptl/sysdeps/x86_64/x32/tls.h b/nptl/sysdeps/x86_64/x32/tls.h
 new file mode 100644
 index 0000000..6622b4e
@@ -2239,7 +2547,7 @@ index 9a35695..37eeba7 100644
  	{
 diff --git a/scripts/data/c++-types-x32-linux-gnu.data b/scripts/data/c++-types-x32-linux-gnu.data
 new file mode 100644
-index 0000000..0a89e27
+index 0000000..348bf52
 --- /dev/null
 +++ b/scripts/data/c++-types-x32-linux-gnu.data
 @@ -0,0 +1,67 @@
@@ -2248,7 +2556,7 @@ index 0000000..0a89e27
 +blksize_t:x
 +caddr_t:Pc
 +clockid_t:i
-+clock_t:l
++clock_t:x
 +daddr_t:i
 +dev_t:y
 +fd_mask:l
@@ -2753,6 +3061,93 @@ index b24bff3..ef3cd11 100644
      unsigned int (*ppc32_gnu_pltexit) (Elf32_Sym *, unsigned int, uintptr_t *,
  				       uintptr_t *,
  				       const struct La_ppc32_regs *,
+diff --git a/sysdeps/i386/bits/byteswap.h b/sysdeps/i386/bits/byteswap.h
+index ddfb785..d4fb6bd 100644
+--- a/sysdeps/i386/bits/byteswap.h
++++ b/sysdeps/i386/bits/byteswap.h
+@@ -25,6 +25,8 @@
+ #ifndef _BITS_BYTESWAP_H
+ #define _BITS_BYTESWAP_H 1
+ 
++#include <features.h>
++
+ /* Swap bytes in 16 bit value.  */
+ #define __bswap_constant_16(x) \
+      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+@@ -62,42 +64,8 @@ __bswap_16 (unsigned short int __bsx)
+      ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |		      \
+       (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+ 
+-#ifdef __GNUC__
+-# if __GNUC__ >= 2
+-/* To swap the bytes in a word the i486 processors and up provide the
+-   `bswap' opcode.  On i386 we have to use three instructions.  */
+-#  if !defined __i486__ && !defined __pentium__ && !defined __pentiumpro__ \
+-      && !defined __pentium4__ && !defined __k8__ && !defined __athlon__ \
+-      && !defined __k6__ && !defined __nocona__ && !defined __core2__ \
+-      && !defined __geode__ && !defined __amdfam10__
+-#   define __bswap_32(x)						      \
+-     (__extension__							      \
+-      ({ register unsigned int __v, __x = (x);				      \
+-	 if (__builtin_constant_p (__x))				      \
+-	   __v = __bswap_constant_32 (__x);				      \
+-	 else								      \
+-	   __asm__ ("rorw $8, %w0;"					      \
+-		    "rorl $16, %0;"					      \
+-		    "rorw $8, %w0"					      \
+-		    : "=r" (__v)					      \
+-		    : "0" (__x)						      \
+-		    : "cc");						      \
+-	 __v; }))
+-#  else
+-#   define __bswap_32(x) \
+-     (__extension__							      \
+-      ({ register unsigned int __v, __x = (x);				      \
+-	 if (__builtin_constant_p (__x))				      \
+-	   __v = __bswap_constant_32 (__x);				      \
+-	 else								      \
+-	   __asm__ ("bswap %0" : "=r" (__v) : "0" (__x));		      \
+-	 __v; }))
+-#  endif
+-# else
+-#  define __bswap_32(x) \
+-     (__extension__							      \
+-      ({ register unsigned int __x = (x); __bswap_constant_32 (__x); }))
+-# endif
++#if __GNUC_PREREQ (4,2)
++# define __bswap_32(x)  __builtin_bswap32 (x)
+ #else
+ static __inline unsigned int
+ __bswap_32 (unsigned int __bsx)
+@@ -109,7 +77,10 @@ __bswap_32 (unsigned int __bsx)
+ 
+ #if defined __GNUC__ && __GNUC__ >= 2
+ /* Swap bytes in 64 bit value.  */
+-# define __bswap_constant_64(x) \
++# if __GNUC_PREREQ (4,2)
++#  define __bswap_64(x)  __builtin_bswap64 (x)
++# else
++#  define __bswap_constant_64(x) \
+      (__extension__ ((((x) & 0xff00000000000000ull) >> 56)		      \
+ 		     | (((x) & 0x00ff000000000000ull) >> 40)		      \
+ 		     | (((x) & 0x0000ff0000000000ull) >> 24)		      \
+@@ -119,7 +90,7 @@ __bswap_32 (unsigned int __bsx)
+ 		     | (((x) & 0x000000000000ff00ull) << 40)		      \
+ 		     | (((x) & 0x00000000000000ffull) << 56)))
+ 
+-# define __bswap_64(x) \
++#  define __bswap_64(x) \
+      (__extension__							      \
+       ({ union { __extension__ unsigned long long int __ll;		      \
+ 		 unsigned long int __l[2]; } __w, __r;			      \
+@@ -132,6 +103,7 @@ __bswap_32 (unsigned int __bsx)
+ 	     __r.__l[1] = __bswap_32 (__w.__l[0]);			      \
+ 	   }								      \
+ 	 __r.__ll; }))
++# endif
+ #endif
+ 
+ #endif /* _BITS_BYTESWAP_H */
 diff --git a/sysdeps/ieee754/dbl-64/wordsize-64/s_llround.c b/sysdeps/ieee754/dbl-64/wordsize-64/s_llround.c
 index f7c9ea5..2fbbd64 100644
 --- a/sysdeps/ieee754/dbl-64/wordsize-64/s_llround.c
@@ -2938,14 +3333,16 @@ index 4322617..8db5866 100644
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		256
 diff --git a/sysdeps/unix/bsd/bsd4.4/freebsd/bits/typesizes.h b/sysdeps/unix/bsd/bsd4.4/freebsd/bits/typesizes.h
-index c0e267f..26ea5a6 100644
+index c0e267f..430ca75 100644
 --- a/sysdeps/unix/bsd/bsd4.4/freebsd/bits/typesizes.h
 +++ b/sysdeps/unix/bsd/bsd4.4/freebsd/bits/typesizes.h
-@@ -58,6 +58,7 @@
+@@ -58,6 +58,9 @@
  #define __BLKSIZE_T_TYPE	__U32_TYPE
  #define __FSID_T_TYPE		struct { int __val[2]; }
  #define __SSIZE_T_TYPE		__SWORD_TYPE
 +#define __SNSECONDS_T_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_SLONG_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_ULONG_TYPE	__ULONGWORD_TYPE
  
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		1024
@@ -2996,51 +3393,114 @@ index 3f1daab..44ad90d 100644
      if test "$libdir" = '${exec_prefix}/lib'; then
        libdir='${exec_prefix}/lib64';
 diff --git a/sysdeps/unix/sysv/linux/i386/readelflib.c b/sysdeps/unix/sysv/linux/i386/readelflib.c
-index a6374e6..6e39b3d 100644
+index a6374e6..bac83bb 100644
 --- a/sysdeps/unix/sysv/linux/i386/readelflib.c
 +++ b/sysdeps/unix/sysv/linux/i386/readelflib.c
-@@ -36,8 +36,18 @@ process_elf_file (const char *file_name, const char *lib, int *flag,
-   int ret;
+@@ -33,40 +33,52 @@ process_elf_file (const char *file_name, const char *lib, int *flag,
+ 		  size_t file_length)
+ {
+   ElfW(Ehdr) *elf_header = (ElfW(Ehdr) *) file_contents;
+-  int ret;
++  int ret, file_flag = 0;
  
-   if (elf_header->e_ident [EI_CLASS] == ELFCLASS32)
+-  if (elf_header->e_ident [EI_CLASS] == ELFCLASS32)
 -    return process_elf32_file (file_name, lib, flag, osversion, soname,
 -			       file_contents, file_length);
-+    {
-+      ret = process_elf32_file (file_name, lib, flag, osversion, soname,
-+				file_contents, file_length);
-+      /* X32 libraries are always libc.so.6+.  */
-+      if (!ret)
-+	switch (elf_header->e_machine)
-+	  {
-+	  case EM_X86_64:
-+	    *flag = FLAG_X8664_LIBX32|FLAG_ELF_LIBC6;
-+	    break;
-+	  }
-+    }
-   else
+-  else
++  switch (elf_header->e_machine)
      {
-       switch (elf_header->e_machine)
+-      switch (elf_header->e_machine)
++    case EM_X86_64:
++      if (elf_header->e_ident[EI_CLASS] == ELFCLASS64)
++	/* X86-64 64bit libraries are always libc.so.6+.  */
++	file_flag = FLAG_X8664_LIB64|FLAG_ELF_LIBC6;
++      else
++	/* X32 libraries are always libc.so.6+.  */
++	file_flag = FLAG_X8664_LIBX32|FLAG_ELF_LIBC6;
++      break;
++#ifndef SKIP_EM_IA_64
++    case EM_IA_64:
++      if (elf_header->e_ident[EI_CLASS] == ELFCLASS64)
+ 	{
+-	case EM_IA_64:
+-	case EM_X86_64:
++	  /* IA64 64bit libraries are always libc.so.6+.  */
++	  file_flag = FLAG_IA64_LIB64|FLAG_ELF_LIBC6;
+ 	  break;
+-	default:
+-	  error (0, 0, _("%s is for unknown machine %d.\n"),
+-		 file_name, elf_header->e_machine);
+-	  return 1;
+ 	}
++      goto failed;
++#endif
++    case EM_386:
++      if (elf_header->e_ident[EI_CLASS] == ELFCLASS32)
++	break;
++      /* Fall through.  */
++    default:
++#ifndef SKIP_EM_IA_64
++failed:
++#endif
++      error (0, 0, _("%s is for unknown machine %d.\n"),
++	     file_name, elf_header->e_machine);
++      return 1;
++    }
+ 
+-      ret = process_elf64_file (file_name, lib, flag, osversion, soname,
+-				file_contents, file_length);
+-      /* IA64/X86-64 64bit libraries are always libc.so.6+.  */
+-      if (!ret)
+-	switch (elf_header->e_machine)
+-	  {
+-	  case EM_IA_64:
+-	    *flag = FLAG_IA64_LIB64|FLAG_ELF_LIBC6;
+-	    break;
+-	  case EM_X86_64:
+-	    *flag = FLAG_X8664_LIB64|FLAG_ELF_LIBC6;
+-	    break;
+-	  }
++  if (elf_header->e_ident[EI_CLASS] == ELFCLASS32)
++    ret = process_elf32_file (file_name, lib, flag, osversion, soname,
++			      file_contents, file_length);
++  else
++    ret = process_elf64_file (file_name, lib, flag, osversion, soname,
++			      file_contents, file_length);
+ 
+-      return ret;
+-    }
++  if (!ret && file_flag)
++    *flag = file_flag;
++
++  return ret;
+ }
+ 
+ #undef __ELF_NATIVE_CLASS
 diff --git a/sysdeps/unix/sysv/linux/s390/bits/typesizes.h b/sysdeps/unix/sysv/linux/s390/bits/typesizes.h
-index 2d9cd87..b97f42a 100644
+index 2d9cd87..c016b7d 100644
 --- a/sysdeps/unix/sysv/linux/s390/bits/typesizes.h
 +++ b/sysdeps/unix/sysv/linux/s390/bits/typesizes.h
-@@ -64,6 +64,7 @@
+@@ -64,6 +64,9 @@
  /* size_t is unsigned long int on s390 -m31.  */
  #define __SSIZE_T_TYPE		__SLONGWORD_TYPE
  #endif
 +#define __SNSECONDS_T_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_SLONG_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_ULONG_TYPE	__ULONGWORD_TYPE
  
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		1024
 diff --git a/sysdeps/unix/sysv/linux/sparc/bits/typesizes.h b/sysdeps/unix/sysv/linux/sparc/bits/typesizes.h
-index b0dd1bd..3f062c0 100644
+index b0dd1bd..50f4a8b 100644
 --- a/sysdeps/unix/sysv/linux/sparc/bits/typesizes.h
 +++ b/sysdeps/unix/sysv/linux/sparc/bits/typesizes.h
-@@ -58,6 +58,7 @@
+@@ -58,6 +58,9 @@
  #define __BLKSIZE_T_TYPE	__SLONGWORD_TYPE
  #define __FSID_T_TYPE		struct { int __val[2]; }
  #define __SSIZE_T_TYPE		__SWORD_TYPE
 +#define __SNSECONDS_T_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_SLONG_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_ULONG_TYPE	__ULONGWORD_TYPE
  
  /* Number of descriptors that can fit in an `fd_set'.  */
  #define	__FD_SETSIZE		1024
@@ -3086,7 +3546,7 @@ index 9c9e615..fcf835d 100644
  sysdep_routines += dl-vdso
  endif
 diff --git a/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S b/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S
-index d8cbe06..fd7e6b7 100644
+index d8cbe06..17d824b 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S
 +++ b/sysdeps/unix/sysv/linux/x86_64/____longjmp_chk.S
 @@ -20,6 +20,8 @@
@@ -3098,8 +3558,22 @@ index d8cbe06..fd7e6b7 100644
  	.section .rodata.str1.1,"aMS",@progbits,1
  	.type	longjmp_msg,@object
  longjmp_msg:
-@@ -41,7 +43,7 @@ longjmp_msg:
- # define CALL_FAIL	subq	$8, %rsp;				      \
+@@ -30,18 +32,18 @@ longjmp_msg:
+ //#define __longjmp ____longjmp_chk
+ 
+ #ifdef PIC
+-# define CALL_FAIL	subq	$8, %rsp;				      \
++# define CALL_FAIL	sub	$8, %RSP_LP;				      \
+ 			cfi_remember_state;				      \
+ 			cfi_def_cfa_offset(16);				      \
+-			leaq	longjmp_msg(%rip), %rdi;		      \
++			lea	longjmp_msg(%rip), %RDI_LP;		      \
+ 			call	HIDDEN_JUMPTARGET(__fortify_fail);	      \
+ 			nop;						      \
+ 			cfi_restore_state
+ #else
+-# define CALL_FAIL	subq	$8, %rsp;				      \
++# define CALL_FAIL	sub	$8, %RSP_LP;				      \
  			cfi_remember_state;				      \
  			cfi_def_cfa_offset(16);				      \
 -			movq	$longjmp_msg, %rdi;			      \
@@ -3107,20 +3581,29 @@ index d8cbe06..fd7e6b7 100644
  			call	HIDDEN_JUMPTARGET(__fortify_fail);	      \
  			nop;						      \
  			cfi_restore_state
-@@ -57,9 +59,9 @@ ENTRY(____longjmp_chk)
+@@ -53,16 +55,15 @@ longjmp_msg:
+ 	.text
+ ENTRY(____longjmp_chk)
+ 	/* Restore registers.  */
+-	movq	(JB_RSP*8)(%rdi), %r8
++	mov	(JB_RSP*8)(%rdi), %R8_LP
  	movq	(JB_RBP*8)(%rdi), %r9
- 	movq	(JB_PC*8)(%rdi), %rdx
+-	movq	(JB_PC*8)(%rdi), %rdx
++	mov	(JB_PC*8)(%rdi), %RDX_LP
  #ifdef PTR_DEMANGLE
 -	PTR_DEMANGLE (%r8)
 -	PTR_DEMANGLE (%r9)
 -	PTR_DEMANGLE (%rdx)
 +	PTR_DEMANGLE (%R8_LP)
-+	PTR_DEMANGLE (%R9_LP)
 +	PTR_DEMANGLE (%RDX_LP)
  #endif
  
- 	cmpq	%r8, %rsp
-@@ -72,19 +74,19 @@ ENTRY(____longjmp_chk)
+-	cmpq	%r8, %rsp
++	cmp	%R8_LP, %RSP_LP
+ 	jbe	.Lok
+ 
+ 	/* Save function parameters.  */
+@@ -72,19 +73,19 @@ ENTRY(____longjmp_chk)
  	cfi_register (%rsi, %rbx)
  
  	xorl	%edi, %edi
@@ -3137,14 +3620,24 @@ index d8cbe06..fd7e6b7 100644
  
 -	movq	-24(%rsp), %rax
 -	addq	-8(%rsp), %rax
+-	subq	%r8, %rax
+-	cmpq	-8(%rsp), %rax
 +	mov	(-sizeSS + oSS_SP)(%rsp), %RAX_LP
 +	add	(-sizeSS + oSS_SIZE)(%rsp), %RAX_LP
- 	subq	%r8, %rax
--	cmpq	-8(%rsp), %rax
++	sub	%R8_LP, %RAX_LP
 +	cmp	(-sizeSS + oSS_SIZE)(%rsp), %RAX_LP
  	jae	.Lok2
  
  .Lfail:	CALL_FAIL
+@@ -111,7 +112,7 @@ ENTRY(____longjmp_chk)
+ 	movq	(JB_R15*8)(%rdi), %r15
+ 	/* Set return value for setjmp.  */
+ 	movl	%esi, %eax
+-	movq	%r8,%rsp
++	mov	%R8_LP, %RSP_LP
+ 	movq	%r9,%rbp
+ 	jmpq	*%rdx
+ END (____longjmp_chk)
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/a.out.h b/sysdeps/unix/sysv/linux/x86_64/bits/a.out.h
 index 228a8d4..0e4a7c9 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/a.out.h
@@ -3192,7 +3685,7 @@ index 7f18562..0d00c69 100644
  # define F_SETLKW	7	/* Set record locking info (blocking).	*/
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/ipc.h b/sysdeps/unix/sysv/linux/x86_64/bits/ipc.h
 new file mode 100644
-index 0000000..27758ce
+index 0000000..0736d43
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/ipc.h
 @@ -0,0 +1,57 @@
@@ -3250,15 +3743,15 @@ index 0000000..27758ce
 +    unsigned short int __pad1;
 +    unsigned short int __seq;		/* Sequence number.  */
 +    unsigned short int __pad2;
-+    __UNATIVE_LONG_TYPE __unused1;
-+    __UNATIVE_LONG_TYPE __unused2;
++    __syscall_ulong_t __unused1;
++    __syscall_ulong_t __unused2;
 +  };
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/ipctypes.h b/sysdeps/unix/sysv/linux/x86_64/bits/ipctypes.h
 new file mode 100644
-index 0000000..f8101b1
+index 0000000..025bab5
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/ipctypes.h
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,34 @@
 +/* bits/ipctypes.h -- Define some types used by SysV IPC/MSG/SHM.
 +   Copyright (C) 2011 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -3285,15 +3778,17 @@ index 0000000..f8101b1
 +#ifndef _BITS_IPCTYPES_H
 +#define _BITS_IPCTYPES_H	1
 +
-+#include <bits/types.h>
-+
 +/* Used in `struct shmid_ds'.  */
-+typedef __pid_t __ipc_pid_t;
++# ifdef __x86_64__
++typedef int __ipc_pid_t;
++# else
++typedef unsigned short int __ipc_pid_t;
++# endif
 +
 +#endif /* bits/ipctypes.h */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h b/sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h
 new file mode 100644
-index 0000000..3c2c006
+index 0000000..1448a7a
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/mqueue.h
 @@ -0,0 +1,35 @@
@@ -3326,14 +3821,14 @@ index 0000000..3c2c006
 +
 +struct mq_attr
 +{
-+  __SNATIVE_LONG_TYPE mq_flags;		/* Message queue flags.  */
-+  __SNATIVE_LONG_TYPE mq_maxmsg;	/* Maximum number of messages.  */
-+  __SNATIVE_LONG_TYPE mq_msgsize;	/* Maximum message size.  */
-+  __SNATIVE_LONG_TYPE mq_curmsgs;	/* Number of messages currently queued.  */
-+  __SNATIVE_LONG_TYPE __pad[4];
++  __syscall_slong_t mq_flags;	/* Message queue flags.  */
++  __syscall_slong_t mq_maxmsg;	/* Maximum number of messages.  */
++  __syscall_slong_t mq_msgsize;	/* Maximum message size.  */
++  __syscall_slong_t mq_curmsgs;	/* Number of messages currently queued.  */
++  __syscall_slong_t __pad[4];
 +};
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/msq.h b/sysdeps/unix/sysv/linux/x86_64/bits/msq.h
-index 422218a..376e16f 100644
+index 422218a..f6a99e5 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/msq.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/msq.h
 @@ -1,4 +1,5 @@
@@ -3357,8 +3852,8 @@ index 422218a..376e16f 100644
  /* Types used in the structure definition.  */
 -typedef unsigned long int msgqnum_t;
 -typedef unsigned long int msglen_t;
-+typedef __UNATIVE_LONG_TYPE msgqnum_t;
-+typedef __UNATIVE_LONG_TYPE msglen_t;
++typedef __syscall_ulong_t msgqnum_t;
++typedef __syscall_ulong_t msglen_t;
  
  /* Structure of record for one message inside the kernel.
     The type `struct msg' is opaque.  */
@@ -3381,15 +3876,15 @@ index 422218a..376e16f 100644
    unsigned long int __unused3;
  #endif
 -  unsigned long int __msg_cbytes; /* current number of bytes on queue */
-+  __UNATIVE_LONG_TYPE __msg_cbytes; /* current number of bytes on queue */
++  __syscall_ulong_t __msg_cbytes; /* current number of bytes on queue */
    msgqnum_t msg_qnum;		/* number of messages currently on queue */
    msglen_t msg_qbytes;		/* max number of bytes allowed on queue */
    __pid_t msg_lspid;		/* pid of last msgsnd() */
    __pid_t msg_lrpid;		/* pid of last msgrcv() */
 -  unsigned long int __unused4;
 -  unsigned long int __unused5;
-+  __UNATIVE_LONG_TYPE __unused4;
-+  __UNATIVE_LONG_TYPE __unused5;
++  __syscall_ulong_t __unused4;
++  __syscall_ulong_t __unused5;
  };
  
  #ifdef __USE_MISC
@@ -3710,7 +4205,7 @@ index 0000000..dea74be
 +
 +__END_DECLS
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/sem.h b/sysdeps/unix/sysv/linux/x86_64/bits/sem.h
-index e86c357..b57a156 100644
+index e86c357..4169641 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/sem.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/sem.h
 @@ -40,12 +40,12 @@ struct semid_ds
@@ -3718,21 +4213,21 @@ index e86c357..b57a156 100644
    struct ipc_perm sem_perm;		/* operation permission struct */
    __time_t sem_otime;			/* last semop() time */
 -  unsigned long int __unused1;
-+  __UNATIVE_LONG_TYPE __unused1;
++  __syscall_ulong_t __unused1;
    __time_t sem_ctime;			/* last time changed by semctl() */
 -  unsigned long int __unused2;
 -  unsigned long int sem_nsems;		/* number of semaphores in set */
 -  unsigned long int __unused3;
 -  unsigned long int __unused4;
-+  __UNATIVE_LONG_TYPE __unused2;
-+  __UNATIVE_LONG_TYPE sem_nsems;	/* number of semaphores in set */
-+  __UNATIVE_LONG_TYPE __unused3;
-+  __UNATIVE_LONG_TYPE __unused4;
++  __syscall_ulong_t __unused2;
++  __syscall_ulong_t sem_nsems;		/* number of semaphores in set */
++  __syscall_ulong_t __unused3;
++  __syscall_ulong_t __unused4;
  };
  
  /* The user should define a union like the following to use it for arguments
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/shm.h b/sysdeps/unix/sysv/linux/x86_64/bits/shm.h
-index 04f5cc5..6d09cdd 100644
+index 04f5cc5..ee51deb 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/shm.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/shm.h
 @@ -1,4 +1,4 @@
@@ -3746,7 +4241,7 @@ index 04f5cc5..6d09cdd 100644
  
  /* Type to count number of attaches.  */
 -typedef unsigned long int shmatt_t;
-+typedef __UNATIVE_LONG_TYPE shmatt_t;
++typedef __syscall_ulong_t shmatt_t;
  
  /* Data structure describing a shared memory segment.  */
  struct shmid_ds
@@ -3773,8 +4268,8 @@ index 04f5cc5..6d09cdd 100644
      shmatt_t shm_nattch;		/* number of current attaches */
 -    unsigned long int __unused4;
 -    unsigned long int __unused5;
-+    __UNATIVE_LONG_TYPE __unused4;
-+    __UNATIVE_LONG_TYPE __unused5;
++    __syscall_ulong_t __unused4;
++    __syscall_ulong_t __unused5;
    };
  
  #ifdef __USE_MISC
@@ -3791,15 +4286,15 @@ index 04f5cc5..6d09cdd 100644
 -    unsigned long int __unused2;
 -    unsigned long int __unused3;
 -    unsigned long int __unused4;
-+    __UNATIVE_LONG_TYPE shmmax;
-+    __UNATIVE_LONG_TYPE shmmin;
-+    __UNATIVE_LONG_TYPE shmmni;
-+    __UNATIVE_LONG_TYPE shmseg;
-+    __UNATIVE_LONG_TYPE shmall;
-+    __UNATIVE_LONG_TYPE __unused1;
-+    __UNATIVE_LONG_TYPE __unused2;
-+    __UNATIVE_LONG_TYPE __unused3;
-+    __UNATIVE_LONG_TYPE __unused4;
++    __syscall_ulong_t shmmax;
++    __syscall_ulong_t shmmin;
++    __syscall_ulong_t shmmni;
++    __syscall_ulong_t shmseg;
++    __syscall_ulong_t shmall;
++    __syscall_ulong_t __unused1;
++    __syscall_ulong_t __unused2;
++    __syscall_ulong_t __unused3;
++    __syscall_ulong_t __unused4;
    };
  
  struct shm_info
@@ -3810,28 +4305,19 @@ index 04f5cc5..6d09cdd 100644
 -    unsigned long int shm_swp;	/* total swapped shm */
 -    unsigned long int swap_attempts;
 -    unsigned long int swap_successes;
-+    __UNATIVE_LONG_TYPE shm_tot;	/* total allocated shm */
-+    __UNATIVE_LONG_TYPE shm_rss;	/* total resident shm */
-+    __UNATIVE_LONG_TYPE shm_swp;	/* total swapped shm */
-+    __UNATIVE_LONG_TYPE swap_attempts;
-+    __UNATIVE_LONG_TYPE swap_successes;
++    __syscall_ulong_t shm_tot;	/* total allocated shm */
++    __syscall_ulong_t shm_rss;	/* total resident shm */
++    __syscall_ulong_t shm_swp;	/* total swapped shm */
++    __syscall_ulong_t swap_attempts;
++    __syscall_ulong_t swap_successes;
    };
  
  #endif /* __USE_MISC */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/sigcontext.h b/sysdeps/unix/sysv/linux/x86_64/bits/sigcontext.h
-index c0d5fe7..f470b22 100644
+index c0d5fe7..152a546 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/sigcontext.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/sigcontext.h
-@@ -23,8 +23,6 @@
- # error "Never use <bits/sigcontext.h> directly; include <signal.h> instead."
- #endif
- 
--#include <bits/wordsize.h>
--
- struct _fpreg
- {
-   unsigned short significand[4];
-@@ -45,7 +43,7 @@ struct _xmmreg
+@@ -45,7 +45,7 @@ struct _xmmreg
  
  
  
@@ -3840,7 +4326,7 @@ index c0d5fe7..f470b22 100644
  
  struct _fpstate
  {
-@@ -104,7 +102,7 @@ struct sigcontext
+@@ -104,7 +104,7 @@ struct sigcontext
    unsigned long cr2;
  };
  
@@ -3849,7 +4335,7 @@ index c0d5fe7..f470b22 100644
  
  struct _fpstate
  {
-@@ -124,36 +122,39 @@ struct _fpstate
+@@ -124,36 +124,39 @@ struct _fpstate
  
  struct sigcontext
  {
@@ -3903,9 +4389,9 @@ index c0d5fe7..f470b22 100644
 +  unsigned long long cr2;
    struct _fpstate * fpstate;
 -  unsigned long __reserved1 [8];
-+#ifndef __LP64__
++# if __WORDSIZE == 32
 +  unsigned int pad0;
-+#endif
++# endif
 +  unsigned long long __reserved1 [8];
  };
  
@@ -3913,8 +4399,339 @@ index c0d5fe7..f470b22 100644
 +#endif /* __x86_64__ */
  
  #endif /* _BITS_SIGCONTEXT_H */
+diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/siginfo.h b/sysdeps/unix/sysv/linux/x86_64/bits/siginfo.h
+new file mode 100644
+index 0000000..5db7139
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/x86_64/bits/siginfo.h
+@@ -0,0 +1,325 @@
++/* siginfo_t, sigevent and constants.  Linux x86-64 version.
++   Copyright (C) 1997-2002, 2003, 2011, 2012
++   Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#if !defined _SIGNAL_H && !defined __need_siginfo_t \
++    && !defined __need_sigevent_t
++# error "Never include this file directly.  Use <signal.h> instead"
++#endif
++
++#include <bits/wordsize.h>
++
++#if (!defined __have_sigval_t \
++     && (defined _SIGNAL_H || defined __need_siginfo_t \
++	 || defined __need_sigevent_t))
++# define __have_sigval_t	1
++
++/* Type for data associated with a signal.  */
++typedef union sigval
++  {
++    int sival_int;
++    void *sival_ptr;
++  } sigval_t;
++#endif
++
++#if (!defined __have_siginfo_t \
++     && (defined _SIGNAL_H || defined __need_siginfo_t))
++# define __have_siginfo_t	1
++
++# define __SI_MAX_SIZE     128
++# if __WORDSIZE == 64
++#  define __SI_PAD_SIZE     ((__SI_MAX_SIZE / sizeof (int)) - 4)
++# else
++#  define __SI_PAD_SIZE     ((__SI_MAX_SIZE / sizeof (int)) - 3)
++# endif
++
++# if defined __x86_64__ && __WORDSIZE == 32
++/* si_utime and si_stime must be 4 byte aligned for x32 to match the
++   kernel.  We align siginfo_t to 8 bytes so that si_utime and si_stime
++   are actually aligned to 8 bytes since their offsets are multiple of
++   8 bytes.  */
++typedef __clock_t __attribute__ ((__aligned__ (4))) __sigchld_clock_t;
++#  define __SI_ALIGNMENT __attribute__ ((__aligned__ (8)))
++# else
++typedef __clock_t __sigchld_clock_t;
++#  define __SI_ALIGNMENT
++# endif
++
++typedef struct siginfo
++  {
++    int si_signo;		/* Signal number.  */
++    int si_errno;		/* If non-zero, an errno value associated with
++				   this signal, as defined in <errno.h>.  */
++    int si_code;		/* Signal code.  */
++
++    union
++      {
++	int _pad[__SI_PAD_SIZE];
++
++	 /* kill().  */
++	struct
++	  {
++	    __pid_t si_pid;	/* Sending process ID.  */
++	    __uid_t si_uid;	/* Real user ID of sending process.  */
++	  } _kill;
++
++	/* POSIX.1b timers.  */
++	struct
++	  {
++	    int si_tid;		/* Timer ID.  */
++	    int si_overrun;	/* Overrun count.  */
++	    sigval_t si_sigval;	/* Signal value.  */
++	  } _timer;
++
++	/* POSIX.1b signals.  */
++	struct
++	  {
++	    __pid_t si_pid;	/* Sending process ID.  */
++	    __uid_t si_uid;	/* Real user ID of sending process.  */
++	    sigval_t si_sigval;	/* Signal value.  */
++	  } _rt;
++
++	/* SIGCHLD.  */
++	struct
++	  {
++	    __pid_t si_pid;	/* Which child.  */
++	    __uid_t si_uid;	/* Real user ID of sending process.  */
++	    int si_status;	/* Exit value or signal.  */
++	    __sigchld_clock_t si_utime;
++	    __sigchld_clock_t si_stime;
++	  } _sigchld;
++
++	/* SIGILL, SIGFPE, SIGSEGV, SIGBUS.  */
++	struct
++	  {
++	    void *si_addr;	/* Faulting insn/memory ref.  */
++	  } _sigfault;
++
++	/* SIGPOLL.  */
++	struct
++	  {
++	    long int si_band;	/* Band event for SIGPOLL.  */
++	    int si_fd;
++	  } _sigpoll;
++      } _sifields;
++  } siginfo_t __SI_ALIGNMENT;
++
++
++/* X/Open requires some more fields with fixed names.  */
++# define si_pid		_sifields._kill.si_pid
++# define si_uid		_sifields._kill.si_uid
++# define si_timerid	_sifields._timer.si_tid
++# define si_overrun	_sifields._timer.si_overrun
++# define si_status	_sifields._sigchld.si_status
++# define si_utime	_sifields._sigchld.si_utime
++# define si_stime	_sifields._sigchld.si_stime
++# define si_value	_sifields._rt.si_sigval
++# define si_int		_sifields._rt.si_sigval.sival_int
++# define si_ptr		_sifields._rt.si_sigval.sival_ptr
++# define si_addr	_sifields._sigfault.si_addr
++# define si_band	_sifields._sigpoll.si_band
++# define si_fd		_sifields._sigpoll.si_fd
++
++
++/* Values for `si_code'.  Positive values are reserved for kernel-generated
++   signals.  */
++enum
++{
++  SI_ASYNCNL = -60,		/* Sent by asynch name lookup completion.  */
++# define SI_ASYNCNL	SI_ASYNCNL
++  SI_TKILL = -6,		/* Sent by tkill.  */
++# define SI_TKILL	SI_TKILL
++  SI_SIGIO,			/* Sent by queued SIGIO. */
++# define SI_SIGIO	SI_SIGIO
++  SI_ASYNCIO,			/* Sent by AIO completion.  */
++# define SI_ASYNCIO	SI_ASYNCIO
++  SI_MESGQ,			/* Sent by real time mesq state change.  */
++# define SI_MESGQ	SI_MESGQ
++  SI_TIMER,			/* Sent by timer expiration.  */
++# define SI_TIMER	SI_TIMER
++  SI_QUEUE,			/* Sent by sigqueue.  */
++# define SI_QUEUE	SI_QUEUE
++  SI_USER,			/* Sent by kill, sigsend.  */
++# define SI_USER	SI_USER
++  SI_KERNEL = 0x80		/* Send by kernel.  */
++#define SI_KERNEL	SI_KERNEL
++};
++
++
++/* `si_code' values for SIGILL signal.  */
++enum
++{
++  ILL_ILLOPC = 1,		/* Illegal opcode.  */
++# define ILL_ILLOPC	ILL_ILLOPC
++  ILL_ILLOPN,			/* Illegal operand.  */
++# define ILL_ILLOPN	ILL_ILLOPN
++  ILL_ILLADR,			/* Illegal addressing mode.  */
++# define ILL_ILLADR	ILL_ILLADR
++  ILL_ILLTRP,			/* Illegal trap. */
++# define ILL_ILLTRP	ILL_ILLTRP
++  ILL_PRVOPC,			/* Privileged opcode.  */
++# define ILL_PRVOPC	ILL_PRVOPC
++  ILL_PRVREG,			/* Privileged register.  */
++# define ILL_PRVREG	ILL_PRVREG
++  ILL_COPROC,			/* Coprocessor error.  */
++# define ILL_COPROC	ILL_COPROC
++  ILL_BADSTK			/* Internal stack error.  */
++# define ILL_BADSTK	ILL_BADSTK
++};
++
++/* `si_code' values for SIGFPE signal.  */
++enum
++{
++  FPE_INTDIV = 1,		/* Integer divide by zero.  */
++# define FPE_INTDIV	FPE_INTDIV
++  FPE_INTOVF,			/* Integer overflow.  */
++# define FPE_INTOVF	FPE_INTOVF
++  FPE_FLTDIV,			/* Floating point divide by zero.  */
++# define FPE_FLTDIV	FPE_FLTDIV
++  FPE_FLTOVF,			/* Floating point overflow.  */
++# define FPE_FLTOVF	FPE_FLTOVF
++  FPE_FLTUND,			/* Floating point underflow.  */
++# define FPE_FLTUND	FPE_FLTUND
++  FPE_FLTRES,			/* Floating point inexact result.  */
++# define FPE_FLTRES	FPE_FLTRES
++  FPE_FLTINV,			/* Floating point invalid operation.  */
++# define FPE_FLTINV	FPE_FLTINV
++  FPE_FLTSUB			/* Subscript out of range.  */
++# define FPE_FLTSUB	FPE_FLTSUB
++};
++
++/* `si_code' values for SIGSEGV signal.  */
++enum
++{
++  SEGV_MAPERR = 1,		/* Address not mapped to object.  */
++# define SEGV_MAPERR	SEGV_MAPERR
++  SEGV_ACCERR			/* Invalid permissions for mapped object.  */
++# define SEGV_ACCERR	SEGV_ACCERR
++};
++
++/* `si_code' values for SIGBUS signal.  */
++enum
++{
++  BUS_ADRALN = 1,		/* Invalid address alignment.  */
++# define BUS_ADRALN	BUS_ADRALN
++  BUS_ADRERR,			/* Non-existant physical address.  */
++# define BUS_ADRERR	BUS_ADRERR
++  BUS_OBJERR			/* Object specific hardware error.  */
++# define BUS_OBJERR	BUS_OBJERR
++};
++
++/* `si_code' values for SIGTRAP signal.  */
++enum
++{
++  TRAP_BRKPT = 1,		/* Process breakpoint.  */
++# define TRAP_BRKPT	TRAP_BRKPT
++  TRAP_TRACE			/* Process trace trap.  */
++# define TRAP_TRACE	TRAP_TRACE
++};
++
++/* `si_code' values for SIGCHLD signal.  */
++enum
++{
++  CLD_EXITED = 1,		/* Child has exited.  */
++# define CLD_EXITED	CLD_EXITED
++  CLD_KILLED,			/* Child was killed.  */
++# define CLD_KILLED	CLD_KILLED
++  CLD_DUMPED,			/* Child terminated abnormally.  */
++# define CLD_DUMPED	CLD_DUMPED
++  CLD_TRAPPED,			/* Traced child has trapped.  */
++# define CLD_TRAPPED	CLD_TRAPPED
++  CLD_STOPPED,			/* Child has stopped.  */
++# define CLD_STOPPED	CLD_STOPPED
++  CLD_CONTINUED			/* Stopped child has continued.  */
++# define CLD_CONTINUED	CLD_CONTINUED
++};
++
++/* `si_code' values for SIGPOLL signal.  */
++enum
++{
++  POLL_IN = 1,			/* Data input available.  */
++# define POLL_IN	POLL_IN
++  POLL_OUT,			/* Output buffers available.  */
++# define POLL_OUT	POLL_OUT
++  POLL_MSG,			/* Input message available.   */
++# define POLL_MSG	POLL_MSG
++  POLL_ERR,			/* I/O error.  */
++# define POLL_ERR	POLL_ERR
++  POLL_PRI,			/* High priority input available.  */
++# define POLL_PRI	POLL_PRI
++  POLL_HUP			/* Device disconnected.  */
++# define POLL_HUP	POLL_HUP
++};
++
++# undef __need_siginfo_t
++#endif	/* !have siginfo_t && (have _SIGNAL_H || need siginfo_t).  */
++
++
++#if (defined _SIGNAL_H || defined __need_sigevent_t) \
++    && !defined __have_sigevent_t
++# define __have_sigevent_t	1
++
++/* Structure to transport application-defined values with signals.  */
++# define __SIGEV_MAX_SIZE	64
++# if __WORDSIZE == 64
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 4)
++# else
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 3)
++# endif
++
++typedef struct sigevent
++  {
++    sigval_t sigev_value;
++    int sigev_signo;
++    int sigev_notify;
++
++    union
++      {
++	int _pad[__SIGEV_PAD_SIZE];
++
++	/* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the
++	   thread to receive the signal.  */
++	__pid_t _tid;
++
++	struct
++	  {
++	    void (*_function) (sigval_t);	/* Function to start.  */
++	    void *_attribute;			/* Really pthread_attr_t.  */
++	  } _sigev_thread;
++      } _sigev_un;
++  } sigevent_t;
++
++/* POSIX names to access some of the members.  */
++# define sigev_notify_function   _sigev_un._sigev_thread._function
++# define sigev_notify_attributes _sigev_un._sigev_thread._attribute
++
++/* `sigev_notify' values.  */
++enum
++{
++  SIGEV_SIGNAL = 0,		/* Notify via signal.  */
++# define SIGEV_SIGNAL	SIGEV_SIGNAL
++  SIGEV_NONE,			/* Other notification: meaningless.  */
++# define SIGEV_NONE	SIGEV_NONE
++  SIGEV_THREAD,			/* Deliver via thread creation.  */
++# define SIGEV_THREAD	SIGEV_THREAD
++
++  SIGEV_THREAD_ID = 4		/* Send signal to specific thread.  */
++#define SIGEV_THREAD_ID	SIGEV_THREAD_ID
++};
++
++#endif	/* have _SIGNAL_H.  */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/stat.h b/sysdeps/unix/sysv/linux/x86_64/bits/stat.h
-index c7e4e1f..49dec53 100644
+index c7e4e1f..0647a17 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/bits/stat.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/stat.h
 @@ -26,7 +26,7 @@
@@ -3922,7 +4739,7 @@ index c7e4e1f..49dec53 100644
  #define _STAT_VER_KERNEL	0
  
 -#if __WORDSIZE == 32
-+#ifndef __x86_64__ 
++#ifndef __x86_64__
  # define _STAT_VER_SVR4		2
  # define _STAT_VER_LINUX	3
  
@@ -3931,7 +4748,7 @@ index c7e4e1f..49dec53 100644
    {
      __dev_t st_dev;		/* Device.  */
 -#if __WORDSIZE == 32
-+#ifndef __x86_64__ 
++#ifndef __x86_64__
      unsigned short int __pad1;
  #endif
 -#if __WORDSIZE == 64 || !defined __USE_FILE_OFFSET64
@@ -3944,7 +4761,7 @@ index c7e4e1f..49dec53 100644
 -#if __WORDSIZE == 32
 -    __mode_t st_mode;			/* File mode.  */
 -    __nlink_t st_nlink;			/* Link count.  */
-+#ifndef __x86_64__ 
++#ifndef __x86_64__
 +    __mode_t st_mode;		/* File mode.  */
 +    __nlink_t st_nlink;		/* Link count.  */
  #else
@@ -3954,12 +4771,12 @@ index c7e4e1f..49dec53 100644
      __uid_t st_uid;		/* User ID of the file's owner.	*/
      __gid_t st_gid;		/* Group ID of the file's group.*/
 -#if __WORDSIZE == 64
-+#ifdef __x86_64__ 
++#ifdef __x86_64__
      int __pad0;
  #endif
      __dev_t st_rdev;		/* Device number, if device.  */
 -#if __WORDSIZE == 32
-+#ifndef __x86_64__ 
++#ifndef __x86_64__
      unsigned short int __pad2;
  #endif
 -#if __WORDSIZE == 64 || !defined __USE_FILE_OFFSET64
@@ -3979,17 +4796,17 @@ index c7e4e1f..49dec53 100644
  #else
      __time_t st_atime;			/* Time of last access.  */
 -    unsigned long int st_atimensec;	/* Nscecs of last access.  */
-+    __UNATIVE_LONG_TYPE st_atimensec;	/* Nscecs of last access.  */
++    __syscall_ulong_t st_atimensec;	/* Nscecs of last access.  */
      __time_t st_mtime;			/* Time of last modification.  */
 -    unsigned long int st_mtimensec;	/* Nsecs of last modification.  */
-+    __UNATIVE_LONG_TYPE st_mtimensec;	/* Nsecs of last modification.  */
++    __syscall_ulong_t st_mtimensec;	/* Nsecs of last modification.  */
      __time_t st_ctime;			/* Time of last status change.  */
 -    unsigned long int st_ctimensec;	/* Nsecs of last status change.  */
-+    __UNATIVE_LONG_TYPE st_ctimensec;	/* Nsecs of last status change.  */
++    __syscall_ulong_t st_ctimensec;	/* Nsecs of last status change.  */
  #endif
 -#if __WORDSIZE == 64
 -    long int __unused[3];
-+#ifdef __x86_64__ 
++#ifdef __x86_64__
 +    long long int __unused[3];
  #else
  # ifndef __USE_FILE_OFFSET64
@@ -4017,24 +4834,24 @@ index c7e4e1f..49dec53 100644
  # else
      __time_t st_atime;			/* Time of last access.  */
 -    unsigned long int st_atimensec;	/* Nscecs of last access.  */
-+    __UNATIVE_LONG_TYPE st_atimensec;	/* Nscecs of last access.  */
++    __syscall_ulong_t st_atimensec;	/* Nscecs of last access.  */
      __time_t st_mtime;			/* Time of last modification.  */
 -    unsigned long int st_mtimensec;	/* Nsecs of last modification.  */
-+    __UNATIVE_LONG_TYPE st_mtimensec;	/* Nsecs of last modification.  */
++    __syscall_ulong_t st_mtimensec;	/* Nsecs of last modification.  */
      __time_t st_ctime;			/* Time of last status change.  */
 -    unsigned long int st_ctimensec;	/* Nsecs of last status change.  */
-+    __UNATIVE_LONG_TYPE st_ctimensec;	/* Nsecs of last status change.  */
++    __syscall_ulong_t st_ctimensec;	/* Nsecs of last status change.  */
  # endif
 -# if __WORDSIZE == 64
 -    long int __unused[3];
-+# ifdef __x86_64__ 
++# ifdef __x86_64__
 +    long long int __unused[3];
  # else
      __ino64_t st_ino;			/* File serial number.		*/
  # endif
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/statfs.h b/sysdeps/unix/sysv/linux/x86_64/bits/statfs.h
 new file mode 100644
-index 0000000..2829607
+index 0000000..d96337e
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/statfs.h
 @@ -0,0 +1,71 @@
@@ -4065,8 +4882,8 @@ index 0000000..2829607
 +
 +struct statfs
 +  {
-+    __SNATIVE_LONG_TYPE f_type;
-+    __SNATIVE_LONG_TYPE f_bsize;
++    __syscall_slong_t f_type;
++    __syscall_slong_t f_bsize;
 +#ifndef __USE_FILE_OFFSET64
 +    __fsblkcnt_t f_blocks;
 +    __fsblkcnt_t f_bfree;
@@ -4081,27 +4898,27 @@ index 0000000..2829607
 +    __fsfilcnt64_t f_ffree;
 +#endif
 +    __fsid_t f_fsid;
-+    __SNATIVE_LONG_TYPE f_namelen;
-+    __SNATIVE_LONG_TYPE f_frsize;
-+    __SNATIVE_LONG_TYPE f_flags;
-+    __SNATIVE_LONG_TYPE f_spare[4];
++    __syscall_slong_t f_namelen;
++    __syscall_slong_t f_frsize;
++    __syscall_slong_t f_flags;
++    __syscall_slong_t f_spare[4];
 +  };
 +
 +#ifdef __USE_LARGEFILE64
 +struct statfs64
 +  {
-+    __SNATIVE_LONG_TYPE f_type;
-+    __SNATIVE_LONG_TYPE f_bsize;
++    __syscall_slong_t f_type;
++    __syscall_slong_t f_bsize;
 +    __fsblkcnt64_t f_blocks;
 +    __fsblkcnt64_t f_bfree;
 +    __fsblkcnt64_t f_bavail;
 +    __fsfilcnt64_t f_files;
 +    __fsfilcnt64_t f_ffree;
 +    __fsid_t f_fsid;
-+    __SNATIVE_LONG_TYPE f_namelen;
-+    __SNATIVE_LONG_TYPE f_frsize;
-+    __SNATIVE_LONG_TYPE f_flags;
-+    __SNATIVE_LONG_TYPE f_spare[4];
++    __syscall_slong_t f_namelen;
++    __syscall_slong_t f_frsize;
++    __syscall_slong_t f_flags;
++    __syscall_slong_t f_spare[4];
 +  };
 +#endif
 +
@@ -4227,7 +5044,7 @@ index 0000000..a2769bd
 +};
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/timex.h b/sysdeps/unix/sysv/linux/x86_64/bits/timex.h
 new file mode 100644
-index 0000000..702a8c4
+index 0000000..adf6292
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/timex.h
 @@ -0,0 +1,128 @@
@@ -4260,41 +5077,41 @@ index 0000000..702a8c4
 +  /* mode selector */
 +  unsigned int modes;
 +  /* time offset (usec) */
-+  __SNATIVE_LONG_TYPE offset;
++  __syscall_slong_t offset;
 +  /* frequency offset (scaled ppm) */
-+  __SNATIVE_LONG_TYPE freq;
++  __syscall_slong_t freq;
 +  /* maximum error (usec) */
-+  __SNATIVE_LONG_TYPE maxerror;
++  __syscall_slong_t maxerror;
 +  /* estimated error (usec) */
-+  __SNATIVE_LONG_TYPE esterror;
++  __syscall_slong_t esterror;
 +  /* clock command/status */
 +  int status;
 +  /* pll time constant */
-+  __SNATIVE_LONG_TYPE constant;
++  __syscall_slong_t constant;
 +  /* clock precision (usec) (read only) */
-+  __SNATIVE_LONG_TYPE precision;
++  __syscall_slong_t precision;
 +  /* clock frequency tolerance (ppm) (read only) */
-+  __SNATIVE_LONG_TYPE tolerance;
++  __syscall_slong_t tolerance;
 +  /* (read only) */
 +  struct timeval time;
 +  /* (modified) usecs between clock ticks */
-+  __SNATIVE_LONG_TYPE tick;
++  __syscall_slong_t tick;
 +  /* pps frequency (scaled ppm) (ro) */
-+  __SNATIVE_LONG_TYPE ppsfreq;
++  __syscall_slong_t ppsfreq;
 +  /* pps jitter (us) (ro) */
-+  __SNATIVE_LONG_TYPE jitter;
++  __syscall_slong_t jitter;
 +  /* interval duration (s) (shift) (ro) */
 +  int shift;
 +  /* pps stability (scaled ppm) (ro) */
-+  __SNATIVE_LONG_TYPE stabil;
++  __syscall_slong_t stabil;
 +  /* jitter limit exceeded (ro) */
-+  __SNATIVE_LONG_TYPE jitcnt;
++  __syscall_slong_t jitcnt;
 +  /* calibration intervals (ro) */
-+  __SNATIVE_LONG_TYPE calcnt;
++  __syscall_slong_t calcnt;
 +  /* calibration errors (ro) */
-+  __SNATIVE_LONG_TYPE errcnt;
++  __syscall_slong_t errcnt;
 +  /* stability limit exceeded (ro) */
-+  __SNATIVE_LONG_TYPE stbcnt;
++  __syscall_slong_t stbcnt;
 +
 +  /* TAI offset (ro) */
 +  int tai;
@@ -4361,10 +5178,10 @@ index 0000000..702a8c4
 +#endif /* bits/timex.h */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h b/sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h
 new file mode 100644
-index 0000000..fa2be06
+index 0000000..d6d4b92
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/bits/typesizes.h
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,88 @@
 +/* bits/typesizes.h -- underlying types for *_t.  X86_64 version.
 +   Copyright (C) 2011 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -4403,12 +5220,13 @@ index 0000000..fa2be06
 +#define	__BLKCNT_T_TYPE		__SQUAD_TYPE
 +#define	__FSFILCNT_T_TYPE	__UQUAD_TYPE
 +#define	__FSBLKCNT_T_TYPE	__UQUAD_TYPE
++#define __CLOCK_T_TYPE		__SQUAD_TYPE
 +#define __TIME_T_TYPE		__SQUAD_TYPE
-+#define __BLKSIZE_T_TYPE	__SQUAD_TYPE
 +#define __SUSECONDS_T_TYPE	__SQUAD_TYPE
 +#define __SNSECONDS_T_TYPE	__SQUAD_TYPE
-+#define __SNATIVE_LONG_TYPE	__SQUAD_TYPE
-+#define __UNATIVE_LONG_TYPE	__UQUAD_TYPE
++#define __BLKSIZE_T_TYPE	__SQUAD_TYPE
++#define __SYSCALL_SLONG_TYPE	__SQUAD_TYPE
++#define __SYSCALL_ULONG_TYPE	__UQUAD_TYPE
 +#else
 +#define __INO_T_TYPE		__ULONGWORD_TYPE
 +#define __NLINK_T_TYPE		__UWORD_TYPE
@@ -4417,12 +5235,13 @@ index 0000000..fa2be06
 +#define	__BLKCNT_T_TYPE		__SLONGWORD_TYPE
 +#define	__FSFILCNT_T_TYPE	__ULONGWORD_TYPE
 +#define	__FSBLKCNT_T_TYPE	__ULONGWORD_TYPE
++#define __CLOCK_T_TYPE		__SLONGWORD_TYPE
 +#define __TIME_T_TYPE		__SLONGWORD_TYPE
-+#define __BLKSIZE_T_TYPE	__SLONGWORD_TYPE
 +#define __SUSECONDS_T_TYPE	__SLONGWORD_TYPE
 +#define __SNSECONDS_T_TYPE	__SLONGWORD_TYPE
-+#define __SNATIVE_LONG_TYPE	__SLONGWORD_TYPE
-+#define __UNATIVE_LONG_TYPE	__ULONGWORD_TYPE
++#define __BLKSIZE_T_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_SLONG_TYPE	__SLONGWORD_TYPE
++#define __SYSCALL_ULONG_TYPE	__ULONGWORD_TYPE
 +#endif
 +
 +#define __DEV_T_TYPE		__UQUAD_TYPE
@@ -4437,7 +5256,6 @@ index 0000000..fa2be06
 +#define	__FSBLKCNT64_T_TYPE	__UQUAD_TYPE
 +#define	__FSFILCNT64_T_TYPE	__UQUAD_TYPE
 +#define	__ID_T_TYPE		__U32_TYPE
-+#define __CLOCK_T_TYPE		__SLONGWORD_TYPE
 +#define __USECONDS_T_TYPE	__U32_TYPE
 +#define __DADDR_T_TYPE		__S32_TYPE
 +#define __SWBLK_T_TYPE		__SLONGWORD_TYPE
@@ -4741,33 +5559,6 @@ index cb647ab..1f400eb 100644
 +    } while (0)
 +
 +#include <sysdeps/generic/dl-cache.h>
-diff --git a/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c b/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
-index 3aba81c..0b06133 100644
---- a/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
-+++ b/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c
-@@ -18,10 +18,6 @@
- 
- #include <dl-vdso.h>
- 
--
--#define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000ul
--
--
- #ifdef SHARED
- void *gettimeofday_ifunc (void) __asm__ ("__gettimeofday");
- 
-diff --git a/sysdeps/unix/sysv/linux/x86_64/init-first.c b/sysdeps/unix/sysv/linux/x86_64/init-first.c
-index cb39aca..c331e12 100644
---- a/sysdeps/unix/sysv/linux/x86_64/init-first.c
-+++ b/sysdeps/unix/sysv/linux/x86_64/init-first.c
-@@ -45,7 +45,6 @@ _libc_vdso_platform_setup (void)
- 
-   p = _dl_vdso_vsym ("getcpu", &linux26);
-   /* If the vDSO is not available we fall back on the old vsyscall.  */
--#define VSYSCALL_ADDR_vgetcpu	0xffffffffff600800
-   if (p == NULL)
-     p = (void *) VSYSCALL_ADDR_vgetcpu;
-   PTR_MANGLE (p);
 diff --git a/sysdeps/unix/sysv/linux/x86_64/ldconfig.h b/sysdeps/unix/sysv/linux/x86_64/ldconfig.h
 index f7f64eb..69f77dd 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/ldconfig.h
@@ -4790,15 +5581,15 @@ index 3f1530d..44d76e8 100644
 -s_^\(RTLDLIST=\)\(.*lib\)\(\|64\)\(/[^/]*\)\(-x86-64\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4\6 \264\4\5\6"_
 +s_^\(RTLDLIST=\)\(.*lib\)\(\|64\|x32\)\(/[^/]*\)\(-x86-64\|-x32\)\(\.so\.[0-9.]*\)[ 	]*$_\1"\2\4\6 \264\4-x86-64\6 \2x32\4-x32\6"_
 diff --git a/sysdeps/unix/sysv/linux/x86_64/makecontext.c b/sysdeps/unix/sysv/linux/x86_64/makecontext.c
-index 615dede..477d22e 100644
+index 615dede..9ae9528 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/makecontext.c
 +++ b/sysdeps/unix/sysv/linux/x86_64/makecontext.c
-@@ -53,25 +53,26 @@ void
+@@ -53,29 +53,30 @@ void
  __makecontext (ucontext_t *ucp, void (*func) (void), int argc, ...)
  {
    extern void __start_context (void);
 -  unsigned long int *sp, idx_uc_link;
-+  unsigned long long int *sp;
++  greg_t *sp;
 +  unsigned int idx_uc_link;
    va_list ap;
    int i;
@@ -4806,101 +5597,136 @@ index 615dede..477d22e 100644
    /* Generate room on stack for parameter if needed and uc_link.  */
 -  sp = (unsigned long int *) ((uintptr_t) ucp->uc_stack.ss_sp
 -			      + ucp->uc_stack.ss_size);
-+  sp = (unsigned long long int *) ((uintptr_t) ucp->uc_stack.ss_sp
-+				   + ucp->uc_stack.ss_size);
++  sp = (greg_t *) ((uintptr_t) ucp->uc_stack.ss_sp
++		   + ucp->uc_stack.ss_size);
    sp -= (argc > 6 ? argc - 6 : 0) + 1;
    /* Align stack and make space for trampoline address.  */
 -  sp = (unsigned long int *) ((((uintptr_t) sp) & -16L) - 8);
-+  sp = (unsigned long long int *) ((((uintptr_t) sp) & -16L) - 8);
++  sp = (greg_t *) ((((uintptr_t) sp) & -16L) - 8);
  
    idx_uc_link = (argc > 6 ? argc - 6 : 0) + 1;
  
    /* Setup context ucp.  */
    /* Address to jump to.  */
 -  ucp->uc_mcontext.gregs[REG_RIP] = (long int) func;
-+  ucp->uc_mcontext.gregs[REG_RIP] = (unsigned long int) func;
++  ucp->uc_mcontext.gregs[REG_RIP] = (uintptr_t) func;
    /* Setup rbx.*/
 -  ucp->uc_mcontext.gregs[REG_RBX] = (long int) &sp[idx_uc_link];
 -  ucp->uc_mcontext.gregs[REG_RSP] = (long int) sp;
-+  ucp->uc_mcontext.gregs[REG_RBX] = (unsigned long int) &sp[idx_uc_link];
-+  ucp->uc_mcontext.gregs[REG_RSP] = (unsigned long int) sp;
++  ucp->uc_mcontext.gregs[REG_RBX] = (uintptr_t) &sp[idx_uc_link];
++  ucp->uc_mcontext.gregs[REG_RSP] = (uintptr_t) sp;
  
    /* Setup stack.  */
-   sp[0] = (unsigned long int) &__start_context;
+-  sp[0] = (unsigned long int) &__start_context;
+-  sp[idx_uc_link] = (unsigned long int) ucp->uc_link;
++  sp[0] = (uintptr_t) &__start_context;
++  sp[idx_uc_link] = (uintptr_t) ucp->uc_link;
+ 
+   va_start (ap, argc);
+   /* Handle arguments.
 @@ -91,26 +92,26 @@ __makecontext (ucontext_t *ucp, void (*func) (void), int argc, ...)
      switch (i)
        {
        case 0:
 -	ucp->uc_mcontext.gregs[REG_RDI] = va_arg (ap, long int);
-+	ucp->uc_mcontext.gregs[REG_RDI] = va_arg (ap, long long int);
++	ucp->uc_mcontext.gregs[REG_RDI] = va_arg (ap, greg_t);
  	break;
        case 1:
 -	ucp->uc_mcontext.gregs[REG_RSI] = va_arg (ap, long int);
-+	ucp->uc_mcontext.gregs[REG_RSI] = va_arg (ap, long long int);
++	ucp->uc_mcontext.gregs[REG_RSI] = va_arg (ap, greg_t);
  	break;
        case 2:
 -	ucp->uc_mcontext.gregs[REG_RDX] = va_arg (ap, long int);
-+	ucp->uc_mcontext.gregs[REG_RDX] = va_arg (ap, long long int);
++	ucp->uc_mcontext.gregs[REG_RDX] = va_arg (ap, greg_t);
  	break;
        case 3:
 -	ucp->uc_mcontext.gregs[REG_RCX] = va_arg (ap, long int);
-+	ucp->uc_mcontext.gregs[REG_RCX] = va_arg (ap, long long int);
++	ucp->uc_mcontext.gregs[REG_RCX] = va_arg (ap, greg_t);
  	break;
        case 4:
 -	ucp->uc_mcontext.gregs[REG_R8] = va_arg (ap, long int);
-+	ucp->uc_mcontext.gregs[REG_R8] = va_arg (ap, long long int);
++	ucp->uc_mcontext.gregs[REG_R8] = va_arg (ap, greg_t);
  	break;
        case 5:
 -	ucp->uc_mcontext.gregs[REG_R9] = va_arg (ap, long int);
-+	ucp->uc_mcontext.gregs[REG_R9] = va_arg (ap, long long int);
++	ucp->uc_mcontext.gregs[REG_R9] = va_arg (ap, greg_t);
  	break;
        default:
  	/* Put value on stack.  */
 -	sp[i - 5] = va_arg (ap, unsigned long int);
-+	sp[i - 5] = va_arg (ap, unsigned long long int);
++	sp[i - 5] = va_arg (ap, greg_t);
  	break;
        }
    va_end (ap);
 diff --git a/sysdeps/unix/sysv/linux/x86_64/readelflib.c b/sysdeps/unix/sysv/linux/x86_64/readelflib.c
-index 5a49af3..65d3ed7 100644
+index 5a49af3..4c4e5f9 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/readelflib.c
 +++ b/sysdeps/unix/sysv/linux/x86_64/readelflib.c
-@@ -36,8 +36,18 @@ process_elf_file (const char *file_name, const char *lib, int *flag,
-   int ret;
- 
-   if (elf_header->e_ident [EI_CLASS] == ELFCLASS32)
+@@ -1,62 +1,2 @@
+-/* Copyright (C) 1999, 2001, 2002, 2005 Free Software Foundation, Inc.
+-   This file is part of the GNU C Library.
+-   Contributed by Andreas Jaeger <aj@suse.de>, 1999 and
+-		  Jakub Jelinek <jakub@redhat.com>, 1999.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
+-
+-
+-int process_elf32_file (const char *file_name, const char *lib, int *flag,
+-			unsigned int *osversion, char **soname,
+-			void *file_contents, size_t file_length);
+-int process_elf64_file (const char *file_name, const char *lib, int *flag,
+-			unsigned int *osversion, char **soname,
+-			void *file_contents, size_t file_length);
+-
+-/* Returns 0 if everything is ok, != 0 in case of error.  */
+-int
+-process_elf_file (const char *file_name, const char *lib, int *flag,
+-		  unsigned int *osversion, char **soname, void *file_contents,
+-		  size_t file_length)
+-{
+-  ElfW(Ehdr) *elf_header = (ElfW(Ehdr) *) file_contents;
+-  int ret;
+-
+-  if (elf_header->e_ident [EI_CLASS] == ELFCLASS32)
 -    return process_elf32_file (file_name, lib, flag, osversion, soname,
 -			       file_contents, file_length);
-+    {
-+      ret = process_elf32_file (file_name, lib, flag, osversion, soname,
-+				file_contents, file_length);
-+      /* X32 libraries are always libc.so.6+.  */
-+      if (!ret)
-+	switch (elf_header->e_machine)
-+	  {
-+	  case EM_X86_64:
-+	    *flag = FLAG_X8664_LIBX32|FLAG_ELF_LIBC6;
-+	    break;
-+	  }
-+    }
-   else
-     {
-       ret = process_elf64_file (file_name, lib, flag, osversion, soname,
-diff --git a/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S b/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
-index 246c955..2053bfd 100644
---- a/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
-+++ b/sysdeps/unix/sysv/linux/x86_64/sched_getcpu.S
-@@ -22,10 +22,6 @@
- #include <bits/errno.h>
- #include <kernel-features.h>
- 
--/* For the calculation see asm/vsyscall.h.  */
--#define VSYSCALL_ADDR_vgetcpu	0xffffffffff600800
+-  else
+-    {
+-      ret = process_elf64_file (file_name, lib, flag, osversion, soname,
+-				file_contents, file_length);
+-      /* x86-64 64bit libraries are always libc.so.6+.  */
+-      if (!ret)
+-	*flag = FLAG_X8664_LIB64|FLAG_ELF_LIBC6;
+-      return ret;
+-    }
+-}
 -
+-#undef __ELF_NATIVE_CLASS
+-#undef process_elf_file
+-#define process_elf_file process_elf32_file
+-#define __ELF_NATIVE_CLASS 32
+-#include "elf/readelflib.c"
 -
- ENTRY (sched_getcpu)
- 	/* Align stack and create local variable for result.  */
- 	sub	$0x8, %rsp
+-#undef __ELF_NATIVE_CLASS
+-#undef process_elf_file
+-#define process_elf_file process_elf64_file
+-#define __ELF_NATIVE_CLASS 64
+-#include "elf/readelflib.c"
++#define SKIP_EM_IA_64
++#include <sysdeps/unix/sysv/linux/i386/readelflib.c>
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sigaction.c b/sysdeps/unix/sysv/linux/x86_64/sigaction.c
 index ab10123..a97e072 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sigaction.c
@@ -4993,7 +5819,7 @@ index 8abbf75..c3adbdf 100644
  #endif
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sys/msg.h b/sysdeps/unix/sysv/linux/x86_64/sys/msg.h
 new file mode 100644
-index 0000000..b59b3a0
+index 0000000..35aa171
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/sys/msg.h
 @@ -0,0 +1,85 @@
@@ -5051,7 +5877,7 @@ index 0000000..b59b3a0
 +/* Template for struct to be used as argument for `msgsnd' and `msgrcv'.  */
 +struct msgbuf
 +  {
-+    __SNATIVE_LONG_TYPE mtype;	/* type of received/sent message */
++    __syscall_slong_t mtype;	/* type of received/sent message */
 +    char mtext[1];		/* text of the message */
 +  };
 +#endif
@@ -5124,7 +5950,7 @@ index acb71a2..0772bc7 100644
     location of the users' stored general purpose registers.  */
  
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sys/ucontext.h b/sysdeps/unix/sysv/linux/x86_64/sys/ucontext.h
-index b59cd29..5bc8f0e 100644
+index b59cd29..75e37c4 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sys/ucontext.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/sys/ucontext.h
 @@ -21,16 +21,15 @@
@@ -5146,7 +5972,7 @@ index b59cd29..5bc8f0e 100644
  
  /* Number of general registers.  */
  #define NGREG	23
-@@ -128,13 +127,13 @@ typedef struct
+@@ -128,7 +127,7 @@ typedef struct
      gregset_t gregs;
      /* Note that fpregs is a pointer.  */
      fpregset_t fpregs;
@@ -5155,13 +5981,6 @@ index b59cd29..5bc8f0e 100644
  } mcontext_t;
  
  /* Userlevel context.  */
- typedef struct ucontext
-   {
--    unsigned long int uc_flags;
-+    unsigned long long int uc_flags;
-     struct ucontext *uc_link;
-     stack_t uc_stack;
-     mcontext_t uc_mcontext;
 @@ -142,7 +141,7 @@ typedef struct ucontext
      struct _libc_fpstate __fpregs_mem;
    } ucontext_t;
@@ -5180,21 +5999,19 @@ index b59cd29..5bc8f0e 100644
  
  #endif /* sys/ucontext.h */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sys/user.h b/sysdeps/unix/sysv/linux/x86_64/sys/user.h
-index e4423cf..d09a420 100644
+index e4423cf..35bfa8b 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sys/user.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/sys/user.h
-@@ -23,9 +23,7 @@
-    too much into it.  Don't use it for anything other than GDB unless
-    you know what you are doing.  */
+@@ -25,7 +25,7 @@
  
--#include <bits/wordsize.h>
--
+ #include <bits/wordsize.h>
+ 
 -#if __WORDSIZE == 64
 +#ifdef __x86_64__
  
  struct user_fpregs_struct
  {
-@@ -33,8 +31,8 @@ struct user_fpregs_struct
+@@ -33,8 +33,8 @@ struct user_fpregs_struct
    unsigned short int	swd;
    unsigned short int	ftw;
    unsigned short int	fop;
@@ -5205,7 +6022,7 @@ index e4423cf..d09a420 100644
    unsigned int		mxcsr;
    unsigned int		mxcr_mask;
    unsigned int		st_space[32];   /* 8*16 bytes for each FP-reg = 128 bytes */
-@@ -44,33 +42,33 @@ struct user_fpregs_struct
+@@ -44,33 +44,33 @@ struct user_fpregs_struct
  
  struct user_regs_struct
  {
@@ -5266,7 +6083,7 @@ index e4423cf..d09a420 100644
  };
  
  struct user
-@@ -78,18 +76,24 @@ struct user
+@@ -78,18 +78,24 @@ struct user
    struct user_regs_struct	regs;
    int				u_fpvalid;
    struct user_fpregs_struct	i387;
@@ -5284,14 +6101,14 @@ index e4423cf..d09a420 100644
 +  long long int			signal;
    int				reserved;
    struct user_regs_struct*	u_ar0;
-+#ifndef __LP64__
++# if __WORDSIZE == 32
 +  unsigned int			pad0;
-+#endif
++# endif
    struct user_fpregs_struct*	u_fpstate;
 -  unsigned long int		magic;
-+#ifndef __LP64__
++# if __WORDSIZE == 32
 +  unsigned int			pad1;
-+#endif
++# endif
 +  unsigned long long int	magic;
    char				u_comm [32];
 -  unsigned long int		u_debugreg [8];
@@ -5299,7 +6116,7 @@ index e4423cf..d09a420 100644
  };
  
  #else
-@@ -162,7 +166,7 @@ struct user
+@@ -162,7 +168,7 @@ struct user
    char				u_comm [32];
    int				u_debugreg [8];
  };
@@ -5309,46 +6126,59 @@ index e4423cf..d09a420 100644
  #define PAGE_SHIFT		12
  #define PAGE_SIZE		(1UL << PAGE_SHIFT)
 diff --git a/sysdeps/unix/sysv/linux/x86_64/sysdep.h b/sysdeps/unix/sysv/linux/x86_64/sysdep.h
-index 6436230..1e68cf1 100644
+index 6436230..9f4105d 100644
 --- a/sysdeps/unix/sysv/linux/x86_64/sysdep.h
 +++ b/sysdeps/unix/sysv/linux/x86_64/sysdep.h
-@@ -190,6 +190,11 @@
- # define DOARGS_5 DOARGS_4
- # define DOARGS_6 DOARGS_5
- 
-+/* For the calculation see asm/vsyscall.h.  */
-+# define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000
-+# define VSYSCALL_ADDR_vtime		0xffffffffff600400
-+# define VSYSCALL_ADDR_vgetcpu		0xffffffffff600800
-+
- #else	/* !__ASSEMBLER__ */
- /* Define a macro which expands inline into the wrapper code for a system
-    call.  */
-@@ -335,6 +340,11 @@
-   LOAD_REGS_5
- # define ASM_ARGS_6	ASM_ARGS_5, "r" (_a6)
- 
-+/* For the calculation see asm/vsyscall.h.  */
-+# define VSYSCALL_ADDR_vgettimeofday	0xffffffffff600000ul
-+# define VSYSCALL_ADDR_vgetcpu		0xffffffffff600800ul
-+# define VSYSCALL_ADDR_vtime		0xffffffffff600400ul
-+
- #endif	/* __ASSEMBLER__ */
- 
- 
-diff --git a/sysdeps/unix/sysv/linux/x86_64/time.c b/sysdeps/unix/sysv/linux/x86_64/time.c
-index a613eb0..7b4a0c8 100644
---- a/sysdeps/unix/sysv/linux/x86_64/time.c
-+++ b/sysdeps/unix/sysv/linux/x86_64/time.c
-@@ -19,8 +19,6 @@
- #ifdef SHARED
- #include <dl-vdso.h>
- 
--#define VSYSCALL_ADDR_vtime	0xffffffffff600400
--
- void *time_ifunc (void) __asm__ ("time");
- 
- void *
+@@ -343,33 +343,33 @@
+ /* We cannot use the thread descriptor because in ld.so we use setjmp
+    earlier than the descriptor is initialized.  */
+ # ifdef __ASSEMBLER__
+-#  define PTR_MANGLE(reg)	xorq __pointer_chk_guard_local(%rip), reg;    \
+-				rolq $17, reg
+-#  define PTR_DEMANGLE(reg)	rorq $17, reg;				      \
+-				xorq __pointer_chk_guard_local(%rip), reg
++#  define PTR_MANGLE(reg)	xor __pointer_chk_guard_local(%rip), reg;    \
++				rol $2*LP_SIZE+1, reg
++#  define PTR_DEMANGLE(reg)	ror $2*LP_SIZE+1, reg;			     \
++				xor __pointer_chk_guard_local(%rip), reg
+ # else
+-#  define PTR_MANGLE(reg)	asm ("xorq __pointer_chk_guard_local(%%rip), %0\n" \
+-				     "rolq $17, %0"			      \
++#  define PTR_MANGLE(reg)	asm ("xor __pointer_chk_guard_local(%%rip), %0\n" \
++				     "rol $2*" LP_SIZE "+1, %0"			  \
+ 				     : "=r" (reg) : "0" (reg))
+-#  define PTR_DEMANGLE(reg)	asm ("rorq $17, %0\n"			      \
+-				     "xorq __pointer_chk_guard_local(%%rip), %0" \
++#  define PTR_DEMANGLE(reg)	asm ("ror $2*" LP_SIZE "+1, %0\n"		  \
++				     "xor __pointer_chk_guard_local(%%rip), %0"   \
+ 				     : "=r" (reg) : "0" (reg))
+ # endif
+ #else
+ # ifdef __ASSEMBLER__
+-#  define PTR_MANGLE(reg)	xorq %fs:POINTER_GUARD, reg;		      \
+-				rolq $17, reg
+-#  define PTR_DEMANGLE(reg)	rorq $17, reg;				      \
+-				xorq %fs:POINTER_GUARD, reg
++#  define PTR_MANGLE(reg)	xor %fs:POINTER_GUARD, reg;		      \
++				rol $2*LP_SIZE+1, reg
++#  define PTR_DEMANGLE(reg)	ror $2*LP_SIZE+1, reg;			      \
++				xor %fs:POINTER_GUARD, reg
+ # else
+-#  define PTR_MANGLE(var)	asm ("xorq %%fs:%c2, %0\n"		      \
+-				     "rolq $17, %0"			      \
++#  define PTR_MANGLE(var)	asm ("xor %%fs:%c2, %0\n"		      \
++				     "rol $2*" LP_SIZE "+1, %0"		      \
+ 				     : "=r" (var)			      \
+ 				     : "0" (var),			      \
+ 				       "i" (offsetof (tcbhead_t,	      \
+ 						      pointer_guard)))
+-#  define PTR_DEMANGLE(var)	asm ("rorq $17, %0\n"			      \
+-				     "xorq %%fs:%c2, %0"		      \
++#  define PTR_DEMANGLE(var)	asm ("ror $2*" LP_SIZE "+1, %0\n"	      \
++				     "xor %%fs:%c2, %0"			      \
+ 				     : "=r" (var)			      \
+ 				     : "0" (var),			      \
+ 				       "i" (offsetof (tcbhead_t,	      \
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/Implies b/sysdeps/unix/sysv/linux/x86_64/x32/Implies
 new file mode 100644
 index 0000000..8d91c80
@@ -5358,10 +6188,14 @@ index 0000000..8d91c80
 +unix/sysv/linux/wordsize-64
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/Makefile b/sysdeps/unix/sysv/linux/x86_64/x32/Makefile
 new file mode 100644
-index 0000000..5f77df7
+index 0000000..aa78238
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/Makefile
-@@ -0,0 +1,3 @@
+@@ -0,0 +1,7 @@
++ifeq ($(subdir),misc)
++sysdep_routines += arch_prctl
++endif
++
 +ifeq ($(subdir),posix)
 +sysdep_routines += getcpu sched_getcpu-static
 +endif
@@ -5379,6 +6213,76 @@ index 0000000..6c5b2a1
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/alphasort64.c
 @@ -0,0 +1 @@
 +#include <sysdeps/wordsize-64/alphasort64.c>
+diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/arch_prctl.c b/sysdeps/unix/sysv/linux/x86_64/x32/arch_prctl.c
+new file mode 100644
+index 0000000..a4079af
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/x86_64/x32/arch_prctl.c
+@@ -0,0 +1,64 @@
++/* arch_prctl call for Linux/x32.
++   Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <errno.h>
++#include <sys/prctl.h>
++#include <sys/syscall.h>
++#include <sysdep.h>
++
++/* Since x32 arch_prctl stores 32bit base address of segment register %fs
++   and %gs as unsigned 64bit value via ARCH_GET_FS and ARCH_GET_GS, we
++   use a local unsigned 64bit variable to hold the base address and copy
++   it to ADDR after arch_prctl return.  */
++
++int
++__arch_prctl (int code, unsigned long *addr)
++{
++  int res;
++  unsigned long long base_addr;
++  unsigned long *addr_saved;
++
++  switch (code)
++    {
++    case ARCH_GET_FS:
++    case ARCH_GET_GS:
++      addr_saved = addr;
++      addr = &base_addr;
++      break;
++
++    default:
++      break;
++    }
++
++  res = INLINE_SYSCALL (arch_prctl, 2, code, addr);
++  if (res == 0)
++    switch (code)
++      {
++      case ARCH_GET_FS:
++      case ARCH_GET_GS:
++	*addr_saved = (unsigned long) base_addr;
++	break;
++
++      default:
++	break;
++      }
++
++  return res;
++}
++
++weak_alias (__arch_prctl, arch_prctl);
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/dl-cache.h b/sysdeps/unix/sysv/linux/x86_64/x32/dl-cache.h
 new file mode 100644
 index 0000000..22a56d7
@@ -5514,7 +6418,7 @@ index 0000000..3c025b7
 +#include <sysdeps/wordsize-64/ftw64.c>
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/getcpu.c b/sysdeps/unix/sysv/linux/x86_64/x32/getcpu.c
 new file mode 100644
-index 0000000..f00cdff
+index 0000000..06c2722
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/getcpu.c
 @@ -0,0 +1,32 @@
@@ -5546,7 +6450,7 @@ index 0000000..f00cdff
 +{
 +  PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
 +
-+  return _dl_vdso_vsym ("getcpu", &linux26);
++  return _dl_vdso_vsym ("__vdso_getcpu", &linux26);
 +}
 +__asm (".type __getcpu, %gnu_indirect_function");
 +#endif
@@ -5719,7 +6623,7 @@ index 0000000..7634853
 +weak_alias (__getdents, __getdents64);
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/gettimeofday.c b/sysdeps/unix/sysv/linux/x86_64/x32/gettimeofday.c
 new file mode 100644
-index 0000000..3ff95dc
+index 0000000..e998e14
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/gettimeofday.c
 @@ -0,0 +1,45 @@
@@ -5751,7 +6655,7 @@ index 0000000..3ff95dc
 +{
 +  PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
 +
-+  return _dl_vdso_vsym ("gettimeofday", &linux26);
++  return _dl_vdso_vsym ("__vdso_gettimeofday", &linux26);
 +}
 +__asm (".type __gettimeofday, %gnu_indirect_function");
 +#else
@@ -5777,7 +6681,7 @@ index 0000000..e542747
 +#include <sysdeps/wordsize-64/glob.c>
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/init-first.c b/sysdeps/unix/sysv/linux/x86_64/x32/init-first.c
 new file mode 100644
-index 0000000..6eae5f4
+index 0000000..f0aa8c8
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/init-first.c
 @@ -0,0 +1,40 @@
@@ -5812,7 +6716,7 @@ index 0000000..6eae5f4
 +{
 +  PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
 +
-+  void *p = _dl_vdso_vsym ("clock_gettime", &linux26);
++  void *p = _dl_vdso_vsym ("__vdso_clock_gettime", &linux26);
 +  PTR_MANGLE (p);
 +  __GI___vdso_clock_gettime = p;
 +}
@@ -5865,9 +6769,30 @@ index 0000000..e83fbba
 +#include <sysdeps/wordsize-64/iofsetpos64.c>
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/llseek.S b/sysdeps/unix/sysv/linux/x86_64/x32/llseek.S
 new file mode 100644
-index 0000000..ca33fd1
+index 0000000..5084d0e
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/llseek.S
+@@ -0,0 +1 @@
++/* No llseek for x32.  */
+diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/lockf.c b/sysdeps/unix/sysv/linux/x86_64/x32/lockf.c
+new file mode 100644
+index 0000000..42306a0
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/x86_64/x32/lockf.c
+@@ -0,0 +1 @@
++#include <sysdeps/wordsize-64/lockf.c>
+diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/lockf64.c b/sysdeps/unix/sysv/linux/x86_64/x32/lockf64.c
+new file mode 100644
+index 0000000..3b4b55a
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/x86_64/x32/lockf64.c
+@@ -0,0 +1 @@
++#include <sysdeps/wordsize-64/lockf64.c>
+diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/lseek.S b/sysdeps/unix/sysv/linux/x86_64/x32/lseek.S
+new file mode 100644
+index 0000000..ca33fd1
+--- /dev/null
++++ b/sysdeps/unix/sysv/linux/x86_64/x32/lseek.S
 @@ -0,0 +1,33 @@
 +/* Copyright (C) 2011 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -5902,20 +6827,6 @@ index 0000000..ca33fd1
 +weak_alias (__libc_lseek64, __lseek)
 +libc_hidden_weak (__lseek)
 +weak_alias (__libc_lseek64, lseek)
-diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/lockf.c b/sysdeps/unix/sysv/linux/x86_64/x32/lockf.c
-new file mode 100644
-index 0000000..42306a0
---- /dev/null
-+++ b/sysdeps/unix/sysv/linux/x86_64/x32/lockf.c
-@@ -0,0 +1 @@
-+#include <sysdeps/wordsize-64/lockf.c>
-diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/lockf64.c b/sysdeps/unix/sysv/linux/x86_64/x32/lockf64.c
-new file mode 100644
-index 0000000..3b4b55a
---- /dev/null
-+++ b/sysdeps/unix/sysv/linux/x86_64/x32/lockf64.c
-@@ -0,0 +1 @@
-+#include <sysdeps/wordsize-64/lockf64.c>
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/mkostemp.c b/sysdeps/unix/sysv/linux/x86_64/x32/mkostemp.c
 new file mode 100644
 index 0000000..177f68a
@@ -6354,33 +7265,16 @@ index 0000000..4c451bd
 +/* sendfile64 is alias of sendfile syscall.  */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/syscalls.list b/sysdeps/unix/sysv/linux/x86_64/x32/syscalls.list
 new file mode 100644
-index 0000000..a5d4007
+index 0000000..7edb6fd
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/syscalls.list
-@@ -0,0 +1,23 @@
-+# Copied from 64bit syscalls.list without llseek, which is implemented in
-+# llseek.S to properly handle 64bit parameter and return value.
-+
+@@ -0,0 +1,6 @@
 +# File name	Caller	Syscall name	# args	Strong name	Weak names
 +
-+lseek		llseek	-
-+pread		-	pread		Ci:ibni	__libc_pread	__libc_pread64 __pread pread __pread64 pread64
-+pwrite		-	pwrite		Ci:ibni	__libc_pwrite	__libc_pwrite64 __pwrite pwrite __pwrite64 pwrite64
-+fstatfs		-	fstatfs		i:ip	__fstatfs	fstatfs fstatfs64 __fstatfs64
-+statfs		-	statfs		i:sp	__statfs	statfs statfs64
-+mmap		-	mmap		b:aniiii __mmap		mmap __mmap64 mmap64
-+ftruncate	-	ftruncate	i:ii	__ftruncate	ftruncate ftruncate64 __ftruncate64
-+truncate	-	truncate	i:si	truncate	truncate64
-+getrlimit	-	getrlimit	i:ip	__getrlimit	getrlimit getrlimit64
-+setrlimit	-	setrlimit	i:ip	__setrlimit	setrlimit setrlimit64
-+readahead	-	readahead	i:iii	__readahead	readahead
-+sendfile	-	sendfile	i:iipi	sendfile	sendfile64
-+sync_file_range	-	sync_file_range	Ci:iiii	sync_file_range
-+creat		-	creat		Ci:si	__libc_creat	creat creat64
-+open		-	open		Ci:siv	__libc_open	__open open __open64 open64
-+prlimit		EXTRA	prlimit64	i:iipp	prlimit		prlimit64
-+
-+fanotify_mark	EXTRA	fanotify_mark	i:iiiis	fanotify_mark
++fallocate	-	fallocate	Ci:iiii	fallocate	fallocate64
++posix_fadvise	-	fadvise64	Vi:iiii	posix_fadvise	posix_fadvise64
++preadv		-	preadv		Ci:ipii	preadv		preadv64
++pwritev		-	pwritev		Ci:ipii	pwritev		pwritev64
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/sysctl.c b/sysdeps/unix/sysv/linux/x86_64/x32/sysctl.c
 new file mode 100644
 index 0000000..634c289
@@ -6390,10 +7284,10 @@ index 0000000..634c289
 +/* X32 doesn't have _sysctl.  */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h b/sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h
 new file mode 100644
-index 0000000..81b2dbe
+index 0000000..15b67b4
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/sysdep.h
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,60 @@
 +/* Copyright (C) 2011 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
 +
@@ -6453,52 +7347,10 @@ index 0000000..81b2dbe
 +
 +#endif	/* __ASSEMBLER__ */
 +
-+/* Pointer mangling support.  */
-+#undef PTR_MANGLE
-+#undef PTR_DEMANGLE
-+
-+#if defined NOT_IN_libc && defined IS_IN_rtld
-+/* We cannot use the thread descriptor because in ld.so we use setjmp
-+   earlier than the descriptor is initialized.  */
-+# ifdef __ASSEMBLER__
-+#  define PTR_MANGLE(reg)	xorl __pointer_chk_guard_local(%rip), reg;    \
-+				roll $17, reg
-+#  define PTR_DEMANGLE(reg)	rorl $17, reg;				      \
-+				xorl __pointer_chk_guard_local(%rip), reg
-+# else
-+#  define PTR_MANGLE(reg)	asm ("xorl __pointer_chk_guard_local(%%rip), %0\n" \
-+				     "roll $17, %0"			      \
-+				     : "=r" (reg) : "0" (reg))
-+#  define PTR_DEMANGLE(reg)	asm ("rorl $17, %0\n"			      \
-+				     "xorl __pointer_chk_guard_local(%%rip), %0" \
-+				     : "=r" (reg) : "0" (reg))
-+# endif
-+#else
-+# ifdef __ASSEMBLER__
-+#  define PTR_MANGLE(reg)	xorl %fs:POINTER_GUARD, reg;		      \
-+				roll $17, reg
-+#  define PTR_DEMANGLE(reg)	rorl $17, reg;				      \
-+				xorl %fs:POINTER_GUARD, reg
-+# else
-+#  define PTR_MANGLE(var)	asm ("xorl %%fs:%c2, %0\n"		      \
-+				     "roll $17, %0"			      \
-+				     : "=r" (var)			      \
-+				     : "0" (var),			      \
-+				       "i" (offsetof (tcbhead_t,	      \
-+						      pointer_guard)))
-+#  define PTR_DEMANGLE(var)	asm ("rorl $17, %0\n"			      \
-+				     "xorl %%fs:%c2, %0"		      \
-+				     : "=r" (var)			      \
-+				     : "0" (var),			      \
-+				       "i" (offsetof (tcbhead_t,	      \
-+						      pointer_guard)))
-+# endif
-+#endif
-+
 +#endif /* linux/x86_64/x32/sysdep.h */
 diff --git a/sysdeps/unix/sysv/linux/x86_64/x32/time.c b/sysdeps/unix/sysv/linux/x86_64/x32/time.c
 new file mode 100644
-index 0000000..b7feb93
+index 0000000..086cb01
 --- /dev/null
 +++ b/sysdeps/unix/sysv/linux/x86_64/x32/time.c
 @@ -0,0 +1,77 @@
@@ -6567,7 +7419,7 @@ index 0000000..b7feb93
 +{
 +  PREPARE_VERSION (linux26, "LINUX_2.6", 61765110);
 +
-+  return _dl_vdso_vsym ("time", &linux26) ?: (void *) time_syscall;
++  return _dl_vdso_vsym ("__vdso_time", &linux26) ?: (void *) time_syscall;
 +}
 +__asm (".type __GI_time, %gnu_indirect_function");
 +#else
@@ -6621,14 +7473,15 @@ index 0000000..8ec4217
 +ieee754/flt-32
 diff --git a/sysdeps/x86_64/64/bits/wordsize.h b/sysdeps/x86_64/64/bits/wordsize.h
 new file mode 100644
-index 0000000..cb59cd2
+index 0000000..9b38756
 --- /dev/null
 +++ b/sysdeps/x86_64/64/bits/wordsize.h
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,8 @@
 +/* Determine the wordsize from the preprocessor defines.  */
 +
-+#if defined __LP64__
++#if defined __x86_64__ && !defined __ILP32__
 +# define __WORDSIZE	64
++# define __WORDSIZE_COMPAT32	1
 +#else
 +# define __WORDSIZE	32
 +#endif
@@ -6652,10 +7505,10 @@ index 2e0a323..0000000
 -ieee754/dbl-64
 -ieee754/flt-32
 diff --git a/sysdeps/x86_64/__longjmp.S b/sysdeps/x86_64/__longjmp.S
-index b045c04..fa9e96b 100644
+index b045c04..a88ff07 100644
 --- a/sysdeps/x86_64/__longjmp.S
 +++ b/sysdeps/x86_64/__longjmp.S
-@@ -30,9 +30,9 @@ ENTRY(__longjmp)
+@@ -30,9 +30,8 @@ ENTRY(__longjmp)
  	movq (JB_RBP*8)(%rdi),%r9
  	movq (JB_PC*8)(%rdi),%rdx
  #ifdef PTR_DEMANGLE
@@ -6663,13 +7516,21 @@ index b045c04..fa9e96b 100644
 -	PTR_DEMANGLE (%r9)
 -	PTR_DEMANGLE (%rdx)
 +	PTR_DEMANGLE (%R8_LP)
-+	PTR_DEMANGLE (%R9_LP)
 +	PTR_DEMANGLE (%RDX_LP)
  #endif
  	/* We add unwind information for the target here.  */
  	cfi_def_cfa(%rdi, 0)
+@@ -51,7 +50,7 @@ ENTRY(__longjmp)
+ 	movq (JB_R15*8)(%rdi),%r15
+ 	/* Set return value for setjmp.  */
+ 	mov %esi, %eax
+-	movq %r8,%rsp
++	mov %R8_LP,%RSP_LP
+ 	movq %r9,%rbp
+ 	jmpq *%rdx
+ END (__longjmp)
 diff --git a/sysdeps/x86_64/bits/atomic.h b/sysdeps/x86_64/bits/atomic.h
-index 7c138eb..2ded147 100644
+index 7c138eb..e5cd5c1 100644
 --- a/sysdeps/x86_64/bits/atomic.h
 +++ b/sysdeps/x86_64/bits/atomic.h
 @@ -87,8 +87,8 @@ typedef uintmax_t uatomic_max_t;
@@ -6689,8 +7550,8 @@ index 7c138eb..2ded147 100644
  		       : "=a" (ret), "=m" (*mem)			      \
 -		       : "q" ((long int) (newval)), "m" (*mem),		      \
 -			 "0" ((long int)oldval),			      \
-+		       : "q" ((long long int) (newval)), "m" (*mem),	      \
-+			 "0" ((long long int) (oldval)),		      \
++		       : "q" ((atomic64_t) (newval)), "m" (*mem),	      \
++			 "0" ((atomic64_t) (oldval)),		      \
  			 "i" (offsetof (tcbhead_t, multiple_threads)));	      \
       ret; })
  
@@ -6699,7 +7560,7 @@ index 7c138eb..2ded147 100644
         __asm __volatile ("xchgq %q0, %1"				      \
  			 : "=r" (result), "=m" (*mem)			      \
 -			 : "0" ((long) (newvalue)), "m" (*mem));	      \
-+			 : "0" ((long long) (newvalue)), "m" (*mem));	      \
++			 : "0" ((atomic64_t) (newvalue)), "m" (*mem));	      \
       result; })
  
  
@@ -6708,7 +7569,7 @@ index 7c138eb..2ded147 100644
         __asm __volatile (lock "xaddq %q0, %1"				      \
  			 : "=r" (result), "=m" (*mem)			      \
 -			 : "0" ((long) (value)), "m" (*mem),		      \
-+			 : "0" ((long long) (value)), "m" (*mem),	      \
++			 : "0" ((atomic64_t) (value)), "m" (*mem),	      \
  			   "i" (offsetof (tcbhead_t, multiple_threads)));     \
       result; })
  
@@ -6717,7 +7578,7 @@ index 7c138eb..2ded147 100644
        __asm __volatile (lock "addq %q1, %0"				      \
  			: "=m" (*mem)					      \
 -			: "ir" ((long) (value)), "m" (*mem),		      \
-+			: "ir" ((long long) (value)), "m" (*mem),	      \
++			: "ir" ((atomic64_t) (value)), "m" (*mem),	      \
  			  "i" (offsetof (tcbhead_t, multiple_threads)));      \
    } while (0)
  
@@ -6726,7 +7587,7 @@ index 7c138eb..2ded147 100644
         __asm __volatile (LOCK_PREFIX "addq %q2, %0; sets %1"		      \
  			 : "=m" (*mem), "=qm" (__result)		      \
 -			 : "ir" ((long) (value)), "m" (*mem));		      \
-+			 : "ir" ((long long) (value)), "m" (*mem));	      \
++			 : "ir" ((atomic64_t) (value)), "m" (*mem));	      \
       __result; })
  
  
@@ -6735,54 +7596,105 @@ index 7c138eb..2ded147 100644
         __asm __volatile (LOCK_PREFIX "addq %q2, %0; setz %1"		      \
  			 : "=m" (*mem), "=qm" (__result)		      \
 -			 : "ir" ((long) (value)), "m" (*mem));		      \
-+			 : "ir" ((long long) (value)), "m" (*mem));	      \
++			 : "ir" ((atomic64_t) (value)), "m" (*mem));	      \
       __result; })
  
  
 diff --git a/sysdeps/x86_64/bits/byteswap.h b/sysdeps/x86_64/bits/byteswap.h
-index c6db93c..4015f9c 100644
+index c6db93c..98767e4 100644
 --- a/sysdeps/x86_64/bits/byteswap.h
 +++ b/sysdeps/x86_64/bits/byteswap.h
-@@ -25,8 +25,6 @@
+@@ -25,6 +25,7 @@
  #ifndef _BITS_BYTESWAP_H
  #define _BITS_BYTESWAP_H 1
  
--#include <bits/wordsize.h>
--
++#include <features.h>
+ #include <bits/wordsize.h>
+ 
  /* Swap bytes in 16 bit value.  */
- #define __bswap_constant_16(x) \
-      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-@@ -58,12 +56,11 @@
+@@ -57,38 +58,8 @@
+      ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |		      \
        (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
  
- #if defined __GNUC__ && __GNUC__ >= 2
+-#if defined __GNUC__ && __GNUC__ >= 2
 -# if __WORDSIZE == 64 || (defined __i486__ || defined __pentium__	      \
 -			  || defined __pentiumpro__ || defined __pentium4__   \
 -			  || defined __k8__ || defined __athlon__	      \
 -			  || defined __k6__ || defined __nocona__	      \
 -			  || defined __core2__ || defined __geode__	      \
 -			  || defined __amdfam10__)
-+# if defined __x86_64__ || defined __i486__ || defined __pentium__	      \
-+     || defined __pentiumpro__ || defined __pentium4__  || defined __k8__     \
-+     || defined __athlon__ || defined __k6__ || defined __nocona__	      \
-+     || defined __core2__ || defined __corei7__ || defined __geode__ 	      \
-+     || defined __amdfam10__
- /* To swap the bytes in a word the i486 processors and up provide the
-    `bswap' opcode.  On i386 we have to use three instructions.  */
- #  define __bswap_32(x) \
-@@ -108,10 +105,10 @@
+-/* To swap the bytes in a word the i486 processors and up provide the
+-   `bswap' opcode.  On i386 we have to use three instructions.  */
+-#  define __bswap_32(x) \
+-     (__extension__							      \
+-      ({ register unsigned int __v, __x = (x);				      \
+-	 if (__builtin_constant_p (__x))				      \
+-	   __v = __bswap_constant_32 (__x);				      \
+-	 else								      \
+-	   __asm__ ("bswap %0" : "=r" (__v) : "0" (__x));		      \
+-	 __v; }))
+-# else
+-#  define __bswap_32(x)							      \
+-     (__extension__							      \
+-      ({ register unsigned int __v, __x = (x);				      \
+-	 if (__builtin_constant_p (__x))				      \
+-	   __v = __bswap_constant_32 (__x);				      \
+-	 else								      \
+-	   __asm__ ("rorw $8, %w0;"					      \
+-		    "rorl $16, %0;"					      \
+-		    "rorw $8, %w0"					      \
+-		    : "=r" (__v)					      \
+-		    : "0" (__x)						      \
+-		    : "cc");						      \
+-	 __v; }))
+-# endif
++#if __GNUC_PREREQ (4,2)
++# define __bswap_32(x)  __builtin_bswap32 (x)
+ #else
+ # define __bswap_32(x) \
+      (__extension__							      \
+@@ -98,7 +69,10 @@
+ 
+ #if defined __GNUC__ && __GNUC__ >= 2
+ /* Swap bytes in 64 bit value.  */
+-# define __bswap_constant_64(x) \
++# if __GNUC_PREREQ (4,2)
++#  define __bswap_64(x)  __builtin_bswap64 (x)
++# else
++#  define __bswap_constant_64(x) \
+      (__extension__ ((((x) & 0xff00000000000000ull) >> 56)		      \
+ 		     | (((x) & 0x00ff000000000000ull) >> 40)		      \
+ 		     | (((x) & 0x0000ff0000000000ull) >> 24)		      \
+@@ -108,8 +82,8 @@
  		     | (((x) & 0x000000000000ff00ull) << 40)		      \
  		     | (((x) & 0x00000000000000ffull) << 56)))
  
 -# if __WORDSIZE == 64
-+# ifdef __x86_64__ 
- #  define __bswap_64(x) \
+-#  define __bswap_64(x) \
++#  if __WORDSIZE == 64
++#   define __bswap_64(x) \
       (__extension__							      \
--      ({ register unsigned long __v, __x = (x);				      \
-+      ({ register unsigned long long int __v, __x = (x);		      \
+       ({ register unsigned long __v, __x = (x);				      \
  	 if (__builtin_constant_p (__x))				      \
- 	   __v = __bswap_constant_64 (__x);				      \
+@@ -117,8 +91,8 @@
  	 else								      \
+ 	   __asm__ ("bswap %q0" : "=r" (__v) : "0" (__x));		      \
+ 	 __v; }))
+-# else
+-#  define __bswap_64(x) \
++#  else
++#   define __bswap_64(x) \
+      (__extension__                                                           \
+       ({ union { __extension__ unsigned long long int __ll;                   \
+ 		 unsigned int __l[2]; } __w, __r;                             \
+@@ -131,6 +105,7 @@
+ 	     __r.__l[1] = __bswap_32 (__w.__l[0]);                            \
+ 	   }                                                                  \
+ 	 __r.__ll; }))
++#  endif
+ # endif
+ #endif
+ 
 diff --git a/sysdeps/x86_64/bits/link.h b/sysdeps/x86_64/bits/link.h
 index 14cc92b..df32930 100644
 --- a/sysdeps/x86_64/bits/link.h
@@ -6841,20 +7753,14 @@ index 9146392..9e23501 100644
     used type.  Similarly for -m32 -mfpmath=sse.  */
  typedef float float_t;		/* `float' expressions are evaluated as `float'.  */
 diff --git a/sysdeps/x86_64/bits/setjmp.h b/sysdeps/x86_64/bits/setjmp.h
-index c9b98b2..72cfd65 100644
+index c9b98b2..3f6f2fe 100644
 --- a/sysdeps/x86_64/bits/setjmp.h
 +++ b/sysdeps/x86_64/bits/setjmp.h
-@@ -24,12 +24,10 @@
- # error "Never include <bits/setjmp.h> directly; use <setjmp.h> instead."
- #endif
+@@ -30,6 +30,8 @@
  
--#include <bits/wordsize.h>
--
- #ifndef _ASM
- 
--# if __WORDSIZE == 64
--typedef long int __jmp_buf[8];
-+# if __x86_64__
+ # if __WORDSIZE == 64
+ typedef long int __jmp_buf[8];
++# elif defined  __x86_64__
 +typedef long long int __jmp_buf[8];
  # else
  typedef int __jmp_buf[6];
@@ -6909,7 +7815,7 @@ index 19f9457..db03827 100644
      }
    else
 diff --git a/sysdeps/x86_64/dl-machine.h b/sysdeps/x86_64/dl-machine.h
-index a8fbc16..5539ce3 100644
+index a8fbc16..99e8900 100644
 --- a/sysdeps/x86_64/dl-machine.h
 +++ b/sysdeps/x86_64/dl-machine.h
 @@ -30,7 +30,7 @@
@@ -7160,7 +8066,7 @@ index a8fbc16..5539ce3 100644
  	  *reloc_addr = value;
  	  break;
  	default:
-@@ -453,22 +478,22 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
+@@ -453,22 +478,29 @@ elf_machine_rela (struct link_map *map, const Elf64_Rela *reloc,
  
  auto inline void
  __attribute ((always_inline))
@@ -7170,9 +8076,17 @@ index a8fbc16..5539ce3 100644
  {
 -  Elf64_Addr *const reloc_addr = reloc_addr_arg;
 -  assert (ELF64_R_TYPE (reloc->r_info) == R_X86_64_RELATIVE);
+-  *reloc_addr = l_addr + reloc->r_addend;
 +  ElfW(Addr) *const reloc_addr = reloc_addr_arg;
-+  assert (ELF32_R_TYPE (reloc->r_info) == R_X86_64_RELATIVE);
-   *reloc_addr = l_addr + reloc->r_addend;
++#if !defined RTLD_BOOTSTRAP
++  if (__builtin_expect (ELF32_R_TYPE (reloc->r_info) == R_X86_64_RELATIVE64, 0))
++    *(Elf64_Addr *) reloc_addr = (Elf64_Addr) l_addr + reloc->r_addend;
++  else
++#endif
++    {
++      assert (ELF32_R_TYPE (reloc->r_info) == R_X86_64_RELATIVE);
++      *reloc_addr = l_addr + reloc->r_addend;
++    }
  }
  
  auto inline void
@@ -7189,7 +8103,7 @@ index a8fbc16..5539ce3 100644
  
    /* Check for unexpected PLT reloc type.  */
    if (__builtin_expect (r_type == R_X86_64_JUMP_SLOT, 1))
-@@ -478,7 +503,7 @@ elf_machine_lazy_rel (struct link_map *map,
+@@ -478,7 +510,7 @@ elf_machine_lazy_rel (struct link_map *map,
        else
  	*reloc_addr =
  	  map->l_mach.plt
@@ -7198,7 +8112,7 @@ index a8fbc16..5539ce3 100644
      }
    else if (__builtin_expect (r_type == R_X86_64_TLSDESC, 1))
      {
-@@ -491,9 +516,9 @@ elf_machine_lazy_rel (struct link_map *map,
+@@ -491,9 +523,9 @@ elf_machine_lazy_rel (struct link_map *map,
      }
    else if (__builtin_expect (r_type == R_X86_64_IRELATIVE, 0))
      {
@@ -7387,7 +8301,7 @@ index 7213c03..f243cf7 100644
  weak_alias (ffsll, ffsl)
 +#endif
 diff --git a/sysdeps/x86_64/fpu/bits/fenv.h b/sysdeps/x86_64/fpu/bits/fenv.h
-index 8bc2450..de47cac 100644
+index 8bc2450..75884dc 100644
 --- a/sysdeps/x86_64/fpu/bits/fenv.h
 +++ b/sysdeps/x86_64/fpu/bits/fenv.h
 @@ -20,9 +20,6 @@
@@ -7405,7 +8319,7 @@ index 8bc2450..de47cac 100644
      unsigned short int __data_selector;
      unsigned short int __unused5;
 -#if __WORDSIZE == 64
-+#if __x86_64__
++#ifdef __x86_64__
      unsigned int __mxcsr;
  #endif
    }
@@ -7931,27 +8845,30 @@ index 0000000..d8df7ba
 +  fi
 +esac
 diff --git a/sysdeps/x86_64/setjmp.S b/sysdeps/x86_64/setjmp.S
-index a66b0e6..68340f1 100644
+index a66b0e6..9cab2fa 100644
 --- a/sysdeps/x86_64/setjmp.S
 +++ b/sysdeps/x86_64/setjmp.S
-@@ -26,7 +26,7 @@ ENTRY (__sigsetjmp)
+@@ -26,7 +26,6 @@ ENTRY (__sigsetjmp)
  	movq %rbx, (JB_RBX*8)(%rdi)
  #ifdef PTR_MANGLE
  	movq %rbp, %rax
 -	PTR_MANGLE (%rax)
-+	PTR_MANGLE (%RAX_LP)
  	movq %rax, (JB_RBP*8)(%rdi)
  #else
  	movq %rbp, (JB_RBP*8)(%rdi)
-@@ -37,12 +37,12 @@ ENTRY (__sigsetjmp)
+@@ -35,14 +34,14 @@ ENTRY (__sigsetjmp)
+ 	movq %r13, (JB_R13*8)(%rdi)
+ 	movq %r14, (JB_R14*8)(%rdi)
  	movq %r15, (JB_R15*8)(%rdi)
- 	leaq 8(%rsp), %rdx	/* Save SP as it will be after we return.  */
+-	leaq 8(%rsp), %rdx	/* Save SP as it will be after we return.  */
++	lea 8(%rsp), %RDX_LP	/* Save SP as it will be after we return.  */
  #ifdef PTR_MANGLE
 -	PTR_MANGLE (%rdx)
 +	PTR_MANGLE (%RDX_LP)
  #endif
  	movq %rdx, (JB_RSP*8)(%rdi)
- 	movq (%rsp), %rax	/* Save PC we are returning to now.  */
+-	movq (%rsp), %rax	/* Save PC we are returning to now.  */
++	mov (%rsp), %RAX_LP	/* Save PC we are returning to now.  */
  #ifdef PTR_MANGLE
 -	PTR_MANGLE (%rax)
 +	PTR_MANGLE (%RAX_LP)
@@ -8036,27 +8953,18 @@ index 0000000..2579ec6
 +# include <gnu/stubs-32.h>
 +#endif
 diff --git a/sysdeps/x86_64/sysdep.h b/sysdeps/x86_64/sysdep.h
-index d61e126..b9da915 100644
+index d61e126..c0116da 100644
 --- a/sysdeps/x86_64/sysdep.h
 +++ b/sysdeps/x86_64/sysdep.h
-@@ -116,4 +116,66 @@ lose:									      \
+@@ -116,4 +116,60 @@ lose:									      \
  
  #define atom_text_section .section ".text.atom", "ax"
  
 +/* Long and pointer size in bytes.  */
 +#define LP_SIZE	8
 +
-+/* Instruction to move long and pointer.  */
-+#define MOVE_LP movq
-+
-+/* Instruction to add long and pointer.  */
-+#define ADD_LP addq
-+
-+/* Instruction to substract long and pointer.  */
-+#define SUB_LP subq
-+
-+/* Instruction to compare against long and pointer.  */
-+#define CMP_LP cmpq
++/* Instruction to operate on long and pointer.  */
++#define LP_OP(insn) insn##q
 +
 +/* Assembler address directive. */
 +#define ASM_ADDR .quad
@@ -8086,6 +8994,9 @@ index d61e126..b9da915 100644
 +
 +/* Assembler address directive. */
 +#define ASM_ADDR ".quad"
++
++/* Instruction to operate on long and pointer.  */
++#define LP_OP(insn) #insn "q"
 +
 +/* Registers to hold long and pointer.  */
 +#define RAX_LP	"rax"
@@ -8129,14 +9040,15 @@ index 0000000..5b3ac54
 +endif
 diff --git a/sysdeps/x86_64/x32/bits/wordsize.h b/sysdeps/x86_64/x32/bits/wordsize.h
 new file mode 100644
-index 0000000..cb59cd2
+index 0000000..9b38756
 --- /dev/null
 +++ b/sysdeps/x86_64/x32/bits/wordsize.h
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,8 @@
 +/* Determine the wordsize from the preprocessor defines.  */
 +
-+#if defined __LP64__
++#if defined __x86_64__ && !defined __ILP32__
 +# define __WORDSIZE	64
++# define __WORDSIZE_COMPAT32	1
 +#else
 +# define __WORDSIZE	32
 +#endif
@@ -8287,12 +9199,13 @@ index 0000000..33cb36e
 +#define PREFER_LONG_LONG
 diff --git a/sysdeps/x86_64/x32/shlib-versions b/sysdeps/x86_64/x32/shlib-versions
 new file mode 100644
-index 0000000..a0d353d
+index 0000000..c30aeef
 --- /dev/null
 +++ b/sysdeps/x86_64/x32/shlib-versions
-@@ -0,0 +1,2 @@
-+x86_64-.*-linux.*       DEFAULT			GLIBC_2.11
-+x86_64-.*-linux.*	ld=ld-linux-x32.so.2	GLIBC_2.11
+@@ -0,0 +1,3 @@
++x86_64-.*-linux.*       DEFAULT			GLIBC_2.16
++x86_64-.*-linux.*	ld=ld-linux-x32.so.2	GLIBC_2.16
++x86_64-.*-.*		ABI			x32-@OS@
 diff --git a/sysdeps/x86_64/x32/symbol-hacks.h b/sysdeps/x86_64/x32/symbol-hacks.h
 new file mode 100644
 index 0000000..bc7b4c4
@@ -8302,10 +9215,10 @@ index 0000000..bc7b4c4
 +/* Fortunately nothing to do.  */
 diff --git a/sysdeps/x86_64/x32/sysdep.h b/sysdeps/x86_64/x32/sysdep.h
 new file mode 100644
-index 0000000..0bb21f8
+index 0000000..d8c87d9
 --- /dev/null
 +++ b/sysdeps/x86_64/x32/sysdep.h
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,91 @@
 +/* Assembler macros for x32.
 +   Copyright (C) 2011 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -8325,8 +9238,9 @@ index 0000000..0bb21f8
 +   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 +   02111-1307 USA.  */
 +
-+#undef ASM_ADDR
 +#undef LP_SIZE
++#undef LP_OP
++#undef ASM_ADDR
 +
 +#undef RAX_LP
 +#undef RBP_LP
@@ -8349,17 +9263,7 @@ index 0000000..0bb21f8
 +
 +# define LP_SIZE 4
 +
-+# undef MOVE_LP
-+# define MOVE_LP movl
-+
-+# undef ADD_LP
-+# define ADD_LP addl
-+
-+# undef SUB_LP
-+# define SUB_LP subl
-+
-+# undef CMP_LP
-+# define CMP_LP cmpl
++# define LP_OP(insn) insn##l
 +
 +# define ASM_ADDR .long
 +
@@ -8384,6 +9288,8 @@ index 0000000..0bb21f8
 +
 +# define LP_SIZE "4"
 +
++# define LP_OP(insn) #insn "l"
++
 +# define ASM_ADDR ".long"
 +
 +# define RAX_LP	"eax"
@@ -8405,49 +9311,845 @@ index 0000000..0bb21f8
 +
 +#endif	/* __ASSEMBLER__ */
 diff --git a/time/mktime.c b/time/mktime.c
-index e47d696..af0457f 100644
+index e47d696..da0a15a 100644
 --- a/time/mktime.c
 +++ b/time/mktime.c
-@@ -169,7 +169,7 @@ ydhms_diff (long int year1, long int yday1, int hour1, int min1, int sec1,
+@@ -22,31 +22,62 @@
+    mktime.  */
+ /* #define DEBUG 1 */
+ 
+-#ifdef HAVE_CONFIG_H
++#ifndef _LIBC
+ # include <config.h>
+ #endif
+ 
+ /* Assume that leap seconds are possible, unless told otherwise.
+-   If the host has a `zic' command with a `-L leapsecondfilename' option,
++   If the host has a 'zic' command with a '-L leapsecondfilename' option,
+    then it supports leap seconds; otherwise it probably doesn't.  */
+ #ifndef LEAP_SECONDS_POSSIBLE
+ # define LEAP_SECONDS_POSSIBLE 1
+ #endif
+ 
+-#include <sys/types.h>		/* Some systems define `time_t' here.  */
+ #include <time.h>
+ 
+ #include <limits.h>
+ 
+-#include <string.h>		/* For the real memcpy prototype.  */
++#include <string.h>             /* For the real memcpy prototype.  */
+ 
+ #if DEBUG
+ # include <stdio.h>
+ # include <stdlib.h>
+ /* Make it work even if the system's libc has its own mktime routine.  */
++# undef mktime
+ # define mktime my_mktime
+ #endif /* DEBUG */
+ 
++/* Some of the code in this file assumes that signed integer overflow
++   silently wraps around.  This assumption can't easily be programmed
++   around, nor can it be checked for portably at compile-time or
++   easily eliminated at run-time.
++
++   Define WRAPV to 1 if the assumption is valid and if
++     #pragma GCC optimize ("wrapv")
++   does not trigger GCC bug <http://gcc.gnu.org/bugzilla/show_bug.cgi?id=51793>.
++   Otherwise, define it to 0; this forces the use of slower code that,
++   while not guaranteed by the C Standard, works on all production
++   platforms that we know about.  */
++#ifndef WRAPV
++# if ((__GNUC__ == 4 && 4 <= __GNUC_MINOR__) || 4 < __GNUC__) && defined __GLIBC__
++#  pragma GCC optimize ("wrapv")
++#  define WRAPV 1
++# else
++#  define WRAPV 0
++# endif
++#endif
++
++/* Verify a requirement at compile-time (unlike assert, which is runtime).  */
++#define verify(name, assertion) struct name { char a[(assertion) ? 1 : -1]; }
++
++/* A signed type that is at least one bit wider than int.  */
++#if INT_MAX <= LONG_MAX / 2
++typedef long int long_int;
++#else
++typedef long long int long_int;
++#endif
++verify (long_int_is_wide_enough, INT_MAX == INT_MAX * (long_int) 2 / 2);
++
+ /* Shift A right by B bits portably, by dividing A by 2**B and
+    truncating towards minus infinity.  A and B should be free of side
+    effects, and B should be in the range 0 <= B <= INT_BITS - 2, where
+@@ -57,9 +88,11 @@
+    implementations (e.g., UNICOS 9.0 on a Cray Y-MP EL) don't shift
+    right in the usual way when A < 0, so SHR falls back on division if
+    ordinary A >> B doesn't seem to be the usual signed shift.  */
+-#define SHR(a, b)	\
+-  (-1 >> 1 == -1	\
+-   ? (a) >> (b)		\
++#define SHR(a, b)                                               \
++  ((-1 >> 1 == -1                                               \
++    && (long_int) -1 >> 1 == -1                                 \
++    && ((time_t) -1 >> 1 == -1 || ! TYPE_SIGNED (time_t)))      \
++   ? (a) >> (b)                                                 \
+    : (a) / (1 << (b)) - ((a) % (1 << (b)) < 0))
+ 
+ /* The extra casts in the following macros work around compiler bugs,
+@@ -70,12 +103,8 @@
+ #define TYPE_IS_INTEGER(t) ((t) 1.5 == 1)
+ 
+ /* True if negative values of the signed integer type T use two's
+-   complement, ones' complement, or signed magnitude representation,
+-   respectively.  Much GNU code assumes two's complement, but some
+-   people like to be portable to all possible C hosts.  */
++   complement, or if T is an unsigned integer type.  */
+ #define TYPE_TWOS_COMPLEMENT(t) ((t) ~ (t) 0 == (t) -1)
+-#define TYPE_ONES_COMPLEMENT(t) ((t) ~ (t) 0 == 0)
+-#define TYPE_SIGNED_MAGNITUDE(t) ((t) ~ (t) 0 < (t) -1)
+ 
+ /* True if the arithmetic type T is signed.  */
+ #define TYPE_SIGNED(t) (! ((t) 0 < (t) -1))
+@@ -86,14 +115,12 @@
+    your host.  */
+ #define TYPE_MINIMUM(t) \
+   ((t) (! TYPE_SIGNED (t) \
+-	? (t) 0 \
+-	: TYPE_SIGNED_MAGNITUDE (t) \
+-	? ~ (t) 0 \
+-	: ~ (t) 0 << (sizeof (t) * CHAR_BIT - 1)))
++        ? (t) 0 \
++        : ~ TYPE_MAXIMUM (t)))
+ #define TYPE_MAXIMUM(t) \
+   ((t) (! TYPE_SIGNED (t) \
+-	? (t) -1 \
+-	: ~ (~ (t) 0 << (sizeof (t) * CHAR_BIT - 1))))
++        ? (t) -1 \
++        : ((((t) 1 << (sizeof (t) * CHAR_BIT - 2)) - 1) * 2 + 1)))
+ 
+ #ifndef TIME_T_MIN
+ # define TIME_T_MIN TYPE_MINIMUM (time_t)
+@@ -103,14 +130,11 @@
+ #endif
+ #define TIME_T_MIDPOINT (SHR (TIME_T_MIN + TIME_T_MAX, 1) + 1)
+ 
+-/* Verify a requirement at compile-time (unlike assert, which is runtime).  */
+-#define verify(name, assertion) struct name { char a[(assertion) ? 1 : -1]; }
+-
+ verify (time_t_is_integer, TYPE_IS_INTEGER (time_t));
+-verify (twos_complement_arithmetic, TYPE_TWOS_COMPLEMENT (int));
+-/* The code also assumes that signed integer overflow silently wraps
+-   around, but this assumption can't be stated without causing a
+-   diagnostic on some hosts.  */
++verify (twos_complement_arithmetic,
++        (TYPE_TWOS_COMPLEMENT (int)
++         && TYPE_TWOS_COMPLEMENT (long_int)
++         && TYPE_TWOS_COMPLEMENT (time_t)));
+ 
+ #define EPOCH_YEAR 1970
+ #define TM_YEAR_BASE 1900
+@@ -118,14 +142,14 @@ verify (base_year_is_a_multiple_of_100, TM_YEAR_BASE % 100 == 0);
+ 
+ /* Return 1 if YEAR + TM_YEAR_BASE is a leap year.  */
+ static inline int
+-leapyear (long int year)
++leapyear (long_int year)
+ {
+   /* Don't add YEAR to TM_YEAR_BASE, as that might overflow.
+      Also, work even if YEAR is negative.  */
+   return
+     ((year & 3) == 0
+      && (year % 100 != 0
+-	 || ((year / 100) & 3) == (- (TM_YEAR_BASE / 100) & 3)));
++         || ((year / 100) & 3) == (- (TM_YEAR_BASE / 100) & 3)));
+ }
+ 
+ /* How many days come before each month (0-12).  */
+@@ -142,16 +166,24 @@ const unsigned short int __mon_yday[2][13] =
+ 
+ 
+ #ifndef _LIBC
+-/* Portable standalone applications should supply a "time_r.h" that
++/* Portable standalone applications should supply a <time.h> that
+    declares a POSIX-compliant localtime_r, for the benefit of older
+    implementations that lack localtime_r or have a nonstandard one.
+    See the gnulib time_r module for one way to implement this.  */
+-# include "time_r.h"
+ # undef __localtime_r
+ # define __localtime_r localtime_r
+ # define __mktime_internal mktime_internal
++# include "mktime-internal.h"
+ #endif
+ 
++/* Return 1 if the values A and B differ according to the rules for
++   tm_isdst: A and B differ if one is zero and the other positive.  */
++static int
++isdst_differ (int a, int b)
++{
++  return (!a != !b) & (0 <= a) & (0 <= b);
++}
++
+ /* Return an integer value measuring (YEAR1-YDAY1 HOUR1:MIN1:SEC1) -
+    (YEAR0-YDAY0 HOUR0:MIN0:SEC0) in seconds, assuming that the clocks
+    were not adjusted between the time stamps.
+@@ -164,12 +196,10 @@ const unsigned short int __mon_yday[2][13] =
+    detect overflow.  */
+ 
+ static inline time_t
+-ydhms_diff (long int year1, long int yday1, int hour1, int min1, int sec1,
+-	    int year0, int yday0, int hour0, int min0, int sec0)
++ydhms_diff (long_int year1, long_int yday1, int hour1, int min1, int sec1,
++            int year0, int yday0, int hour0, int min0, int sec0)
  {
    verify (C99_integer_division, -1 / 2 == 0);
-   verify (long_int_year_and_yday_are_wide_enough,
+-  verify (long_int_year_and_yday_are_wide_enough,
 -	  INT_MAX <= LONG_MAX / 2 || TIME_T_MAX <= UINT_MAX);
-+	  INT_MAX <= TIME_T_MAX / 2 || TIME_T_MAX <= UINT_MAX);
  
    /* Compute intervening leap days correctly even if year is negative.
       Take care to avoid integer overflow here.  */
+@@ -192,6 +222,53 @@ ydhms_diff (long int year1, long int yday1, int hour1, int min1, int sec1,
+   return seconds;
+ }
+ 
++/* Return the average of A and B, even if A + B would overflow.  */
++static time_t
++time_t_avg (time_t a, time_t b)
++{
++  return SHR (a, 1) + SHR (b, 1) + (a & b & 1);
++}
++
++/* Return 1 if A + B does not overflow.  If time_t is unsigned and if
++   B's top bit is set, assume that the sum represents A - -B, and
++   return 1 if the subtraction does not wrap around.  */
++static int
++time_t_add_ok (time_t a, time_t b)
++{
++  if (! TYPE_SIGNED (time_t))
++    {
++      time_t sum = a + b;
++      return (sum < a) == (TIME_T_MIDPOINT <= b);
++    }
++  else if (WRAPV)
++    {
++      time_t sum = a + b;
++      return (sum < a) == (b < 0);
++    }
++  else
++    {
++      time_t avg = time_t_avg (a, b);
++      return TIME_T_MIN / 2 <= avg && avg <= TIME_T_MAX / 2;
++    }
++}
++
++/* Return 1 if A + B does not overflow.  */
++static int
++time_t_int_add_ok (time_t a, int b)
++{
++  verify (int_no_wider_than_time_t, INT_MAX <= TIME_T_MAX);
++  if (WRAPV)
++    {
++      time_t sum = a + b;
++      return (sum < a) == (b < 0);
++    }
++  else
++    {
++      int a_odd = a & 1;
++      time_t avg = SHR (a, 1) + (SHR (b, 1) + (a_odd & b));
++      return TIME_T_MIN / 2 <= avg && avg <= TIME_T_MAX / 2;
++    }
++}
+ 
+ /* Return a time_t value corresponding to (YEAR-YDAY HOUR:MIN:SEC),
+    assuming that *T corresponds to *TP and that no clock adjustments
+@@ -200,17 +277,16 @@ ydhms_diff (long int year1, long int yday1, int hour1, int min1, int sec1,
+    If overflow occurs, yield the minimal or maximal value, except do not
+    yield a value equal to *T.  */
+ static time_t
+-guess_time_tm (long int year, long int yday, int hour, int min, int sec,
+-	       const time_t *t, const struct tm *tp)
++guess_time_tm (long_int year, long_int yday, int hour, int min, int sec,
++               const time_t *t, const struct tm *tp)
+ {
+   if (tp)
+     {
+       time_t d = ydhms_diff (year, yday, hour, min, sec,
+-			     tp->tm_year, tp->tm_yday,
+-			     tp->tm_hour, tp->tm_min, tp->tm_sec);
+-      time_t t1 = *t + d;
+-      if ((t1 < *t) == (TYPE_SIGNED (time_t) ? d < 0 : TIME_T_MAX / 2 < d))
+-	return t1;
++                             tp->tm_year, tp->tm_yday,
++                             tp->tm_hour, tp->tm_min, tp->tm_sec);
++      if (time_t_add_ok (*t, d))
++        return *t + d;
+     }
+ 
+   /* Overflow occurred one way or another.  Return the nearest result
+@@ -219,8 +295,8 @@ guess_time_tm (long int year, long int yday, int hour, int min, int sec,
+      match; and don't oscillate between two values, as that would
+      confuse the spring-forward gap detector.  */
+   return (*t < TIME_T_MIDPOINT
+-	  ? (*t <= TIME_T_MIN + 1 ? *t + 1 : TIME_T_MIN)
+-	  : (TIME_T_MAX - 1 <= *t ? *t - 1 : TIME_T_MAX));
++          ? (*t <= TIME_T_MIN + 1 ? *t + 1 : TIME_T_MIN)
++          : (TIME_T_MAX - 1 <= *t ? *t - 1 : TIME_T_MAX));
+ }
+ 
+ /* Use CONVERT to convert *T to a broken down time in *TP.
+@@ -228,7 +304,7 @@ guess_time_tm (long int year, long int yday, int hour, int min, int sec,
+    it is the nearest in-range value and then convert that.  */
+ static struct tm *
+ ranged_convert (struct tm *(*convert) (const time_t *, struct tm *),
+-		time_t *t, struct tm *tp)
++                time_t *t, struct tm *tp)
+ {
+   struct tm *r = convert (t, tp);
+ 
+@@ -238,27 +314,25 @@ ranged_convert (struct tm *(*convert) (const time_t *, struct tm *),
+       time_t ok = 0;
+ 
+       /* BAD is a known unconvertible time_t, and OK is a known good one.
+-	 Use binary search to narrow the range between BAD and OK until
+-	 they differ by 1.  */
++         Use binary search to narrow the range between BAD and OK until
++         they differ by 1.  */
+       while (bad != ok + (bad < 0 ? -1 : 1))
+-	{
+-	  time_t mid = *t = (bad < 0
+-			     ? bad + ((ok - bad) >> 1)
+-			     : ok + ((bad - ok) >> 1));
+-	  r = convert (t, tp);
+-	  if (r)
+-	    ok = mid;
+-	  else
+-	    bad = mid;
+-	}
++        {
++          time_t mid = *t = time_t_avg (ok, bad);
++          r = convert (t, tp);
++          if (r)
++            ok = mid;
++          else
++            bad = mid;
++        }
+ 
+       if (!r && ok)
+-	{
+-	  /* The last conversion attempt failed;
+-	     revert to the most recent successful attempt.  */
+-	  *t = ok;
+-	  r = convert (t, tp);
+-	}
++        {
++          /* The last conversion attempt failed;
++             revert to the most recent successful attempt.  */
++          *t = ok;
++          r = convert (t, tp);
++        }
+     }
+ 
+   return r;
+@@ -273,8 +347,8 @@ ranged_convert (struct tm *(*convert) (const time_t *, struct tm *),
+    This function is external because it is used also by timegm.c.  */
+ time_t
+ __mktime_internal (struct tm *tp,
+-		   struct tm *(*convert) (const time_t *, struct tm *),
+-		   time_t *offset)
++                   struct tm *(*convert) (const time_t *, struct tm *),
++                   time_t *offset)
+ {
+   time_t t, gt, t0, t1, t2;
+   struct tm tm;
+@@ -293,9 +367,7 @@ __mktime_internal (struct tm *tp,
+   int mday = tp->tm_mday;
+   int mon = tp->tm_mon;
+   int year_requested = tp->tm_year;
+-  /* Normalize the value.  */
+-  int isdst = ((tp->tm_isdst >> (8 * sizeof (tp->tm_isdst) - 1))
+-	       | (tp->tm_isdst != 0));
++  int isdst = tp->tm_isdst;
+ 
+   /* 1 if the previous probe was DST.  */
+   int dst2;
+@@ -304,8 +376,8 @@ __mktime_internal (struct tm *tp,
+   int mon_remainder = mon % 12;
+   int negative_mon_remainder = mon_remainder < 0;
+   int mon_years = mon / 12 - negative_mon_remainder;
+-  long int lyear_requested = year_requested;
+-  long int year = lyear_requested + mon_years;
++  long_int lyear_requested = year_requested;
++  long_int year = lyear_requested + mon_years;
+ 
+   /* The other values need not be in range:
+      the remaining code handles minor overflows correctly,
+@@ -315,10 +387,10 @@ __mktime_internal (struct tm *tp,
+   /* Calculate day of year from year, month, and day of month.
+      The result need not be in range.  */
+   int mon_yday = ((__mon_yday[leapyear (year)]
+-		   [mon_remainder + 12 * negative_mon_remainder])
+-		  - 1);
+-  long int lmday = mday;
+-  long int yday = mon_yday + lmday;
++                   [mon_remainder + 12 * negative_mon_remainder])
++                  - 1);
++  long_int lmday = mday;
++  long_int yday = mon_yday + lmday;
+ 
+   time_t guessed_offset = *offset;
+ 
+@@ -327,33 +399,33 @@ __mktime_internal (struct tm *tp,
+   if (LEAP_SECONDS_POSSIBLE)
+     {
+       /* Handle out-of-range seconds specially,
+-	 since ydhms_tm_diff assumes every minute has 60 seconds.  */
++         since ydhms_tm_diff assumes every minute has 60 seconds.  */
+       if (sec < 0)
+-	sec = 0;
++        sec = 0;
+       if (59 < sec)
+-	sec = 59;
++        sec = 59;
+     }
+ 
+   /* Invert CONVERT by probing.  First assume the same offset as last
+      time.  */
+ 
+   t0 = ydhms_diff (year, yday, hour, min, sec,
+-		   EPOCH_YEAR - TM_YEAR_BASE, 0, 0, 0, - guessed_offset);
++                   EPOCH_YEAR - TM_YEAR_BASE, 0, 0, 0, - guessed_offset);
+ 
+   if (TIME_T_MAX / INT_MAX / 366 / 24 / 60 / 60 < 3)
+     {
+       /* time_t isn't large enough to rule out overflows, so check
+-	 for major overflows.  A gross check suffices, since if t0
+-	 has overflowed, it is off by a multiple of TIME_T_MAX -
+-	 TIME_T_MIN + 1.  So ignore any component of the difference
+-	 that is bounded by a small value.  */
++         for major overflows.  A gross check suffices, since if t0
++         has overflowed, it is off by a multiple of TIME_T_MAX -
++         TIME_T_MIN + 1.  So ignore any component of the difference
++         that is bounded by a small value.  */
+ 
+       /* Approximate log base 2 of the number of time units per
+-	 biennium.  A biennium is 2 years; use this unit instead of
+-	 years to avoid integer overflow.  For example, 2 average
+-	 Gregorian years are 2 * 365.2425 * 24 * 60 * 60 seconds,
+-	 which is 63113904 seconds, and rint (log2 (63113904)) is
+-	 26.  */
++         biennium.  A biennium is 2 years; use this unit instead of
++         years to avoid integer overflow.  For example, 2 average
++         Gregorian years are 2 * 365.2425 * 24 * 60 * 60 seconds,
++         which is 63113904 seconds, and rint (log2 (63113904)) is
++         26.  */
+       int ALOG2_SECONDS_PER_BIENNIUM = 26;
+       int ALOG2_MINUTES_PER_BIENNIUM = 20;
+       int ALOG2_HOURS_PER_BIENNIUM = 14;
+@@ -361,119 +433,117 @@ __mktime_internal (struct tm *tp,
+       int LOG2_YEARS_PER_BIENNIUM = 1;
+ 
+       int approx_requested_biennia =
+-	(SHR (year_requested, LOG2_YEARS_PER_BIENNIUM)
+-	 - SHR (EPOCH_YEAR - TM_YEAR_BASE, LOG2_YEARS_PER_BIENNIUM)
+-	 + SHR (mday, ALOG2_DAYS_PER_BIENNIUM)
+-	 + SHR (hour, ALOG2_HOURS_PER_BIENNIUM)
+-	 + SHR (min, ALOG2_MINUTES_PER_BIENNIUM)
+-	 + (LEAP_SECONDS_POSSIBLE
+-	    ? 0
+-	    : SHR (sec, ALOG2_SECONDS_PER_BIENNIUM)));
++        (SHR (year_requested, LOG2_YEARS_PER_BIENNIUM)
++         - SHR (EPOCH_YEAR - TM_YEAR_BASE, LOG2_YEARS_PER_BIENNIUM)
++         + SHR (mday, ALOG2_DAYS_PER_BIENNIUM)
++         + SHR (hour, ALOG2_HOURS_PER_BIENNIUM)
++         + SHR (min, ALOG2_MINUTES_PER_BIENNIUM)
++         + (LEAP_SECONDS_POSSIBLE
++            ? 0
++            : SHR (sec, ALOG2_SECONDS_PER_BIENNIUM)));
+ 
+       int approx_biennia = SHR (t0, ALOG2_SECONDS_PER_BIENNIUM);
+       int diff = approx_biennia - approx_requested_biennia;
+-      int abs_diff = diff < 0 ? - diff : diff;
++      int abs_diff = diff < 0 ? -1 - diff : diff;
+ 
+       /* IRIX 4.0.5 cc miscalculates TIME_T_MIN / 3: it erroneously
+-	 gives a positive value of 715827882.  Setting a variable
+-	 first then doing math on it seems to work.
+-	 (ghazi@caip.rutgers.edu) */
++         gives a positive value of 715827882.  Setting a variable
++         first then doing math on it seems to work.
++         (ghazi@caip.rutgers.edu) */
+       time_t time_t_max = TIME_T_MAX;
+       time_t time_t_min = TIME_T_MIN;
+       time_t overflow_threshold =
+-	(time_t_max / 3 - time_t_min / 3) >> ALOG2_SECONDS_PER_BIENNIUM;
++        (time_t_max / 3 - time_t_min / 3) >> ALOG2_SECONDS_PER_BIENNIUM;
+ 
+       if (overflow_threshold < abs_diff)
+-	{
+-	  /* Overflow occurred.  Try repairing it; this might work if
+-	     the time zone offset is enough to undo the overflow.  */
+-	  time_t repaired_t0 = -1 - t0;
+-	  approx_biennia = SHR (repaired_t0, ALOG2_SECONDS_PER_BIENNIUM);
+-	  diff = approx_biennia - approx_requested_biennia;
+-	  abs_diff = diff < 0 ? - diff : diff;
+-	  if (overflow_threshold < abs_diff)
+-	    return -1;
+-	  guessed_offset += repaired_t0 - t0;
+-	  t0 = repaired_t0;
+-	}
++        {
++          /* Overflow occurred.  Try repairing it; this might work if
++             the time zone offset is enough to undo the overflow.  */
++          time_t repaired_t0 = -1 - t0;
++          approx_biennia = SHR (repaired_t0, ALOG2_SECONDS_PER_BIENNIUM);
++          diff = approx_biennia - approx_requested_biennia;
++          abs_diff = diff < 0 ? -1 - diff : diff;
++          if (overflow_threshold < abs_diff)
++            return -1;
++          guessed_offset += repaired_t0 - t0;
++          t0 = repaired_t0;
++        }
+     }
+ 
+   /* Repeatedly use the error to improve the guess.  */
+ 
+   for (t = t1 = t2 = t0, dst2 = 0;
+        (gt = guess_time_tm (year, yday, hour, min, sec, &t,
+-			    ranged_convert (convert, &t, &tm)),
+-	t != gt);
++                            ranged_convert (convert, &t, &tm)),
++        t != gt);
+        t1 = t2, t2 = t, t = gt, dst2 = tm.tm_isdst != 0)
+     if (t == t1 && t != t2
+-	&& (tm.tm_isdst < 0
+-	    || (isdst < 0
+-		? dst2 <= (tm.tm_isdst != 0)
+-		: (isdst != 0) != (tm.tm_isdst != 0))))
++        && (tm.tm_isdst < 0
++            || (isdst < 0
++                ? dst2 <= (tm.tm_isdst != 0)
++                : (isdst != 0) != (tm.tm_isdst != 0))))
+       /* We can't possibly find a match, as we are oscillating
+-	 between two values.  The requested time probably falls
+-	 within a spring-forward gap of size GT - T.  Follow the common
+-	 practice in this case, which is to return a time that is GT - T
+-	 away from the requested time, preferring a time whose
+-	 tm_isdst differs from the requested value.  (If no tm_isdst
+-	 was requested and only one of the two values has a nonzero
+-	 tm_isdst, prefer that value.)  In practice, this is more
+-	 useful than returning -1.  */
++         between two values.  The requested time probably falls
++         within a spring-forward gap of size GT - T.  Follow the common
++         practice in this case, which is to return a time that is GT - T
++         away from the requested time, preferring a time whose
++         tm_isdst differs from the requested value.  (If no tm_isdst
++         was requested and only one of the two values has a nonzero
++         tm_isdst, prefer that value.)  In practice, this is more
++         useful than returning -1.  */
+       goto offset_found;
+     else if (--remaining_probes == 0)
+       return -1;
+ 
+   /* We have a match.  Check whether tm.tm_isdst has the requested
+      value, if any.  */
+-  if (isdst != tm.tm_isdst && 0 <= isdst && 0 <= tm.tm_isdst)
++  if (isdst_differ (isdst, tm.tm_isdst))
+     {
+       /* tm.tm_isdst has the wrong value.  Look for a neighboring
+-	 time with the right value, and use its UTC offset.
++         time with the right value, and use its UTC offset.
+ 
+-	 Heuristic: probe the adjacent timestamps in both directions,
+-	 looking for the desired isdst.  This should work for all real
+-	 time zone histories in the tz database.  */
++         Heuristic: probe the adjacent timestamps in both directions,
++         looking for the desired isdst.  This should work for all real
++         time zone histories in the tz database.  */
+ 
+       /* Distance between probes when looking for a DST boundary.  In
+-	 tzdata2003a, the shortest period of DST is 601200 seconds
+-	 (e.g., America/Recife starting 2000-10-08 01:00), and the
+-	 shortest period of non-DST surrounded by DST is 694800
+-	 seconds (Africa/Tunis starting 1943-04-17 01:00).  Use the
+-	 minimum of these two values, so we don't miss these short
+-	 periods when probing.  */
++         tzdata2003a, the shortest period of DST is 601200 seconds
++         (e.g., America/Recife starting 2000-10-08 01:00), and the
++         shortest period of non-DST surrounded by DST is 694800
++         seconds (Africa/Tunis starting 1943-04-17 01:00).  Use the
++         minimum of these two values, so we don't miss these short
++         periods when probing.  */
+       int stride = 601200;
+ 
+       /* The longest period of DST in tzdata2003a is 536454000 seconds
+-	 (e.g., America/Jujuy starting 1946-10-01 01:00).  The longest
+-	 period of non-DST is much longer, but it makes no real sense
+-	 to search for more than a year of non-DST, so use the DST
+-	 max.  */
++         (e.g., America/Jujuy starting 1946-10-01 01:00).  The longest
++         period of non-DST is much longer, but it makes no real sense
++         to search for more than a year of non-DST, so use the DST
++         max.  */
+       int duration_max = 536454000;
+ 
+       /* Search in both directions, so the maximum distance is half
+-	 the duration; add the stride to avoid off-by-1 problems.  */
++         the duration; add the stride to avoid off-by-1 problems.  */
+       int delta_bound = duration_max / 2 + stride;
+ 
+       int delta, direction;
+ 
+       for (delta = stride; delta < delta_bound; delta += stride)
+-	for (direction = -1; direction <= 1; direction += 2)
+-	  {
+-	    time_t ot = t + delta * direction;
+-	    if ((ot < t) == (direction < 0))
+-	      {
+-		struct tm otm;
+-		ranged_convert (convert, &ot, &otm);
+-		if (otm.tm_isdst == isdst)
+-		  {
+-		    /* We found the desired tm_isdst.
+-		       Extrapolate back to the desired time.  */
+-		    t = guess_time_tm (year, yday, hour, min, sec, &ot, &otm);
+-		    ranged_convert (convert, &t, &tm);
+-		    goto offset_found;
+-		  }
+-	      }
+-	  }
++        for (direction = -1; direction <= 1; direction += 2)
++          if (time_t_int_add_ok (t, delta * direction))
++            {
++              time_t ot = t + delta * direction;
++              struct tm otm;
++              ranged_convert (convert, &ot, &otm);
++              if (! isdst_differ (isdst, otm.tm_isdst))
++                {
++                  /* We found the desired tm_isdst.
++                     Extrapolate back to the desired time.  */
++                  t = guess_time_tm (year, yday, hour, min, sec, &ot, &otm);
++                  ranged_convert (convert, &t, &tm);
++                  goto offset_found;
++                }
++            }
+     }
+ 
+  offset_found:
+@@ -482,14 +552,16 @@ __mktime_internal (struct tm *tp,
+   if (LEAP_SECONDS_POSSIBLE && sec_requested != tm.tm_sec)
+     {
+       /* Adjust time to reflect the tm_sec requested, not the normalized value.
+-	 Also, repair any damage from a false match due to a leap second.  */
++         Also, repair any damage from a false match due to a leap second.  */
+       int sec_adjustment = (sec == 0 && tm.tm_sec == 60) - sec;
++      if (! time_t_int_add_ok (t, sec_requested))
++        return -1;
+       t1 = t + sec_requested;
++      if (! time_t_int_add_ok (t1, sec_adjustment))
++        return -1;
+       t2 = t1 + sec_adjustment;
+-      if (((t1 < t) != (sec_requested < 0))
+-	  | ((t2 < t1) != (sec_adjustment < 0))
+-	  | ! convert (&t2, &tm))
+-	return -1;
++      if (! convert (&t2, &tm))
++        return -1;
+       t = t2;
+     }
+ 
+@@ -510,7 +582,7 @@ mktime (struct tm *tp)
+ {
+ #ifdef _LIBC
+   /* POSIX.1 8.1.1 requires that whenever mktime() is called, the
+-     time zone names contained in the external variable `tzname' shall
++     time zone names contained in the external variable 'tzname' shall
+      be set as if the tzset() function had been called.  */
+   __tzset ();
+ #endif
+@@ -533,13 +605,13 @@ static int
+ not_equal_tm (const struct tm *a, const struct tm *b)
+ {
+   return ((a->tm_sec ^ b->tm_sec)
+-	  | (a->tm_min ^ b->tm_min)
+-	  | (a->tm_hour ^ b->tm_hour)
+-	  | (a->tm_mday ^ b->tm_mday)
+-	  | (a->tm_mon ^ b->tm_mon)
+-	  | (a->tm_year ^ b->tm_year)
+-	  | (a->tm_yday ^ b->tm_yday)
+-	  | (a->tm_isdst ^ b->tm_isdst));
++          | (a->tm_min ^ b->tm_min)
++          | (a->tm_hour ^ b->tm_hour)
++          | (a->tm_mday ^ b->tm_mday)
++          | (a->tm_mon ^ b->tm_mon)
++          | (a->tm_year ^ b->tm_year)
++          | (a->tm_yday ^ b->tm_yday)
++          | isdst_differ (a->tm_isdst, b->tm_isdst));
+ }
+ 
+ static void
+@@ -547,9 +619,9 @@ print_tm (const struct tm *tp)
+ {
+   if (tp)
+     printf ("%04d-%02d-%02d %02d:%02d:%02d yday %03d wday %d isdst %d",
+-	    tp->tm_year + TM_YEAR_BASE, tp->tm_mon + 1, tp->tm_mday,
+-	    tp->tm_hour, tp->tm_min, tp->tm_sec,
+-	    tp->tm_yday, tp->tm_wday, tp->tm_isdst);
++            tp->tm_year + TM_YEAR_BASE, tp->tm_mon + 1, tp->tm_mday,
++            tp->tm_hour, tp->tm_min, tp->tm_sec,
++            tp->tm_yday, tp->tm_wday, tp->tm_isdst);
+   else
+     printf ("0");
+ }
+@@ -581,11 +653,11 @@ main (int argc, char **argv)
+ 
+   if ((argc == 3 || argc == 4)
+       && (sscanf (argv[1], "%d-%d-%d%c",
+-		  &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &trailer)
+-	  == 3)
++                  &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &trailer)
++          == 3)
+       && (sscanf (argv[2], "%d:%d:%d%c",
+-		  &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &trailer)
+-	  == 3))
++                  &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &trailer)
++          == 3))
+     {
+       tm.tm_year -= TM_YEAR_BASE;
+       tm.tm_mon--;
+@@ -594,10 +666,10 @@ main (int argc, char **argv)
+       tl = mktime (&tmk);
+       lt = localtime (&tl);
+       if (lt)
+-	{
+-	  tml = *lt;
+-	  lt = &tml;
+-	}
++        {
++          tml = *lt;
++          lt = &tml;
++        }
+       printf ("mktime returns %ld == ", (long int) tl);
+       print_tm (&tmk);
+       printf ("\n");
+@@ -610,51 +682,51 @@ main (int argc, char **argv)
+       time_t to = atol (argv[3]);
+ 
+       if (argc == 4)
+-	for (tl = from; by < 0 ? to <= tl : tl <= to; tl = tl1)
+-	  {
+-	    lt = localtime (&tl);
+-	    if (lt)
+-	      {
+-		tmk = tml = *lt;
+-		tk = mktime (&tmk);
+-		status |= check_result (tk, tmk, tl, &tml);
+-	      }
+-	    else
+-	      {
+-		printf ("localtime (%ld) yields 0\n", (long int) tl);
+-		status = 1;
+-	      }
+-	    tl1 = tl + by;
+-	    if ((tl1 < tl) != (by < 0))
+-	      break;
+-	  }
++        for (tl = from; by < 0 ? to <= tl : tl <= to; tl = tl1)
++          {
++            lt = localtime (&tl);
++            if (lt)
++              {
++                tmk = tml = *lt;
++                tk = mktime (&tmk);
++                status |= check_result (tk, tmk, tl, &tml);
++              }
++            else
++              {
++                printf ("localtime (%ld) yields 0\n", (long int) tl);
++                status = 1;
++              }
++            tl1 = tl + by;
++            if ((tl1 < tl) != (by < 0))
++              break;
++          }
+       else
+-	for (tl = from; by < 0 ? to <= tl : tl <= to; tl = tl1)
+-	  {
+-	    /* Null benchmark.  */
+-	    lt = localtime (&tl);
+-	    if (lt)
+-	      {
+-		tmk = tml = *lt;
+-		tk = tl;
+-		status |= check_result (tk, tmk, tl, &tml);
+-	      }
+-	    else
+-	      {
+-		printf ("localtime (%ld) yields 0\n", (long int) tl);
+-		status = 1;
+-	      }
+-	    tl1 = tl + by;
+-	    if ((tl1 < tl) != (by < 0))
+-	      break;
+-	  }
++        for (tl = from; by < 0 ? to <= tl : tl <= to; tl = tl1)
++          {
++            /* Null benchmark.  */
++            lt = localtime (&tl);
++            if (lt)
++              {
++                tmk = tml = *lt;
++                tk = tl;
++                status |= check_result (tk, tmk, tl, &tml);
++              }
++            else
++              {
++                printf ("localtime (%ld) yields 0\n", (long int) tl);
++                status = 1;
++              }
++            tl1 = tl + by;
++            if ((tl1 < tl) != (by < 0))
++              break;
++          }
+     }
+   else
+     printf ("Usage:\
+ \t%s YYYY-MM-DD HH:MM:SS [ISDST] # Test given time.\n\
+ \t%s FROM BY TO # Test values FROM, FROM+BY, ..., TO.\n\
+ \t%s FROM BY TO - # Do not test those values (for benchmark).\n",
+-	    argv[0], argv[0], argv[0]);
++            argv[0], argv[0], argv[0]);
+ 
+   return status;
+ }
+@@ -663,6 +735,6 @@ main (int argc, char **argv)
+ 
+ /*
+ Local Variables:
+-compile-command: "gcc -DDEBUG -Wall -W -O -g mktime.c -o mktime"
++compile-command: "gcc -DDEBUG -I. -Wall -W -O2 -g mktime.c -o mktime"
+ End:
+ */
 diff --git a/time/offtime.c b/time/offtime.c
-index c0b1db5..312ad42 100644
+index c0b1db5..703ae9e 100644
 --- a/time/offtime.c
 +++ b/time/offtime.c
-@@ -36,6 +36,8 @@ __offtime (t, offset, tp)
+@@ -32,7 +32,7 @@ __offtime (t, offset, tp)
+      long int offset;
+      struct tm *tp;
+ {
+-  long int days, rem, y;
++  time_t days, rem, y;
    const unsigned short int *ip;
  
    days = *t / SECS_PER_DAY;
-+  if (days != *t / SECS_PER_DAY)
-+    goto overflow;
-   rem = *t % SECS_PER_DAY;
-   rem += offset;
-   while (rem < 0)
-@@ -66,6 +68,9 @@ __offtime (t, offset, tp)
+@@ -64,7 +64,7 @@ __offtime (t, offset, tp)
+   while (days < 0 || days >= (__isleap (y) ? 366 : 365))
+     {
        /* Guess a corrected year, assuming 365 days per year.  */
-       long int yg = y + days / 365 - (days % 365 < 0);
+-      long int yg = y + days / 365 - (days % 365 < 0);
++      time_t yg = y + days / 365 - (days % 365 < 0);
  
-+      if (yg < 0)
-+	goto overflow;
-+
        /* Adjust DAYS and Y to match the guessed year.  */
        days -= ((yg - y) * 365
- 	       + LEAPS_THRU_END_OF (yg - 1)
-@@ -75,6 +80,7 @@ __offtime (t, offset, tp)
-   tp->tm_year = y - 1900;
-   if (tp->tm_year != y - 1900)
-     {
-+overflow:
-       /* The year cannot be represented due to overflow.  */
-       __set_errno (EOVERFLOW);
-       return 0;
 diff --git a/time/time.h b/time/time.h
 index fee8d27..c448ee2 100644
 --- a/time/time.h
