@@ -1,0 +1,74 @@
+From ceb9e56b3d1f8c1922e0526c2e841373843460e2 Mon Sep 17 00:00:00 2001
+From: Paul Pluzhnikov <ppluzhnikov@google.com>
+Date: Wed, 13 Jun 2012 09:57:18 -0700
+Subject: [PATCH] Suppress sign-conversion warning from FD_SET.
+
+[BZ #14210] See <http://sourceware.org/ml/libc-alpha/2012-05/msg01794.html>.
+* debug/fdelt_chk.c (__fdelt_chk): Accept and return long int,
+not unsigned long int.
+* misc/bits/select2.h (__fdelt_chk, __fdelt_warn, __FD_ELT): Likewise.
+---
+ ChangeLog           |    9 +++++++++
+ debug/fdelt_chk.c   |    8 ++++----
+ misc/bits/select2.h |   13 +++++++------
+ 3 files changed, 20 insertions(+), 10 deletions(-)
+
+diff --git a/debug/fdelt_chk.c b/debug/fdelt_chk.c
+index 5e06f8f..ded3f2f 100644
+--- a/debug/fdelt_chk.c
++++ b/debug/fdelt_chk.c
+@@ -1,4 +1,4 @@
+-/* Copyright (C) 2011 Free Software Foundation, Inc.
++/* Copyright (C) 2011, 2012 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -18,10 +18,10 @@
+ #include <sys/select.h>
+ 
+ 
+-unsigned long int
+-__fdelt_chk (unsigned long int d)
++long int
++__fdelt_chk (long int d)
+ {
+-  if (d >= FD_SETSIZE)
++  if (d < 0 || d >= FD_SETSIZE)
+     __chk_fail ();
+ 
+   return d / __NFDBITS;
+diff --git a/misc/bits/select2.h b/misc/bits/select2.h
+index 9679925..76ae368 100644
+--- a/misc/bits/select2.h
++++ b/misc/bits/select2.h
+@@ -1,5 +1,5 @@
+ /* Checking macros for select functions.
+-   Copyright (C) 2011 Free Software Foundation, Inc.
++   Copyright (C) 2011, 2012 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -21,14 +21,15 @@
+ #endif
+ 
+ /* Helper functions to issue warnings and errors when needed.  */
+-extern unsigned long int __fdelt_chk (unsigned long int __d);
+-extern unsigned long int __fdelt_warn (unsigned long int __d)
++extern long int __fdelt_chk (long int __d);
++extern long int __fdelt_warn (long int __d)
+   __warnattr ("bit outside of fd_set selected");
+ #undef __FD_ELT
+ #define	__FD_ELT(d) \
+   __extension__								    \
+-  ({ unsigned long int __d = (d);					    \
++  ({ long int __d = (d);						    \
+      (__builtin_constant_p (__d)					    \
+-      ? (__d >= __FD_SETSIZE						    \
+-	 ? __fdelt_warn (__d) : (__d / __NFDBITS))			    \
++      ? (0 <= __d && __d < __FD_SETSIZE					    \
++	 ? (__d / __NFDBITS)						    \
++	 : __fdelt_warn (__d))						    \
+       : __fdelt_chk (__d)); })
+-- 
+1.7.9.7
+
