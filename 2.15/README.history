@@ -1,3 +1,6 @@
+17		14 Jun 2012
+	U 1200_all_glibc-2.15-x32.patch
+
 16		13 Jun 2012
 	+ 0096_all_glibc-2.15-fortify-fd-set.patch
 
