@@ -1,3 +1,6 @@
+18		17 Jun 2012
+	+ 0088_all_glibc-2.12-getconf-buffer-overflow.patch
+
 17		14 Jun 2012
 	U 1200_all_glibc-2.15-x32.patch
 

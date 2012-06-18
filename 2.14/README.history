@@ -1,4 +1,5 @@
 8		[pending]
+	+ 0088_all_glibc-2.12-getconf-buffer-overflow.patch
 	- 1103_all_glibc-new-valencian-locale.patch
 	+ 1510_all_glibc-2.13-hppa-libm.patch
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
