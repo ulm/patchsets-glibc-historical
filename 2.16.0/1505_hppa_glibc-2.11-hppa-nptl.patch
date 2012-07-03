@@ -1,0 +1,233 @@
+http://bugs.gentoo.org/301642
+
+--- a/elf/dl-fptr.c	2010-07-25 21:58:31.241131107 +0200
++++ b/elf/dl-fptr.c	2010-07-25 22:00:54.323726976 +0200
+@@ -56,7 +56,8 @@
+   }
+ local =
+   {
+-    .root = &local.boot_table,
++    /* Address of .boot_table is not known until runtime.  */
++    .root = 0,
+     .npages = 2,
+     .boot_table =
+       {
+@@ -93,6 +94,17 @@
+   return new_table;
+ }
+ 
++/* Must call _dl_fptr_init before using any other function.  */
++void 
++_dl_fptr_init (void)
++{
++  struct local *l;
++
++  ELF_MACHINE_LOAD_ADDRESS (l, local);
++  /* Initialize root once.  */
++  if (__builtin_expect (l->root == 0, 0))
++    l->root = &l->boot_table;
++}
+ 
+ static ElfW(Addr)
+ make_fdesc (ElfW(Addr) ip, ElfW(Addr) gp)
+--- a/nptl/allocatestack.c	2010-07-25 21:58:30.669136153 +0200
++++ b/nptl/allocatestack.c	2010-07-25 21:59:05.528795435 +0200
+@@ -354,6 +354,15 @@
+   if (__builtin_expect (attr->flags & ATTR_FLAG_STACKADDR, 0))
+     {
+       uintptr_t adj;
++#if _STACK_GROWS_DOWN
++      char * stackaddr = (char *) attr->stackaddr;
++#else
++      /* Assume the same layout as the _STACK_GROWS_DOWN case, 
++	 with struct pthread at the top of the stack block. 
++	 Later we adjust the guard location and stack address 
++	 to match the _STACK_GROWS_UP case.  */
++      char * stackaddr = (char *) attr->stackaddr + attr->stacksize;
++#endif
+ 
+       /* If the user also specified the size of the stack make sure it
+ 	 is large enough.  */
+@@ -363,11 +372,11 @@
+ 
+       /* Adjust stack size for alignment of the TLS block.  */
+ #if TLS_TCB_AT_TP
+-      adj = ((uintptr_t) attr->stackaddr - TLS_TCB_SIZE)
++      adj = ((uintptr_t) stackaddr - TLS_TCB_SIZE)
+ 	    & __static_tls_align_m1;
+       assert (size > adj + TLS_TCB_SIZE);
+ #elif TLS_DTV_AT_TP
+-      adj = ((uintptr_t) attr->stackaddr - __static_tls_size)
++      adj = ((uintptr_t) stackaddr - __static_tls_size)
+ 	    & __static_tls_align_m1;
+       assert (size > adj);
+ #endif
+@@ -377,10 +386,10 @@
+ 	 the stack.  It is the user's responsibility to do this if it
+ 	 is wanted.  */
+ #if TLS_TCB_AT_TP
+-      pd = (struct pthread *) ((uintptr_t) attr->stackaddr
++      pd = (struct pthread *) ((uintptr_t) stackaddr
+ 			       - TLS_TCB_SIZE - adj);
+ #elif TLS_DTV_AT_TP
+-      pd = (struct pthread *) (((uintptr_t) attr->stackaddr
++      pd = (struct pthread *) (((uintptr_t) stackaddr
+ 				- __static_tls_size - adj)
+ 			       - TLS_PRE_TCB_SIZE);
+ #endif
+@@ -392,7 +401,7 @@
+       pd->specific[0] = pd->specific_1stblock;
+ 
+       /* Remember the stack-related values.  */
+-      pd->stackblock = (char *) attr->stackaddr - size;
++      pd->stackblock = (char *) stackaddr - size;
+       pd->stackblock_size = size;
+ 
+       /* This is a user-provided stack.  It will not be queued in the
+@@ -617,7 +626,7 @@
+ 	  char *guard = mem + (((size - guardsize) / 2) & ~pagesize_m1);
+ #elif _STACK_GROWS_DOWN
+ 	  char *guard = mem;
+-# elif _STACK_GROWS_UP
++#elif _STACK_GROWS_UP
+ 	  char *guard = (char *) (((uintptr_t) pd - guardsize) & ~pagesize_m1);
+ #endif
+ 	  if (mprotect (guard, guardsize, PROT_NONE) != 0)
+@@ -716,7 +725,6 @@
+   *stack = stacktop;
+ #elif _STACK_GROWS_UP
+   *stack = pd->stackblock;
+-  assert (*stack > 0);
+ #endif
+ 
+   return 0;
+--- a/nptl/pthread_attr_getstack.c	2010-07-25 21:58:30.717135358 +0200
++++ b/nptl/pthread_attr_getstack.c	2010-07-25 21:59:05.532796982 +0200
+@@ -33,7 +33,11 @@
+   iattr = (struct pthread_attr *) attr;
+ 
+   /* Store the result.  */
++#ifdef _STACK_GROWS_DOWN
+   *stackaddr = (char *) iattr->stackaddr - iattr->stacksize;
++#else
++  *stackaddr = (char *) iattr->stackaddr;
++#endif
+   *stacksize = iattr->stacksize;
+ 
+   return 0;
+--- a/nptl/pthread_attr_setstack.c	2010-07-25 21:58:30.717135358 +0200
++++ b/nptl/pthread_attr_setstack.c	2010-07-25 21:59:05.532796982 +0200
+@@ -48,7 +48,11 @@
+ #endif
+ 
+   iattr->stacksize = stacksize;
++#if _STACK_GROWS_DOWN
+   iattr->stackaddr = (char *) stackaddr + stacksize;
++#else
++  iattr->stackaddr = (char *) stackaddr;
++#endif
+   iattr->flags |= ATTR_FLAG_STACKADDR;
+ 
+   return 0;
+@@ -81,7 +85,11 @@
+ #  endif
+ 
+   iattr->stacksize = stacksize;
++#if _STACK_GROWS_DOWN
+   iattr->stackaddr = (char *) stackaddr + stacksize;
++#else
++  iattr->stackaddr = (char *) stackaddr;
++#endif
+   iattr->flags |= ATTR_FLAG_STACKADDR;
+ 
+   return 0;
+--- a/nptl/pthread_create.c	2010-07-25 21:58:30.713135617 +0200
++++ b/nptl/pthread_create.c	2010-07-25 21:59:05.536794818 +0200
+@@ -383,12 +383,18 @@
+ #ifdef _STACK_GROWS_DOWN
+   char *sp = CURRENT_STACK_FRAME;
+   size_t freesize = (sp - (char *) pd->stackblock) & ~pagesize_m1;
+-#else
+-# error "to do"
+-#endif
+   assert (freesize < pd->stackblock_size);
+   if (freesize > PTHREAD_STACK_MIN)
+     madvise (pd->stackblock, freesize - PTHREAD_STACK_MIN, MADV_DONTNEED);
++#else
++  char *sp = CURRENT_STACK_FRAME;
++  size_t freesize = ((char *) pd->stackblock + pd->stackblock_size - sp) 
++		     & ~pagesize_m1;
++  void *freeblock = (void *) (sp + PTHREAD_STACK_MIN);
++  assert (freesize < pd->stackblock_size);
++  if (freesize > PTHREAD_STACK_MIN)
++    madvise (freeblock, freesize - PTHREAD_STACK_MIN, MADV_DONTNEED);
++#endif
+ 
+   /* If the thread is detached free the TCB.  */
+   if (IS_DETACHED (pd))
+--- a/nptl/pthread_getattr_np.c	2010-07-25 21:58:30.713135617 +0200
++++ b/nptl/pthread_getattr_np.c	2010-07-25 21:59:05.536794818 +0200
+@@ -61,7 +62,11 @@
+   if (__builtin_expect (thread->stackblock != NULL, 1))
+     {
+       iattr->stacksize = thread->stackblock_size;
++#ifdef _STACK_GROWS_DOWN
+       iattr->stackaddr = (char *) thread->stackblock + iattr->stacksize;
++#else
++      iattr->stackaddr = (char *) thread->stackblock;
++#endif
+     }
+   else
+     {
+@@ -110,13 +115,21 @@
+ 		    {
+ 		      /* Found the entry.  Now we have the info we need.  */
+ 		      iattr->stacksize = rl.rlim_cur;
++#ifdef _STACK_GROWS_DOWN
+ 		      iattr->stackaddr = (void *) to;
+ 
+ 		      /* The limit might be too high.  */
+ 		      if ((size_t) iattr->stacksize
+ 			  > (size_t) iattr->stackaddr - last_to)
+ 			iattr->stacksize = (size_t) iattr->stackaddr - last_to;
++#else
++		      iattr->stackaddr = (void *) from;
+ 
++		      /* The limit might be too high.  */
++		      if ((size_t) iattr->stacksize
++			  > to - (size_t) iattr->stackaddr)
++			iattr->stacksize = to - (size_t) iattr->stackaddr;
++#endif
+ 		      /* We succeed and no need to look further.  */
+ 		      ret = 0;
+ 		      break;
+
+2010-02-09  Carlos O'Donell  <carlos@codesourcery.com>
+
+	* sysdeps/hppa/dl-machine.h (ELF_MACHINE_BEFORE_RTLD_RELOC):
+	Call _dl_fptr_init.
+
+--- a/ports/sysdeps/hppa/dl-machine.h	2010-07-25 21:58:30.189140390 +0200
++++ b/ports/sysdeps/hppa/dl-machine.h	2010-07-25 22:02:25.502848298 +0200
+@@ -64,7 +64,8 @@
+ }
+ 
+ #define ELF_MACHINE_BEFORE_RTLD_RELOC(dynamic_info)		\
+-	__hppa_init_bootstrap_fdesc_table (&bootstrap_map);
++	__hppa_init_bootstrap_fdesc_table (&bootstrap_map);	\
++	_dl_fptr_init();
+ 
+ /* Return nonzero iff ELF header is compatible with the running host.  */
+ static inline int
+--- a/sysdeps/generic/dl-fptr.h	2010-07-25 21:58:30.525138223 +0200
++++ b/sysdeps/generic/dl-fptr.h	2010-07-25 22:00:54.323726976 +0200
+@@ -40,6 +40,9 @@
+ 
+ extern ElfW(Addr) _dl_boot_fptr_table [];
+ 
++/* Must be called before any other function.  */
++extern void _dl_fptr_init (void);
++
+ extern ElfW(Addr) _dl_make_fptr (struct link_map *, const ElfW(Sym) *,
+ 				 ElfW(Addr));
+ 
