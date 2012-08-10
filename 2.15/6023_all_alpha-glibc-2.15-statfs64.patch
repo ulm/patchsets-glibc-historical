@@ -1,0 +1,48 @@
+From fe7b738e7a0cf88f28bb40f55daa4237733f290f Mon Sep 17 00:00:00 2001
+From: Richard Henderson <rth@twiddle.net>
+Date: Wed, 8 Feb 2012 11:43:50 -0800
+Subject: [PATCH] alpha: Require kernel version 2.6.0.
+
+The minimum version that supports TLS.  Also avoids having to
+fix the build for ancient __ASSUME_* settings.
+---
+ ChangeLog.alpha                                 |    5 +++++
+ sysdeps/unix/sysv/linux/alpha/configure         |    8 ++++++++
+ sysdeps/unix/sysv/linux/alpha/configure.in      |    8 ++++++++
+ sysdeps/unix/sysv/linux/alpha/kernel-features.h |    9 +++++++++
+ 4 files changed, 30 insertions(+)
+ create mode 100644 sysdeps/unix/sysv/linux/alpha/configure
+ create mode 100644 sysdeps/unix/sysv/linux/alpha/configure.in
+
+2012-02-08  Richard Henderson  <rth@twiddle.net>
+
+	* sysdeps/unix/sysv/linux/alpha/kernel-features.h: Protect from
+	multiple includes.  Disable statfs64 entirely.
+
+diff --git a/sysdeps/unix/sysv/linux/alpha/kernel-features.h b/sysdeps/unix/sysv/linux/alpha/kernel-features.h
+index 9c640f9..ce4d160 100644
+--- a/ports/sysdeps/unix/sysv/linux/alpha/kernel-features.h
++++ b/ports/sysdeps/unix/sysv/linux/alpha/kernel-features.h
+@@ -18,6 +18,9 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++#ifndef _KERNEL_FEATURES_H
++#define _KERNEL_FEATURES_H 1
++
+ /* alpha switched to a 64-bit timeval sometime before 2.2.0.  */
+ #if __LINUX_KERNEL_VERSION >= 131584
+ # define __ASSUME_TIMEVAL64	1
+@@ -96,3 +99,9 @@
+ #if __LINUX_KERNEL_VERSION < 0x020621
+ # undef __ASSUME_FALLOCATE
+ #endif
++
++/* There never has been support for fstat64.  */
++#undef __ASSUME_STATFS64
++#define __ASSUME_STATFS64 0
++
++#endif /* _KERNEL_FEATURES_H */
+-- 
+1.7.9.7
+

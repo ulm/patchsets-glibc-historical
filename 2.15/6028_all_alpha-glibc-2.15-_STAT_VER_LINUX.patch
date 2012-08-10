@@ -1,0 +1,31 @@
+From 2011e6018cece62599c78e9a3c500ec887335a90 Mon Sep 17 00:00:00 2001
+From: Richard Henderson <rth@twiddle.net>
+Date: Wed, 8 Feb 2012 11:48:38 -0800
+Subject: [PATCH] alpha: Define _STAT_VER_LINUX.
+
+---
+ ChangeLog.alpha                           |    2 ++
+ sysdeps/unix/sysv/linux/alpha/bits/stat.h |    5 +++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+2012-02-08  Richard Henderson  <rth@twiddle.net>
+
+	* sysdeps/unix/sysv/linux/alpha/bits/stat.h (_STAT_VER_LINUX): New.
+
+diff --git a/sysdeps/unix/sysv/linux/alpha/bits/stat.h b/sysdeps/unix/sysv/linux/alpha/bits/stat.h
+index d7241bd..e70e836 100644
+--- a/ports/sysdeps/unix/sysv/linux/alpha/bits/stat.h
++++ b/ports/sysdeps/unix/sysv/linux/alpha/bits/stat.h
+@@ -30,7 +30,8 @@
+ #define _STAT_VER_GLIBC2_1	2
+ #define _STAT_VER_KERNEL64	3
+ #define _STAT_VER_GLIBC2_3_4	3
+-#define _STAT_VER		_STAT_VER_GLIBC2_3_4
++#define _STAT_VER_LINUX		3
++#define _STAT_VER		_STAT_VER_LINUX
+ 
+ /* Versions of the `xmknod' interface.  */
+ #define _MKNOD_VER_LINUX	0
+-- 
+1.7.9.7
+

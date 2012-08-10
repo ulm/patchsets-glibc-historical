@@ -1,5 +1,12 @@
-19		[pending]
+19		10 Aug 2012
 	- 1200_all_glibc-2.15-x32.patch
+	- 6023_all_alpha-glibc-2.13-statfs64.patch
+	+ 6023_all_alpha-glibc-2.15-statfs64.patch
+	+ 6024_all_alpha-glibc-2.15-relro.patch
+	+ 6025_all_alpha-glibc-2.15-drop-tls-checks.patch
+	+ 6027_all_alpha-glibc-2.15-TLS_DTV_UNALLOCATED.patch
+	+ 6028_all_alpha-glibc-2.15-_STAT_VER_LINUX.patch
+	+ 6029_all_alpha-glibc-2.15-fstatat64.patch
 
 18		17 Jun 2012
 	+ 0088_all_glibc-2.12-getconf-buffer-overflow.patch

@@ -1,0 +1,14 @@
+latest glibc tree has lower this value, so do the same (since
+0x10000 is too large and fails with at least binutils-2.22)
+
+--- a/configure
++++ b/configure
+@@ -6352,7 +6352,7 @@
+       libc_commonpagesize=0x4000
+       ;;
+     alpha*)
+-      libc_commonpagesize=0x10000
++      libc_commonpagesize=0x2000
+       libc_relro_required=yes
+       ;;
+   esac

@@ -1,0 +1,30 @@
+From 6aa8bd8cd15f1563db859805e9681cb750247667 Mon Sep 17 00:00:00 2001
+From: Richard Henderson <rth@twiddle.net>
+Date: Wed, 8 Feb 2012 11:44:40 -0800
+Subject: [PATCH] alpha: Define TLS_DTV_UNALLOCATED.
+
+---
+ ChangeLog.alpha        |    2 ++
+ sysdeps/alpha/dl-tls.h |    4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+2012-02-08  Richard Henderson  <rth@twiddle.net>
+
+	* sysdeps/alpha/dl-tls.h (TLS_DTV_UNALLOCATED): New.
+
+diff --git a/sysdeps/alpha/dl-tls.h b/sysdeps/alpha/dl-tls.h
+index f81f95d..d40d0a4 100644
+--- a/ports/sysdeps/alpha/dl-tls.h
++++ b/ports/sysdeps/alpha/dl-tls.h
+@@ -25,5 +25,7 @@ typedef struct
+   unsigned long int ti_offset;
+ } tls_index;
+ 
+-
+ extern void *__tls_get_addr (tls_index *ti);
++
++/* Value used for dtv entries for which the allocation is delayed.  */
++#define TLS_DTV_UNALLOCATED	((void *) -1l)
+-- 
+1.7.9.7
+
