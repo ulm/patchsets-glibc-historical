@@ -1,4 +1,5 @@
 http://sourceware.org/ml/libc-alpha/2012-08/msg00118.html
+https://bugs.gentoo.org/431038
 
 do not bother running ldconfig on DESTDIR.  it wants to write the temp cache
 file outside of the chroot.  doesnt matter anyways as we wont use the cache
