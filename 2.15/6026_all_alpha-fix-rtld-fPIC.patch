@@ -3,8 +3,8 @@
 	* sysdeps/alpha/Makefile (CFLAGS-rtld.c): add $(PIC-ccflag).
 	(CFLAGS-dl-close.c): Likewise.
 
---- ports/sysdeps/alpha/Makefile
-+++ ports/sysdeps/alpha/Makefile
+--- a/ports/sysdeps/alpha/Makefile
++++ b/ports/sysdeps/alpha/Makefile
 @@ -35,6 +35,9 @@
  ifeq ($(subdir),elf)
  # The ld.so startup code cannot use literals until it self-relocates.

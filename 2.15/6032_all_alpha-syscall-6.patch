@@ -5,8 +5,8 @@ http://sourceware.org/bugzilla/show_bug.cgi?id=11677
 	* sysdeps/unix/sysv/linux/alpha/syscall.S: add support for 6th
 	argument.
 
---- ports/sysdeps/unix/sysv/linux/alpha/syscall.S
-+++ ports/sysdeps/unix/sysv/linux/alpha/syscall.S
+--- a/ports/sysdeps/unix/sysv/linux/alpha/syscall.S
++++ b/ports/sysdeps/unix/sysv/linux/alpha/syscall.S
 @@ -31,13 +31,13 @@
   *
   * Usage:

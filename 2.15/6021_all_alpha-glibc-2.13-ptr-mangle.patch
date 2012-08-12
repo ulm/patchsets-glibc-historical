@@ -35,8 +35,8 @@ testsuite:
 
 diff --git a/sysdeps/unix/alpha/sysdep.h b/sysdeps/unix/alpha/sysdep.h
 index d9009c1..25979ad 100644
---- ports/sysdeps/unix/alpha/sysdep.h
-+++ ports/sysdeps/unix/alpha/sysdep.h
+--- a/ports/sysdeps/unix/alpha/sysdep.h
++++ b/ports/sysdeps/unix/alpha/sysdep.h
 @@ -157,6 +157,8 @@ __LABEL(name)						\
  
  #else /* !ASSEMBLER */

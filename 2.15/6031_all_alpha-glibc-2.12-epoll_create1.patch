@@ -19,8 +19,8 @@ Signed-off-by: Mike Frysinger <vapier@gentoo.org>
 
 diff --git a/sysdeps/unix/sysv/linux/alpha/sys/epoll.h b/sysdeps/unix/sysv/linux/alpha/sys/epoll.h
 index 9f983a5..9177c31 100644
---- ports/sysdeps/unix/sysv/linux/alpha/sys/epoll.h
-+++ ports/sysdeps/unix/sysv/linux/alpha/sys/epoll.h
+--- a/ports/sysdeps/unix/sysv/linux/alpha/sys/epoll.h
++++ b/ports/sysdeps/unix/sysv/linux/alpha/sys/epoll.h
 @@ -31,7 +31,7 @@ typedef __sigset_t sigset_t;
  #endif
  

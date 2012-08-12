@@ -6,8 +6,8 @@ whether the code is going into a shared library when it should be using
 https://bugs.gentoo.org/336914
 http://sourceware.org/ml/libc-ports/2011-09/msg00018.html
 
---- ports/sysdeps/arm/eabi/setjmp.S
-+++ ports/sysdeps/arm/eabi/setjmp.S
+--- a/ports/sysdeps/arm/eabi/setjmp.S
++++ b/ports/sysdeps/arm/eabi/setjmp.S
 @@ -37,7 +37,7 @@
  	add	a3, a3, a4
  	ldr	a3, [a3, #RTLD_GLOBAL_RO_DL_HWCAP_OFFSET]
@@ -26,8 +26,8 @@ http://sourceware.org/ml/libc-ports/2011-09/msg00018.html
  1:	.long	_GLOBAL_OFFSET_TABLE_ - 0b - 8
  Lrtld_global_ro:
  	.long	C_SYMBOL_NAME(_rtld_global_ro)(GOT)
---- ports/sysdeps/arm/eabi/__longjmp.S
-+++ ports/sysdeps/arm/eabi/__longjmp.S
+--- a/ports/sysdeps/arm/eabi/__longjmp.S
++++ b/ports/sysdeps/arm/eabi/__longjmp.S
 @@ -43,7 +43,7 @@
  	add	a2, a2, a3
  	ldr	a2, [a2, #RTLD_GLOBAL_RO_DL_HWCAP_OFFSET]

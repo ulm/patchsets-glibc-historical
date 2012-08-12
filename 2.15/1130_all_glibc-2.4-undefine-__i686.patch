@@ -9,8 +9,8 @@ http://sourceware.org/ml/libc-alpha/2006-04/msg00090.html
 
 	* sysdeps/i386/sysdep.h (__i686): Undefine.
 
---- sysdeps/i386/sysdep.h
-+++ sysdeps/i386/sysdep.h
+--- a/sysdeps/i386/sysdep.h
++++ b/sysdeps/i386/sysdep.h
 @@ -17,6 +17,14 @@
     Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
     02111-1307 USA.  */
@@ -33,8 +33,8 @@ Note: this breaks mips so we wrap it in a hackish __i686__ for now ...
 
 	* sysdeps/pthread/pt-initfini.c: Include sysdep.h.
 
---- nptl/sysdeps/pthread/pt-initfini.c
-+++ nptl/sysdeps/pthread/pt-initfini.c
+--- a/nptl/sysdeps/pthread/pt-initfini.c
++++ b/nptl/sysdeps/pthread/pt-initfini.c
 @@ -45,6 +45,9 @@
  /* Embed an #include to pull in the alignment and .end directives. */
  asm ("\n#include \"defs.h\"");
