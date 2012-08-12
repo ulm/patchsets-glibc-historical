@@ -8,8 +8,8 @@
 
 	Patch also NPTL. Bug #116086. <kevquinn@gentoo.org> (20 Dec 2005).
 
---- sysdeps/unix/sysv/linux/dl-execstack.c
-+++ sysdeps/unix/sysv/linux/dl-execstack.c
+--- a/sysdeps/unix/sysv/linux/dl-execstack.c
++++ b/sysdeps/unix/sysv/linux/dl-execstack.c
 @@ -63,7 +63,10 @@
        else
  # endif
@@ -50,8 +50,8 @@
  	    {
  	      result = errno;
  	      goto out;
---- nptl/allocatestack.c
-+++ nptl/allocatestack.c
+--- a/nptl/allocatestack.c
++++ b/nptl/allocatestack.c
 @@ -279,7 +279,8 @@
    size_t len = pd->stackblock_size - pd->guardsize;
  #endif

@@ -19,9 +19,6 @@ git diff -R 'fcabc0f8b185f9e0a9289720be5ede6c39b3bf21^!'
 	* libio/Makefile (tests): Add bug-fclose1.
 	* libio/bug-fclose1.c: New file.
 
- 2011-05-12  Ulrich Drepper  <drepper@gmail.com>
- 
- 	[BZ #12511]
 diff --git b/libio/Makefile a/libio/Makefile
 index ec30904..83b9458 100644
 --- b/libio/Makefile

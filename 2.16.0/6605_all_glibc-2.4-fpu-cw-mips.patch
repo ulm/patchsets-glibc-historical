@@ -1,7 +1,7 @@
 http://sourceware.org/ml/libc-alpha/2002-10/msg00392.html
 
---- ports/sysdeps/mips/fpu_control.h
-+++ ports/sysdeps/mips/fpu_control.h
+--- a/ports/sysdeps/mips/fpu_control.h
++++ b/ports/sysdeps/mips/fpu_control.h
 @@ -74,7 +74,7 @@
  #define _FPU_RC_UP      0x2
  #define _FPU_RC_DOWN    0x3

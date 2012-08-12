@@ -1,7 +1,5 @@
 http://bugs.gentoo.org/315977
 
-diff --git a/posix/gai.conf b/posix/gai.conf
-index 195287e..efba67b 100644
 --- a/posix/gai.conf
 +++ b/posix/gai.conf
 @@ -56,9 +56,7 @@

@@ -5,8 +5,8 @@ glibc-2.2 symbol version
 
 one day, we'll just drop this on the floor (maybe after 2006.1)
 
---- ports/sysdeps/unix/sysv/linux/mips/Versions
-+++ ports/sysdeps/unix/sysv/linux/mips/Versions
+--- a/ports/sysdeps/unix/sysv/linux/mips/Versions
++++ b/ports/sysdeps/unix/sysv/linux/mips/Versions
 @@ -34,3 +34,9 @@
      _test_and_set;
    }
@@ -17,8 +17,8 @@ one day, we'll just drop this on the floor (maybe after 2006.1)
 +    clock_gettime; clock_settime;
 +  }
 +}
---- Versions.def
-+++ Versions.def
+--- a/Versions.def
++++ b/Versions.def
 @@ -90,6 +90,7 @@
    GLIBC_PRIVATE
  }
@@ -27,8 +27,8 @@ one day, we'll just drop this on the floor (maybe after 2006.1)
    GLIBC_2.1
    GLIBC_2.2
    GLIBC_2.3
---- sysdeps/unix/clock_gettime.c
-+++ sysdeps/unix/clock_gettime.c
+--- a/sysdeps/unix/clock_gettime.c
++++ b/sysdeps/unix/clock_gettime.c
 @@ -23,6 +23,7 @@
  #include <sys/time.h>
  #include <libc-internal.h>
@@ -58,8 +58,8 @@ one day, we'll just drop this on the floor (maybe after 2006.1)
 +strong_alias (__clock_gettime, __mips_clock_gettime)
 +compat_symbol (librt, __mips_clock_gettime, clock_gettime, GLIBC_2_0);
 +#endif
---- sysdeps/unix/clock_settime.c
-+++ sysdeps/unix/clock_settime.c
+--- a/sysdeps/unix/clock_settime.c
++++ b/sysdeps/unix/clock_settime.c
 @@ -21,6 +21,7 @@
  #include <sys/time.h>
  #include <libc-internal.h>
