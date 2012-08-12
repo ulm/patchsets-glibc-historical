@@ -1,3 +1,6 @@
+3		[pending]
+	- 1030_all_glibc-manual-no-perl.patch
+
 2		11 Aug 2012
 	- 1530_all_glibc-m68k-sys-user.patch
 	- 6120_all_ppc-glibc-2.9-atomic.patch
