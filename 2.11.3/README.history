@@ -1,5 +1,6 @@
 4		[pending]
 	- 1103_all_glibc-new-valencian-locale.patch
+	- 1530_all_glibc-m68k-sys-user.patch
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
 
 3		15 Feb 2012

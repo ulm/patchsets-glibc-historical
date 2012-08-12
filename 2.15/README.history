@@ -1,5 +1,6 @@
 19		10 Aug 2012
 	- 1200_all_glibc-2.15-x32.patch
+	- 1530_all_glibc-m68k-sys-user.patch
 	- 6023_all_alpha-glibc-2.13-statfs64.patch
 	+ 6023_all_alpha-glibc-2.15-statfs64.patch
 	+ 6024_all_alpha-glibc-2.15-relro.patch

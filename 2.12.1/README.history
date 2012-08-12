@@ -2,6 +2,7 @@
 	+ 0088_all_glibc-2.12-getconf-buffer-overflow.patch
 	- 1103_all_glibc-new-valencian-locale.patch
 	U 1505_hppa_glibc-2.11-hppa-nptl.patch
+	- 1530_all_glibc-m68k-sys-user.patch
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
 	+ 6225_all_glibc-2.12-eabi-armv4.patch
 	+ 6305_all_glibc-2.11-s390-older-binutils.patch

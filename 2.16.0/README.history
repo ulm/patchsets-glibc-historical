@@ -1,3 +1,6 @@
+2		[pending]
+	- 1530_all_glibc-m68k-sys-user.patch
+
 1		03 Jun 2012
 	+ 0020_all_glibc-tweak-rfc1918-lookup.patch
 	+ 0052_all_glibc-2.14-resolv-hp-assert.patch

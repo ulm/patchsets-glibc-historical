@@ -1,6 +1,7 @@
 6		[pending]
 	U 1010_all_glibc-queue-header-updates.patch
 	- 1103_all_glibc-new-valencian-locale.patch
+	- 1530_all_glibc-m68k-sys-user.patch
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
 	U 6028_all_alpha-fix-SOCK_NONBLOCK.patch
 	+ 6305_all_glibc-2.11-s390-older-binutils.patch

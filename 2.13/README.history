@@ -1,5 +1,6 @@
 12		[pending]
 	+ 0088_all_glibc-2.12-getconf-buffer-overflow.patch
+	- 1530_all_glibc-m68k-sys-user.patch
 
 11		02 May 2012
 	- 1103_all_glibc-new-valencian-locale.patch
