@@ -1,0 +1,31 @@
+https://bugs.gentoo.org/428536
+
+From c473bd1cd99db042dc1958c1bbaff3cba01a7893 Mon Sep 17 00:00:00 2001
+From: Marek Polacek <polacek@redhat.com>
+Date: Sun, 8 Jan 2012 13:21:50 -0500
+Subject: [PATCH] Quash implicit declaration warning
+
+---
+ nptl/ChangeLog                           |    4 ++++
+ nptl/sysdeps/unix/sysv/linux/mq_notify.c |    1 +
+ 2 files changed, 5 insertions(+)
+
+2012-01-08  Marek Polacek  <polacek@redhat.com>
+
+	* sysdeps/unix/sysv/linux/mq_notify.c: Include <nptl/pthreadP.h>.
+
+diff --git a/nptl/sysdeps/unix/sysv/linux/mq_notify.c b/nptl/sysdeps/unix/sysv/linux/mq_notify.c
+index 11ffc32..bc4a01f 100644
+--- a/nptl/sysdeps/unix/sysv/linux/mq_notify.c
++++ b/nptl/sysdeps/unix/sysv/linux/mq_notify.c
+@@ -30,6 +30,7 @@
+ #include <sys/socket.h>
+ #include <not-cancel.h>
+ #include <kernel-features.h>
++#include <nptl/pthreadP.h>
+ 
+ 
+ #ifdef __NR_mq_notify
+-- 
+1.7.9.7
+
