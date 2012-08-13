@@ -1,4 +1,5 @@
 https://bugs.gentoo.org/394237
+http://sourceware.org/ml/libc-ports/2011-12/msg00017.html
 
 --- a/ports/sysdeps/arm/dl-machine.h
 +++ b/ports/sysdeps/arm/dl-machine.h
