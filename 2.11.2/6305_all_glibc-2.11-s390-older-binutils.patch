@@ -1,3 +1,8 @@
+https://bugs.gentoo.org/365999
+
+Note: this was fixed in a different way in newer versions:
+	http://sourceware.org/ml/libc-alpha/2011-04/msg00021.html
+
 http://sourceware.org/ml/libc-alpha/2011-03/msg00038.html
 
 From: "Andreas Krebbel" <krebbel@linux.vnet.ibm.com>

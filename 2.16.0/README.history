@@ -1,5 +1,6 @@
 3		[pending]
 	- 1030_all_glibc-manual-no-perl.patch
+	- 6305_all_glibc-2.11-s390-older-binutils.patch
 
 2		11 Aug 2012
 	- 1530_all_glibc-m68k-sys-user.patch

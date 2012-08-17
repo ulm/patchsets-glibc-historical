@@ -1,6 +1,7 @@
 11		[pending]
 	+ 0088_all_glibc-2.12-getconf-buffer-overflow.patch
 	- 1530_all_glibc-m68k-sys-user.patch
+	- 6305_all_glibc-2.11-s390-older-binutils.patch
 
 10		31 May 2012
 	+ 6226_all_arm-glibc-2.15-hardfp.patch

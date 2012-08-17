@@ -5,7 +5,6 @@
 	- 1530_all_glibc-m68k-sys-user.patch
 	- 6020_all_alpha-fix-gcc-4.1-warnings.patch
 	+ 6225_all_glibc-2.12-eabi-armv4.patch
-	+ 6305_all_glibc-2.11-s390-older-binutils.patch
 
 7		31 Aug 2011
 	+ 0070_all_glibc-2.14-rpc-export.patch

@@ -1,3 +1,6 @@
+21		[pending]
+	- 6305_all_glibc-2.11-s390-older-binutils.patch
+
 20		11 Aug 2012
 	+ 0064_all_glibc-2.15-nptl-implicit-decl.patch
 	- 1530_all_glibc-m68k-sys-user.patch
