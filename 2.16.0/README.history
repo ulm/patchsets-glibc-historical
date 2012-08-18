@@ -1,5 +1,6 @@
 3		[pending]
 	- 1030_all_glibc-manual-no-perl.patch
+	- 3010_all_2.3.3_pre20040117-pt_pax.patch
 	U 6022_alpha_alpha-add-fdatasync-support.patch -> 6022_all_alpha-add-fdatasync-support.patch
 	- 6305_all_glibc-2.11-s390-older-binutils.patch
 
