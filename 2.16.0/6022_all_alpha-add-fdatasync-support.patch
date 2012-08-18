@@ -1,0 +1,129 @@
+http://sourceware.org/bugzilla/show_bug.cgi?id=5400
+http://sourceware.org/ml/libc-ports/2012-08/msg00142.html
+
+From 85288903d373a7eb019dd835fb41e531c0acd99a Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Fri, 17 Aug 2012 13:01:28 -0400
+Subject: [PATCH] alpha: add conditional fdatasync support
+
+While most arches have had the fdatasync syscall for a long time, the
+alpha port didn't add it until the 2.6.22 release.
+
+This is heavily based on Aurelien Jarno's initial work.
+
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+2012-08-17  Mike Frysinger  <vapier@gentoo.org>
+
+	[BZ #5400]
+	* sysdeps/unix/sysv/linux/alpha/Makefile (CFLAGS-fdatasync.c): Define.
+	* sysdeps/unix/sysv/linux/alpha/fdatasync.c: New file
+	* sysdeps/unix/sysv/linux/alpha/kernel-features.h
+	(__ASSUME_FDATASYNC): Define.
+---
+ ports/sysdeps/unix/sysv/linux/alpha/Makefile       |    1 +
+ ports/sysdeps/unix/sysv/linux/alpha/fdatasync.c    |   65 ++++++++++++++++++++
+ .../unix/sysv/linux/alpha/kernel-features.h        |    5 ++
+ 3 files changed, 71 insertions(+)
+ create mode 100644 ports/sysdeps/unix/sysv/linux/alpha/fdatasync.c
+
+diff --git a/ports/sysdeps/unix/sysv/linux/alpha/Makefile b/ports/sysdeps/unix/sysv/linux/alpha/Makefile
+index f64f23f..9676fee 100644
+--- a/ports/sysdeps/unix/sysv/linux/alpha/Makefile
++++ b/ports/sysdeps/unix/sysv/linux/alpha/Makefile
+@@ -20,6 +20,7 @@ sysdep_routines += osf_select osf_gettimeofday osf_settimeofday \
+ # Support old ipc control
+ sysdep_routines += oldmsgctl oldsemctl oldshmctl
+ 
++CFLAGS-fdatasync.c = -fexceptions
+ CFLAGS-ioperm.c = -Wa,-mev6
+ endif
+ 
+diff --git a/ports/sysdeps/unix/sysv/linux/alpha/fdatasync.c b/ports/sysdeps/unix/sysv/linux/alpha/fdatasync.c
+new file mode 100644
+index 0000000..10f5035
+--- /dev/null
++++ b/ports/sysdeps/unix/sysv/linux/alpha/fdatasync.c
+@@ -0,0 +1,65 @@
++/* fdatasync -- synchronize at least the data part of a file with
++   the underlying media. Linux version.
++
++   Copyright (C) 2007-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <errno.h>
++#include <unistd.h>
++
++#include <sysdep-cancel.h>
++#include <sys/syscall.h>
++#include <bp-checks.h>
++
++#include <kernel-features.h>
++
++static int
++do_fdatasync (int fd)
++{
++#ifdef __ASSUME_FDATASYNC
++  return INLINE_SYSCALL (fdatasync, 1, fd);
++#elif defined __NR_fdatasync
++  static int __have_no_fdatasync;
++
++  if (!__builtin_expect (__have_no_fdatasync, 0))
++    {
++      int result = INLINE_SYSCALL (fdatasync, 1, fd);
++      if (__builtin_expect (result, 0) != -1 || errno != ENOSYS)
++	return result;
++
++      __have_no_fdatasync = 1;
++    }
++#endif
++  return INLINE_SYSCALL (fsync, 1, fd);
++}
++
++int
++__fdatasync (int fd)
++{
++  if (SINGLE_THREAD_P)
++    return do_fdatasync (fd);
++
++  int oldtype = LIBC_CANCEL_ASYNC ();
++
++  int result = do_fdatasync (fd);
++
++  LIBC_CANCEL_RESET (oldtype);
++
++  return result;
++}
++
++weak_alias (__fdatasync, fdatasync)
+diff --git a/ports/sysdeps/unix/sysv/linux/alpha/kernel-features.h b/ports/sysdeps/unix/sysv/linux/alpha/kernel-features.h
+index 217525a..f0b7291 100644
+--- a/ports/sysdeps/unix/sysv/linux/alpha/kernel-features.h
++++ b/ports/sysdeps/unix/sysv/linux/alpha/kernel-features.h
+@@ -85,4 +85,9 @@
+ #undef __ASSUME_STATFS64
+ #define __ASSUME_STATFS64 0
+ 
++/* Support for fsyncdata was added for alpha after 2.6.21.  */
++#if __LINUX_KERNEL_VERSION >= 0x020616
++# define __ASSUME_FDATASYNC	1
++#endif
++
+ #endif /* _KERNEL_FEATURES_H */
+-- 
+1.7.9.7
+
