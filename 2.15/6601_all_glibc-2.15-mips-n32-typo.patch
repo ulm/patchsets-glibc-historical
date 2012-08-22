@@ -1,0 +1,35 @@
+https://bugs.gentoo.org/431676
+
+fix already in upstream and glibc-2.16
+
+From 12139ca306df26046c14c98c6dc13bd15d3071a2 Mon Sep 17 00:00:00 2001
+From: Joseph Myers <joseph@codesourcery.com>
+Date: Fri, 1 Jun 2012 14:42:11 +0000
+Subject: [PATCH] Fix typo in MIPS abi-n32-condition.
+
+---
+ ChangeLog.mips                        |    5 +++++
+ sysdeps/unix/sysv/linux/mips/Makefile |    4 ++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+2012-06-01  Joseph Myers  <joseph@codesourcery.com>
+
+	* sysdeps/unix/sysv/linux/mips/Makefile (abi-n32-condition): Fix
+	typo.
+
+diff --git a/sysdeps/unix/sysv/linux/mips/Makefile b/sysdeps/unix/sysv/linux/mips/Makefile
+index 2bbc9a4..99c554f 100644
+--- a/ports/sysdeps/unix/sysv/linux/mips/Makefile
++++ b/ports/sysdeps/unix/sysv/linux/mips/Makefile
+@@ -12,7 +12,7 @@ sysdep_routines += cachectl cacheflush sysmips _test_and_set
+ syscall-list-o32-options := -mabi=32
+ syscall-list-o32-condition := _MIPS_SIM == _MIPS_SIM_ABI32
+ syscall-list-n32-options := -mabi=n32
+-syscall-list-n32-condition := _MIPS_SIM == _MIPS_SIM_ABIN32
++syscall-list-n32-condition := _MIPS_SIM == _MIPS_SIM_NABI32
+ syscall-list-n64-options := -mabi=64
+ syscall-list-n64-condition := _MIPS_SIM == _MIPS_SIM_ABI64
+ endif
+-- 
+1.7.9.7
+

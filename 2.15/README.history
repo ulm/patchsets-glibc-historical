@@ -1,5 +1,6 @@
-21		[pending]
+21		22 Aug 2012
 	- 6305_all_glibc-2.11-s390-older-binutils.patch
+	+ 6601_all_glibc-2.15-mips-n32-typo.patch
 
 20		11 Aug 2012
 	+ 0064_all_glibc-2.15-nptl-implicit-decl.patch
