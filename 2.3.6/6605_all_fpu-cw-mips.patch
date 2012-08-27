@@ -1,4 +1,6 @@
-diff -u -r1.6 fpu_control.h
+http://sourceware.org/ml/libc-alpha/2002-10/msg00392.html
+http://sourceware.org/ml/libc-ports/2012-08/msg00166.html
+
 --- libc/sysdeps/mips/fpu_control.h	6 Jul 2001 04:56:00 -0000	1.6
 +++ libc/sysdeps/mips/fpu_control.h	19 Oct 2002 16:03:35 -0000
 @@ -74,7 +74,7 @@
