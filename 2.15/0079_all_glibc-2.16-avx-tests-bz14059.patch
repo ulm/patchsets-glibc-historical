@@ -1,0 +1,363 @@
+cherry picked from upstream
+
+http://sourceware.org/bugzilla/show_bug.cgi?id=14059
+https://bugzilla.redhat.com/show_bug.cgi?id=801650
+https://bugs.gentoo.org/433884
+
+From 1a0994f5356214e8af8a1c1cc33fbf74a7ac8993 Mon Sep 17 00:00:00 2001
+From: Carlos O'Donell <carlos_odonell@mentor.com>
+Date: Wed, 16 May 2012 20:14:24 -0700
+Subject: [PATCH] BZ#14059: Fix AVX and FMA4 detection.
+
+Fix AVX and FMA4 detection by following the guidelines
+set out by Intel and AMD for detecting these features.
+---
+ ChangeLog                                    | 30 ++++++++++
+ NEWS                                         |  2 +-
+ sysdeps/i386/i686/multiarch/Makefile         |  1 +
+ sysdeps/i386/i686/multiarch/test-multiarch.c |  1 +
+ sysdeps/x86_64/multiarch/Makefile            |  1 +
+ sysdeps/x86_64/multiarch/init-arch.c         | 27 +++++----
+ sysdeps/x86_64/multiarch/init-arch.h         | 51 ++++++++++------
+ sysdeps/x86_64/multiarch/strcmp.S            |  9 ++-
+ sysdeps/x86_64/multiarch/test-multiarch.c    | 90 ++++++++++++++++++++++++++++
+ 9 files changed, 181 insertions(+), 31 deletions(-)
+ create mode 100644 sysdeps/i386/i686/multiarch/test-multiarch.c
+ create mode 100644 sysdeps/x86_64/multiarch/test-multiarch.c
+
+2012-05-17  Andreas Jaeger  <aj@suse.de>
+	    Carlos O'Donell  <carlos_odonell@mentor.com>
+
+	[BZ #14059]
+	* sysdeps/x86_64/multiarch/init-arch.h
+	(bit_YMM_Usable): Rename to...
+	(bit_AVX_Usable): ... this.
+	(bit_FMA4_Usable): New macro.
+	(bit_XMM_state): New macro.
+	(bit_YMM_state): New macro.
+	[__ASSEMBLER__] (index_YMM_Usable): Rename to...
+	[__ASSEMBLER__] (index_AVX_Usable): ... this.
+	[__ASSEMBLER__] (index_FMA4_Usable): New macro.
+	(CPUID_OSXSAVE): New macro.
+	(CPUID_AVX): New macro.
+	(CPUID_FMA4): New macro.
+	(index_YMM_Usable): Rename to...
+	(index_AVX_Usable): ... this.
+	(HAS_AVX): Use HAS_ARCH_FEATURE.
+	(HAS_FMA4): Likewise.
+	(HAS_YMM_USABLE): Remove.
+	* sysdeps/x86_64/multiarch/init-arch.c (__init_cpu_features):
+	Enable AVX or FMA4 IFF YMM and XMM states are usable and the features
+	are present.
+	* sysdeps/x86_64/multiarch/strcmp.S: Use bit_AVX_Usable.
+	* sysdeps/i386/i686/multiarch/Makefile: Add test-multiarch to tests.
+	* sysdeps/x86_64/multiarch/Makefile: Likewise.
+	* sysdeps/i386/i686/multiarch/test-multiarch.c: New file.
+	* sysdeps/x86_64/multiarch/test-multiarch.c: New file.
+
+diff --git a/sysdeps/i386/i686/multiarch/Makefile b/sysdeps/i386/i686/multiarch/Makefile
+index b764e5b..8946bfa 100644
+--- a/sysdeps/i386/i686/multiarch/Makefile
++++ b/sysdeps/i386/i686/multiarch/Makefile
+@@ -1,5 +1,6 @@
+ ifeq ($(subdir),csu)
+ aux += init-arch
++tests += test-multiarch
+ gen-as-const-headers += ifunc-defines.sym
+ endif
+ 
+diff --git a/sysdeps/i386/i686/multiarch/test-multiarch.c b/sysdeps/i386/i686/multiarch/test-multiarch.c
+new file mode 100644
+index 0000000..593cfec
+--- /dev/null
++++ b/sysdeps/i386/i686/multiarch/test-multiarch.c
+@@ -0,0 +1 @@
++#include <sysdeps/x86_64/multiarch/test-multiarch.c>
+diff --git a/sysdeps/x86_64/multiarch/Makefile b/sysdeps/x86_64/multiarch/Makefile
+index 9a183f0..dd6c27d 100644
+--- a/sysdeps/x86_64/multiarch/Makefile
++++ b/sysdeps/x86_64/multiarch/Makefile
+@@ -1,5 +1,6 @@
+ ifeq ($(subdir),csu)
+ aux += init-arch
++tests += test-multiarch
+ gen-as-const-headers += ifunc-defines.sym
+ endif
+ 
+diff --git a/sysdeps/x86_64/multiarch/init-arch.c b/sysdeps/x86_64/multiarch/init-arch.c
+index 80527ec..fb44dcf 100644
+--- a/sysdeps/x86_64/multiarch/init-arch.c
++++ b/sysdeps/x86_64/multiarch/init-arch.c
+@@ -143,16 +143,23 @@ __init_cpu_features (void)
+   else
+     kind = arch_kind_other;
+ 
+-  if (__cpu_features.cpuid[COMMON_CPUID_INDEX_1].ecx & bit_AVX)
++  /* Can we call xgetbv?  */
++  if (CPUID_OSXSAVE)
+     {
+-      /* Reset the AVX bit in case OSXSAVE is disabled.  */
+-      if ((__cpu_features.cpuid[COMMON_CPUID_INDEX_1].ecx & bit_OSXSAVE) != 0
+-	  && ({ unsigned int xcrlow;
+-		unsigned int xcrhigh;
+-		asm ("xgetbv"
+-		     : "=a" (xcrlow), "=d" (xcrhigh) : "c" (0));
+-		(xcrlow & 6) == 6; }))
+-	__cpu_features.feature[index_YMM_Usable] |= bit_YMM_Usable;
++      unsigned int xcrlow;
++      unsigned int xcrhigh;
++      asm ("xgetbv" : "=a" (xcrlow), "=d" (xcrhigh) : "c" (0));
++      /* Is YMM and XMM state usable?  */
++      if ((xcrlow & (bit_YMM_state | bit_XMM_state)) ==
++	  (bit_YMM_state | bit_XMM_state))
++	{
++	  /* Determine if AVX is usable.  */
++	  if (CPUID_AVX)
++	    __cpu_features.feature[index_AVX_Usable] |= bit_AVX_Usable;
++	  /* Determine if FMA4 is usable.  */
++	  if (CPUID_FMA4)
++	    __cpu_features.feature[index_FMA4_Usable] |= bit_FMA4_Usable;
++	}
+     }
+ 
+   __cpu_features.family = family;
+diff --git a/sysdeps/x86_64/multiarch/init-arch.h b/sysdeps/x86_64/multiarch/init-arch.h
+index 5054e46..45e2651 100644
+--- a/sysdeps/x86_64/multiarch/init-arch.h
++++ b/sysdeps/x86_64/multiarch/init-arch.h
+@@ -21,8 +21,10 @@
+ #define bit_Prefer_SSE_for_memop	(1 << 3)
+ #define bit_Fast_Unaligned_Load		(1 << 4)
+ #define bit_Prefer_PMINUB_for_stringop	(1 << 5)
+-#define bit_YMM_Usable			(1 << 6)
++#define bit_AVX_Usable			(1 << 6)
++#define bit_FMA4_Usable			(1 << 7)
+ 
++/* CPUID Feature flags.  */
+ #define bit_SSE2	(1 << 26)
+ #define bit_SSSE3	(1 << 9)
+ #define bit_SSE4_1	(1 << 19)
+@@ -33,6 +35,10 @@
+ #define bit_FMA		(1 << 12)
+ #define bit_FMA4	(1 << 16)
+ 
++/* XCR0 Feature flags.  */
++#define bit_XMM_state  (1 << 1)
++#define bit_YMM_state  (2 << 1)
++
+ #ifdef	__ASSEMBLER__
+ 
+ # include <ifunc-defines.h>
+@@ -49,7 +55,8 @@
+ # define index_Prefer_SSE_for_memop	FEATURE_INDEX_1*FEATURE_SIZE
+ # define index_Fast_Unaligned_Load	FEATURE_INDEX_1*FEATURE_SIZE
+ # define index_Prefer_PMINUB_for_stringop FEATURE_INDEX_1*FEATURE_SIZE
+-# define index_YMM_Usable		FEATURE_INDEX_1*FEATURE_SIZE
++# define index_AVX_Usable		FEATURE_INDEX_1*FEATURE_SIZE
++# define index_FMA4_Usable		FEATURE_INDEX_1*FEATURE_SIZE
+ 
+ #else	/* __ASSEMBLER__ */
+ 
+@@ -113,35 +120,45 @@ extern const struct cpu_features *__get_cpu_features (void)
+ 
+ /* Following are the feature tests used throughout libc.  */
+ 
++/* CPUID_* evaluates to true if the feature flag is enabled.
++   We always use &__cpu_features because the HAS_CPUID_* macros
++   are called only within __init_cpu_features, where we can't
++   call __get_cpu_features without infinite recursion.  */
++# define HAS_CPUID_FLAG(idx, reg, bit) \
++  (((&__cpu_features)->cpuid[idx].reg & (bit)) != 0)
++
++# define CPUID_OSXSAVE \
++  HAS_CPUID_FLAG (COMMON_CPUID_INDEX_1, ecx, bit_OSXSAVE)
++# define CPUID_AVX \
++  HAS_CPUID_FLAG (COMMON_CPUID_INDEX_1, ecx, bit_AVX)
++# define CPUID_FMA4 \
++  HAS_CPUID_FLAG (COMMON_CPUID_INDEX_80000001, ecx, bit_FMA4)
++
++/* HAS_* evaluates to true if we may use the feature at runtime.  */
+ # define HAS_SSE2	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, edx, bit_SSE2)
+ # define HAS_POPCOUNT	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, ecx, bit_POPCOUNT)
+ # define HAS_SSSE3	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, ecx, bit_SSSE3)
+ # define HAS_SSE4_1	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, ecx, bit_SSE4_1)
+ # define HAS_SSE4_2	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, ecx, bit_SSE4_2)
+ # define HAS_FMA	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, ecx, bit_FMA)
+-# define HAS_AVX	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_1, ecx, bit_AVX)
+-# define HAS_FMA4	HAS_CPU_FEATURE (COMMON_CPUID_INDEX_80000001, ecx, bit_FMA4)
+ 
+ # define index_Fast_Rep_String		FEATURE_INDEX_1
+ # define index_Fast_Copy_Backward	FEATURE_INDEX_1
+ # define index_Slow_BSF			FEATURE_INDEX_1
+ # define index_Prefer_SSE_for_memop	FEATURE_INDEX_1
+ # define index_Fast_Unaligned_Load	FEATURE_INDEX_1
+-# define index_YMM_Usable		FEATURE_INDEX_1
++# define index_AVX_Usable		FEATURE_INDEX_1
++# define index_FMA4_Usable		FEATURE_INDEX_1
+ 
+ # define HAS_ARCH_FEATURE(name) \
+   ((__get_cpu_features ()->feature[index_##name] & (bit_##name)) != 0)
+ 
+-# define HAS_FAST_REP_STRING	HAS_ARCH_FEATURE (Fast_Rep_String)
+-
+-# define HAS_FAST_COPY_BACKWARD	HAS_ARCH_FEATURE (Fast_Copy_Backward)
+-
+-# define HAS_SLOW_BSF		HAS_ARCH_FEATURE (Slow_BSF)
+-
+-# define HAS_PREFER_SSE_FOR_MEMOP HAS_ARCH_FEATURE (Prefer_SSE_for_memop)
+-
+-# define HAS_FAST_UNALIGNED_LOAD HAS_ARCH_FEATURE (Fast_Unaligned_Load)
+-
+-# define HAS_YMM_USABLE		HAS_ARCH_FEATURE (YMM_Usable)
++# define HAS_FAST_REP_STRING		HAS_ARCH_FEATURE (Fast_Rep_String)
++# define HAS_FAST_COPY_BACKWARD		HAS_ARCH_FEATURE (Fast_Copy_Backward)
++# define HAS_SLOW_BSF			HAS_ARCH_FEATURE (Slow_BSF)
++# define HAS_PREFER_SSE_FOR_MEMOP	HAS_ARCH_FEATURE (Prefer_SSE_for_memop)
++# define HAS_FAST_UNALIGNED_LOAD	HAS_ARCH_FEATURE (Fast_Unaligned_Load)
++# define HAS_AVX			HAS_ARCH_FEATURE (AVX_Usable)
++# define HAS_FMA4			HAS_ARCH_FEATURE (FMA4_Usable)
+ 
+ #endif	/* __ASSEMBLER__ */
+diff --git a/sysdeps/x86_64/multiarch/strcmp.S b/sysdeps/x86_64/multiarch/strcmp.S
+index 2b9870b..d366d09 100644
+--- a/sysdeps/x86_64/multiarch/strcmp.S
++++ b/sysdeps/x86_64/multiarch/strcmp.S
+@@ -83,6 +83,7 @@
+ 	.text
+ ENTRY(STRCMP)
+ 	.type	STRCMP, @gnu_indirect_function
++	/* Manually inlined call to __get_cpu_features.  */
+ 	cmpl	$0, __cpu_features+KIND_OFFSET(%rip)
+ 	jne	1f
+ 	call	__init_cpu_features
+@@ -100,13 +101,14 @@ END(STRCMP)
+ # ifdef USE_AS_STRCASECMP_L
+ ENTRY(__strcasecmp)
+ 	.type	__strcasecmp, @gnu_indirect_function
++	/* Manually inlined call to __get_cpu_features.  */
+ 	cmpl	$0, __cpu_features+KIND_OFFSET(%rip)
+ 	jne	1f
+ 	call	__init_cpu_features
+ 1:
+ #  ifdef HAVE_AVX_SUPPORT
+ 	leaq	__strcasecmp_avx(%rip), %rax
+-	testl	$bit_AVX, __cpu_features+CPUID_OFFSET+index_AVX(%rip)
++	testl	$bit_AVX_Usable, __cpu_features+FEATURE_OFFSET+index_AVX_Usable(%rip)
+ 	jnz	2f
+ #  endif
+ 	leaq	__strcasecmp_sse42(%rip), %rax
+@@ -123,13 +125,14 @@ weak_alias (__strcasecmp, strcasecmp)
+ # ifdef USE_AS_STRNCASECMP_L
+ ENTRY(__strncasecmp)
+ 	.type	__strncasecmp, @gnu_indirect_function
++	/* Manually inlined call to __get_cpu_features.  */
+ 	cmpl	$0, __cpu_features+KIND_OFFSET(%rip)
+ 	jne	1f
+ 	call	__init_cpu_features
+ 1:
+ #  ifdef HAVE_AVX_SUPPORT
+ 	leaq	__strncasecmp_avx(%rip), %rax
+-	testl	$bit_AVX, __cpu_features+CPUID_OFFSET+index_AVX(%rip)
++	testl	$bit_AVX_Usable, __cpu_features+FEATURE_OFFSET+index_AVX_Usable(%rip)
+ 	jnz	2f
+ #  endif
+ 	leaq	__strncasecmp_sse42(%rip), %rax
+diff --git a/sysdeps/x86_64/multiarch/test-multiarch.c b/sysdeps/x86_64/multiarch/test-multiarch.c
+new file mode 100644
+index 0000000..76b1af2
+--- /dev/null
++++ b/sysdeps/x86_64/multiarch/test-multiarch.c
+@@ -0,0 +1,90 @@
++/* Test CPU feature data.
++   This file is part of the GNU C Library.
++   Copyright (C) 2012 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <init-arch.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++static char *cpu_flags;
++
++/* Search for flags in /proc/cpuinfo and store line
++   in cpu_flags.  */
++void
++get_cpuinfo (void)
++{
++  FILE *f;
++  char *line = NULL;
++  size_t len = 0;
++  ssize_t read;
++
++  f = fopen ("/proc/cpuinfo", "r");
++  if (f == NULL)
++    {
++      printf ("cannot open /proc/cpuinfo");
++      exit (1);
++    }
++
++  while ((read = getline (&line, &len, f)) != -1)
++    {
++      if (strncmp (line, "flags", 5) == 0)
++       {
++         cpu_flags = strdup (line);
++         break;
++       }
++    }
++  fclose (f);
++  free (line);
++}
++
++int
++check_proc (const char *proc_name, int flag, const char *name)
++{
++  int found = 0;
++
++  printf ("Checking %s:\n", name);
++  printf ("  init-arch %d\n", flag);
++  if (strstr (cpu_flags, proc_name) != NULL)
++    found = 1;
++  printf ("  cpuinfo (%s) %d\n", proc_name, found);
++
++  if (found != flag)
++    printf (" *** failure ***\n");
++
++  return (found != flag);
++}
++
++static int
++do_test (int argc, char **argv)
++{
++  int fails;
++
++  get_cpuinfo ();
++  fails = check_proc ("avx", HAS_AVX, "HAS_AVX");
++  fails += check_proc ("fma4", HAS_FMA4, "HAS_FMA4");
++  fails += check_proc ("sse4_2", HAS_SSE4_2, "HAS_SSE4_2");
++  fails += check_proc ("sse4_1", HAS_SSE4_1, "HAS_SSE4_1");
++  fails += check_proc ("ssse3", HAS_SSSE3, "HAS_SSSE3");
++  fails += check_proc ("popcnt", HAS_POPCOUNT, "HAS_POPCOUNT");
++
++  printf ("%d differences between /proc/cpuinfo and glibc code.\n", fails);
++
++  return (fails != 0);
++}
++
++#include "../../../test-skeleton.c"
+-- 
+1.7.12
+

@@ -1,0 +1,73 @@
+From 3b1004624e54cc2fefd034ff80d5dea4b6db764f Mon Sep 17 00:00:00 2001
+From: Joseph Myers <joseph@codesourcery.com>
+Date: Mon, 30 Jan 2012 19:55:15 +0000
+Subject: [PATCH] Fix makefile/configure problems with sse2avx changes.
+
+---
+ ChangeLog                             | 8 ++++++++
+ config.make.in                        | 1 +
+ configure                             | 2 ++
+ configure.in                          | 1 +
+ sysdeps/x86_64/fpu/multiarch/Makefile | 2 +-
+ 5 files changed, 13 insertions(+), 1 deletion(-)
+
+2012-01-30  Joseph Myers  <joseph@codesourcery.com>
+
+	* configure.in (libc_cv_cc_sse2avx): AC_SUBST.
+	* configure: Regenerate.
+	* config.make.in (config-cflags-sse2avx): Define.
+	* sysdeps/x86_64/fpu/multiarch/Makefile (CFLAGS-slowexp-avx.c):
+	Fix typo.
+
+diff --git a/config.make.in b/config.make.in
+index d937952..75061f6 100644
+--- a/config.make.in
++++ b/config.make.in
+@@ -36,6 +36,7 @@ asflags-cpu = @libc_cv_cc_submachine@
+ 
+ config-cflags-sse4 = @libc_cv_cc_sse4@
+ config-cflags-avx = @libc_cv_cc_avx@
++config-cflags-sse2avx = @libc_cv_cc_sse2avx@
+ config-cflags-novzeroupper = @libc_cv_cc_novzeroupper@
+ config-asflags-i686 = @libc_cv_as_i686@
+ 
+diff --git a/configure b/configure
+index 71e8de1..508e1bb 100755
+--- a/configure
++++ b/configure
+@@ -620,6 +620,7 @@ use_ldconfig
+ libc_cv_as_i686
+ libc_cv_cc_fma4
+ libc_cv_cc_novzeroupper
++libc_cv_cc_sse2avx
+ libc_cv_cc_avx
+ libc_cv_cc_sse4
+ libc_cv_cpp_asm_debuginfo
+diff --git a/configure.in b/configure.in
+index 5fd6d85..0499d3c 100644
+--- a/configure.in
++++ b/configure.in
+@@ -2154,6 +2154,7 @@ dnl sysdeps/CPU/configure.in checks set this via arch-specific asm tests
+ AC_SUBST(libc_cv_cpp_asm_debuginfo)
+ AC_SUBST(libc_cv_cc_sse4)
+ AC_SUBST(libc_cv_cc_avx)
++AC_SUBST(libc_cv_cc_sse2avx)
+ AC_SUBST(libc_cv_cc_novzeroupper)
+ AC_SUBST(libc_cv_cc_fma4)
+ AC_SUBST(libc_cv_as_i686)
+diff --git a/sysdeps/x86_64/fpu/multiarch/Makefile b/sysdeps/x86_64/fpu/multiarch/Makefile
+index 4b5c173..2a38ffc 100644
+--- a/sysdeps/x86_64/fpu/multiarch/Makefile
++++ b/sysdeps/x86_64/fpu/multiarch/Makefile
+@@ -48,7 +48,7 @@ CFLAGS-mpexp-avx.c = -msse2avx -DSSE2AVX
+ CFLAGS-mplog-avx.c = -msse2avx -DSSE2AVX
+ CFLAGS-s_atan-avx.c = -msse2avx -DSSE2AVX
+ CFLAGS-s_sin-avx.c = -msse2avx -DSSE2AVX
+-CFLAGS-slowexp-avx.c = -sse2mavx -DSSE2AVX
++CFLAGS-slowexp-avx.c = -msse2avx -DSSE2AVX
+ CFLAGS-s_tan-avx.c = -msse2avx -DSSE2AVX
+ endif
+ endif
+-- 
+1.7.12
+

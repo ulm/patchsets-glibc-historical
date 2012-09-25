@@ -1,0 +1,63 @@
+cherry picked from upstream
+
+http://sourceware.org/bugzilla/show_bug.cgi?id=13583
+https://bugzilla.redhat.com/show_bug.cgi?id=801650
+https://bugs.gentoo.org/433884
+
+From afc5ed09cbce5d6fd48b3a8c5ec427b31f996880 Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@gmail.com>
+Date: Thu, 26 Jan 2012 07:45:14 -0500
+Subject: [PATCH] Reset bit_AVX in __cpu_features is OS support is missing
+
+---
+ ChangeLog                            |  7 +++++++
+ NEWS                                 |  4 ++--
+ sysdeps/x86_64/multiarch/init-arch.c | 14 +++++++++++++-
+ sysdeps/x86_64/multiarch/init-arch.h |  3 ++-
+ 4 files changed, 24 insertions(+), 4 deletions(-)
+
+2012-01-26  Ulrich Drepper  <drepper@gmail.com>
+
+	[BZ #13583]
+	* sysdeps/x86_64/multiarch/init-arch.h: Define bit_OSXSAVE.
+	* sysdeps/x86_64/multiarch/init-arch.c (__init_cpu_features): If
+	bit_AVX is set also check OSXAVE/XCR0 and reset bit_AVX if necessary.
+
+diff --git a/sysdeps/x86_64/multiarch/init-arch.c b/sysdeps/x86_64/multiarch/init-arch.c
+index 65b0ee9..4fabbee 100644
+--- a/sysdeps/x86_64/multiarch/init-arch.c
++++ b/sysdeps/x86_64/multiarch/init-arch.c
+@@ -144,6 +144,18 @@ __init_cpu_features (void)
+   else
+     kind = arch_kind_other;
+ 
++  if (__cpu_features.cpuid[COMMON_CPUID_INDEX_1].ecx & bit_AVX)
++    {
++      /* Reset the AVX bit in case OSXSAVE is disabled.  */
++      if ((__cpu_features.cpuid[COMMON_CPUID_INDEX_1].ecx & bit_OSXSAVE) == 0
++	  || ({ unsigned int xcrlow;
++	      unsigned int xcrhigh;
++	      asm ("xgetbv"
++		   : "=a" (xcrlow), "=d" (xcrhigh) : "c" (0));
++	      (xcrlow & 6) != 6; }))
++	__cpu_features.cpuid[COMMON_CPUID_INDEX_1].ecx &= ~bit_AVX;
++    }
++
+   __cpu_features.family = family;
+   __cpu_features.model = model;
+   atomic_write_barrier ();
+diff --git a/sysdeps/x86_64/multiarch/init-arch.h b/sysdeps/x86_64/multiarch/init-arch.h
+index 2a1df39..408e5ae 100644
+--- a/sysdeps/x86_64/multiarch/init-arch.h
++++ b/sysdeps/x86_64/multiarch/init-arch.h
+@@ -27,6 +27,7 @@
+ #define bit_SSSE3	(1 << 9)
+ #define bit_SSE4_1	(1 << 19)
+ #define bit_SSE4_2	(1 << 20)
++#define bit_OSXSAVE	(1 << 27)
+ #define bit_AVX		(1 << 28)
+ #define bit_POPCOUNT	(1 << 23)
+ #define bit_FMA		(1 << 12)
+-- 
+1.7.12
+

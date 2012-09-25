@@ -1,5 +1,10 @@
-22		[pending]
+22		25 Sep 2012
 	+ 0071_all_glibc-2.16-vfprintf-args.patch
+	+ 0075_all_glibc-2.16-avx-tests-bz13583.patch
+	+ 0076_all_glibc-2.16-avx-tests-bz13583-p2.patch
+	+ 0077_all_glibc-2.16-sse2avx.patch
+	+ 0078_all_glibc-2.16-sse2avx-fixes.patch
+	+ 0079_all_glibc-2.16-avx-tests-bz14059.patch
 
 21		22 Aug 2012
 	- 6305_all_glibc-2.11-s390-older-binutils.patch

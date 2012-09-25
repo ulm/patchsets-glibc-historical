@@ -1,0 +1,289 @@
+From 56f6f6a2403cfa7267cad722597113be35ecf70d Mon Sep 17 00:00:00 2001
+From: Ulrich Drepper <drepper@gmail.com>
+Date: Sat, 28 Jan 2012 14:48:46 -0500
+Subject: [PATCH] Use -msse2avx option for x86-64 libm functions
+
+---
+ ChangeLog                              | 17 +++++++++++++++
+ config.h.in                            |  9 +++++---
+ math/math_private.h                    |  8 -------
+ sysdeps/i386/configure                 | 23 ++++++++++++++++++++
+ sysdeps/i386/configure.in              | 11 ++++++++++
+ sysdeps/x86_64/fpu/math_private.h      | 38 +++++++---------------------------
+ sysdeps/x86_64/fpu/multiarch/Makefile  | 22 ++++++++++----------
+ sysdeps/x86_64/fpu/multiarch/e_atan2.c |  2 +-
+ sysdeps/x86_64/fpu/multiarch/e_exp.c   |  2 +-
+ sysdeps/x86_64/fpu/multiarch/e_log.c   |  3 +--
+ sysdeps/x86_64/fpu/multiarch/s_atan.c  |  2 +-
+ sysdeps/x86_64/fpu/multiarch/s_sin.c   |  4 ++--
+ sysdeps/x86_64/fpu/multiarch/s_tan.c   |  2 +-
+ 13 files changed, 83 insertions(+), 60 deletions(-)
+
+2012-01-28  Ulrich Drepper  <drepper@gmail.com>
+
+	* config.h.in: Define HAVE_SSE2AVX_SUPPORT.
+	* sysdeps/i386/configure.in: Check for -msse2avx.
+	* sysdeps/x86_64/fpu/math_private.h: Use VEX-encoded instructions
+	also if SSE2AVX is defined.
+	* sysdeps/x86_64/fpu/multiarch/Makefile: Compile *-avx functions
+	if config-cflags-sse2avx is yes.  Also add -DSSE2AVX to defines.
+	* sysdeps/x86_64/fpu/multiarch/e_atan2.c: Use HAS_AVX again instead
+	of HAS_YMM_USABLE.
+	* sysdeps/x86_64/fpu/multiarch/e_exp.c: Likewise.
+	* sysdeps/x86_64/fpu/multiarch/e_log.c: Likewise.
+	* sysdeps/x86_64/fpu/multiarch/s_atan.c: Likewise.
+	* sysdeps/x86_64/fpu/multiarch/s_sin.c: Likewise.
+	* sysdeps/x86_64/fpu/multiarch/s_tan.c: Likewise.
+
+diff --git a/config.h.in b/config.h.in
+index 50d53d4..1489476 100644
+--- a/config.h.in
++++ b/config.h.in
+@@ -106,6 +106,9 @@
+ /* Define if gcc supports AVX.  */
+ #undef	HAVE_AVX_SUPPORT
+ 
++/* Define if gcc supports VEX encoding.  */
++#undef	HAVE_SSE2AVX_SUPPORT
++
+ /* Define if gcc supports FMA4.  */
+ #undef	HAVE_FMA4_SUPPORT
+ 
+diff --git a/sysdeps/i386/configure b/sysdeps/i386/configure
+index ae494e2..bc7900e 100644
+--- a/sysdeps/i386/configure
++++ b/sysdeps/i386/configure
+@@ -756,6 +756,29 @@ if test $libc_cv_cc_avx = yes; then
+ 
+ fi
+ 
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for AVX encoding of SSE instructions" >&5
++$as_echo_n "checking for AVX encoding of SSE instructions... " >&6; }
++if ${libc_cv_cc_sse2avx+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  if { ac_try='${CC-cc} -msse2avx -xc /dev/null -S -o /dev/null'
++  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
++  (eval $ac_try) 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; }; then
++  libc_cv_cc_sse2avx=yes
++else
++  libc_cv_cc_sse2avx=no
++fi
++fi
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $libc_cv_cc_sse2avx" >&5
++$as_echo "$libc_cv_cc_sse2avx" >&6; }
++if test $libc_cv_cc_sse2avx = yes; then
++  $as_echo "#define HAVE_SSE2AVX_SUPPORT 1" >>confdefs.h
++
++fi
++
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FMA4 support" >&5
+ $as_echo_n "checking for FMA4 support... " >&6; }
+ if ${libc_cv_cc_fma4+:} false; then :
+diff --git a/sysdeps/i386/configure.in b/sysdeps/i386/configure.in
+index 5a9840e..59a4cd6 100644
+--- a/sysdeps/i386/configure.in
++++ b/sysdeps/i386/configure.in
+@@ -67,6 +67,17 @@ if test $libc_cv_cc_avx = yes; then
+   AC_DEFINE(HAVE_AVX_SUPPORT)
+ fi
+ 
++dnl Check if -msse2avx works.
++AC_CACHE_CHECK(for AVX encoding of SSE instructions, libc_cv_cc_sse2avx, [dnl
++if AC_TRY_COMMAND([${CC-cc} -msse2avx -xc /dev/null -S -o /dev/null]); then
++  libc_cv_cc_sse2avx=yes
++else
++  libc_cv_cc_sse2avx=no
++fi])
++if test $libc_cv_cc_sse2avx = yes; then
++  AC_DEFINE(HAVE_SSE2AVX_SUPPORT)
++fi
++
+ dnl Check if -mfma4 works.
+ AC_CACHE_CHECK(for FMA4 support, libc_cv_cc_fma4, [dnl
+ if AC_TRY_COMMAND([${CC-cc} -mfma4 -xc /dev/null -S -o /dev/null]); then
+diff --git a/sysdeps/x86_64/fpu/math_private.h b/sysdeps/x86_64/fpu/math_private.h
+index 50f765f..8e79718 100644
+--- a/sysdeps/x86_64/fpu/math_private.h
++++ b/sysdeps/x86_64/fpu/math_private.h
+@@ -19,7 +19,7 @@
+ 
+ /* We can do a few things better on x86-64.  */
+ 
+-#ifdef __AVX__
++#if defined __AVX__ || defined SSE2AVX
+ # define MOVD "vmovd"
+ # define STMXCSR "vstmxcsr"
+ # define LDMXCSR "vldmxcsr"
+@@ -90,7 +90,7 @@
+   ({ int __di; GET_FLOAT_WORD (__di, (float) d);			      \
+      (__di & 0x7fffffff) < 0x7f800000; })
+ 
+-#ifdef __AVX__
++#if defined __AVX__ || defined SSE2AVX
+ # define __ieee754_sqrt(d) \
+   ({ double __res;							      \
+     asm ("vsqrtsd %1, %0, %0" : "=x" (__res) : "xm" ((double) (d)));	      \
+@@ -116,7 +116,7 @@
+ 
+ #ifdef __SSE4_1__
+ # ifndef __rint
+-#  ifdef __AVX__
++#  if defined __AVX__ || defined SSE2AVX
+ #   define __rint(d) \
+   ({ double __res; \
+     asm ("vroundsd $4, %1, %0, %0" : "=x" (__res) : "xm" ((double) (d)));      \
+@@ -129,7 +129,7 @@
+ #  endif
+ # endif
+ # ifndef __rintf
+-#  ifdef __AVX__
++#  if defined __AVX__ || defined SSE2AVX
+ #   define __rintf(d) \
+   ({ float __res; \
+     asm ("vroundss $4, %1, %0, %0" : "=x" (__res) : "xm" ((float) (d)));      \
+@@ -143,7 +143,7 @@
+ # endif
+ 
+ # ifndef __floor
+-#  ifdef __AVX__
++#  if defined __AVX__ || defined SSE2AVX
+ #   define __floor(d) \
+   ({ double __res; \
+     asm ("vroundsd $1, %1, %0, %0" : "=x" (__res) : "xm" ((double) (d)));      \
+@@ -156,7 +156,7 @@
+ #  endif
+ # endif
+ # ifndef __floorf
+-#  ifdef __AVX__
++#  if defined __AVX__ || defined SSE2AVX
+ #   define __floorf(d) \
+   ({ float __res; \
+     asm ("vroundss $1, %1, %0, %0" : "=x" (__res) : "xm" ((float) (d)));      \
+diff --git a/sysdeps/x86_64/fpu/multiarch/Makefile b/sysdeps/x86_64/fpu/multiarch/Makefile
+index be68903..4b5c173 100644
+--- a/sysdeps/x86_64/fpu/multiarch/Makefile
++++ b/sysdeps/x86_64/fpu/multiarch/Makefile
+@@ -34,21 +34,21 @@ CFLAGS-s_sin-fma4.c = -mfma4
+ CFLAGS-s_tan-fma4.c = -mfma4
+ endif
+ 
+-ifeq ($(config-cflags-avx),yes)
++ifeq ($(config-cflags-sse2avx),yes)
+ libm-sysdep_routines += e_exp-avx e_log-avx s_atan-avx \
+ 			e_atan2-avx s_sin-avx s_tan-avx \
+ 			mplog-avx mpa-avx slowexp-avx \
+ 			mpexp-avx
+ 
+-CFLAGS-e_atan2-avx.c = -mavx
+-CFLAGS-e_exp-avx.c = -mavx
+-CFLAGS-e_log-avx.c = -mavx
+-CFLAGS-mpa-avx.c = -mavx
+-CFLAGS-mpexp-avx.c = -mavx
+-CFLAGS-mplog-avx.c = -mavx
+-CFLAGS-s_atan-avx.c = -mavx
+-CFLAGS-s_sin-avx.c = -mavx
+-CFLAGS-slowexp-avx.c = -mavx
+-CFLAGS-s_tan-avx.c = -mavx
++CFLAGS-e_atan2-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-e_exp-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-e_log-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-mpa-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-mpexp-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-mplog-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-s_atan-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-s_sin-avx.c = -msse2avx -DSSE2AVX
++CFLAGS-slowexp-avx.c = -sse2mavx -DSSE2AVX
++CFLAGS-s_tan-avx.c = -msse2avx -DSSE2AVX
+ endif
+ endif
+diff --git a/sysdeps/x86_64/fpu/multiarch/e_atan2.c b/sysdeps/x86_64/fpu/multiarch/e_atan2.c
+index 3a615fc..6867c6e 100644
+--- a/sysdeps/x86_64/fpu/multiarch/e_atan2.c
++++ b/sysdeps/x86_64/fpu/multiarch/e_atan2.c
+@@ -14,7 +14,7 @@ extern double __ieee754_atan2_fma4 (double, double);
+ 
+ libm_ifunc (__ieee754_atan2,
+ 	    HAS_FMA4 ? __ieee754_atan2_fma4
+-	    : (HAS_YMM_USABLE ? __ieee754_atan2_avx : __ieee754_atan2_sse2));
++	    : (HAS_AVX ? __ieee754_atan2_avx : __ieee754_atan2_sse2));
+ strong_alias (__ieee754_atan2, __atan2_finite)
+ 
+ # define __ieee754_atan2 __ieee754_atan2_sse2
+diff --git a/sysdeps/x86_64/fpu/multiarch/e_exp.c b/sysdeps/x86_64/fpu/multiarch/e_exp.c
+index 7b2320a..3c65028 100644
+--- a/sysdeps/x86_64/fpu/multiarch/e_exp.c
++++ b/sysdeps/x86_64/fpu/multiarch/e_exp.c
+@@ -14,7 +14,7 @@ extern double __ieee754_exp_fma4 (double);
+ 
+ libm_ifunc (__ieee754_exp,
+ 	    HAS_FMA4 ? __ieee754_exp_fma4
+-	    : (HAS_YMM_USABLE ? __ieee754_exp_avx : __ieee754_exp_sse2));
++	    : (HAS_AVX ? __ieee754_exp_avx : __ieee754_exp_sse2));
+ strong_alias (__ieee754_exp, __exp_finite)
+ 
+ # define __ieee754_exp __ieee754_exp_sse2
+diff --git a/sysdeps/x86_64/fpu/multiarch/e_log.c b/sysdeps/x86_64/fpu/multiarch/e_log.c
+index ab277d6..05f3668 100644
+--- a/sysdeps/x86_64/fpu/multiarch/e_log.c
++++ b/sysdeps/x86_64/fpu/multiarch/e_log.c
+@@ -14,8 +14,7 @@ extern double __ieee754_log_fma4 (double);
+ 
+ libm_ifunc (__ieee754_log,
+ 	    HAS_FMA4 ? __ieee754_log_fma4
+-	    : (HAS_YMM_USABLE ? __ieee754_log_avx
+-	       : __ieee754_log_sse2));
++	    : (HAS_AVX ? __ieee754_log_avx : __ieee754_log_sse2));
+ strong_alias (__ieee754_log, __log_finite)
+ 
+ # define __ieee754_log __ieee754_log_sse2
+diff --git a/sysdeps/x86_64/fpu/multiarch/s_atan.c b/sysdeps/x86_64/fpu/multiarch/s_atan.c
+index 78c7e09..ae16d7c 100644
+--- a/sysdeps/x86_64/fpu/multiarch/s_atan.c
++++ b/sysdeps/x86_64/fpu/multiarch/s_atan.c
+@@ -13,7 +13,7 @@ extern double __atan_fma4 (double);
+ # endif
+ 
+ libm_ifunc (atan, (HAS_FMA4 ? __atan_fma4 :
+-		   HAS_YMM_USABLE ? __atan_avx : __atan_sse2));
++		   HAS_AVX ? __atan_avx : __atan_sse2));
+ 
+ # define atan __atan_sse2
+ #endif
+diff --git a/sysdeps/x86_64/fpu/multiarch/s_sin.c b/sysdeps/x86_64/fpu/multiarch/s_sin.c
+index 417acd0..a0c2521 100644
+--- a/sysdeps/x86_64/fpu/multiarch/s_sin.c
++++ b/sysdeps/x86_64/fpu/multiarch/s_sin.c
+@@ -18,11 +18,11 @@ extern double __sin_fma4 (double);
+ # endif
+ 
+ libm_ifunc (__cos, (HAS_FMA4 ? __cos_fma4 :
+-		    HAS_YMM_USABLE ? __cos_avx : __cos_sse2));
++		    HAS_AVX ? __cos_avx : __cos_sse2));
+ weak_alias (__cos, cos)
+ 
+ libm_ifunc (__sin, (HAS_FMA4 ? __sin_fma4 :
+-		    HAS_YMM_USABLE ? __sin_avx : __sin_sse2));
++		    HAS_AVX ? __sin_avx : __sin_sse2));
+ weak_alias (__sin, sin)
+ 
+ # define __cos __cos_sse2
+diff --git a/sysdeps/x86_64/fpu/multiarch/s_tan.c b/sysdeps/x86_64/fpu/multiarch/s_tan.c
+index 3047155..904308f 100644
+--- a/sysdeps/x86_64/fpu/multiarch/s_tan.c
++++ b/sysdeps/x86_64/fpu/multiarch/s_tan.c
+@@ -13,7 +13,7 @@ extern double __tan_fma4 (double);
+ # endif
+ 
+ libm_ifunc (tan, (HAS_FMA4 ? __tan_fma4 :
+-		  HAS_YMM_USABLE ? __tan_avx : __tan_sse2));
++		  HAS_AVX ? __tan_avx : __tan_sse2));
+ 
+ # define tan __tan_sse2
+ #endif
+-- 
+1.7.12
+
