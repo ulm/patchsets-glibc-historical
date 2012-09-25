@@ -1,0 +1,49 @@
+https://bugs.gentoo.org/394175
+
+From ced6f16ee919d12725840d43d007f1cfd67118df Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 24 Sep 2012 08:58:04 -0700
+Subject: [PATCH] Properly handle fencepost with MALLOC_ALIGN_MASK
+
+---
+ ChangeLog      |  6 ++++++
+ NEWS           |  2 +-
+ malloc/arena.c | 10 +++++++---
+ 3 files changed, 14 insertions(+), 4 deletions(-)
+
+2012-09-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	[BZ #14562]
+	* malloc/arena.c (heap_trim): Properly get fencepost and adjust
+	new chunk size with MALLOC_ALIGN_MASK.
+
+diff --git a/malloc/arena.c b/malloc/arena.c
+index 97c0b90..f24e76c 100644
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -655,15 +655,19 @@ heap_trim(heap_info *heap, size_t pad)
+   unsigned long pagesz = GLRO(dl_pagesize);
+   mchunkptr top_chunk = top(ar_ptr), p, bck, fwd;
+   heap_info *prev_heap;
+-  long new_size, top_size, extra;
++  long new_size, top_size, extra, prev_size, misalign;
+ 
+   /* Can this heap go away completely? */
+   while(top_chunk == chunk_at_offset(heap, sizeof(*heap))) {
+     prev_heap = heap->prev;
+-    p = chunk_at_offset(prev_heap, prev_heap->size - (MINSIZE-2*SIZE_SZ));
++    prev_size = prev_heap->size - (MINSIZE-2*SIZE_SZ);
++    p = chunk_at_offset(prev_heap, prev_size);
++    /* fencepost must be properly aligned.  */
++    misalign = ((long) p) & MALLOC_ALIGN_MASK;
++    p = chunk_at_offset(prev_heap, prev_size - misalign);
+     assert(p->size == (0|PREV_INUSE)); /* must be fencepost */
+     p = prev_chunk(p);
+-    new_size = chunksize(p) + (MINSIZE-2*SIZE_SZ);
++    new_size = chunksize(p) + (MINSIZE-2*SIZE_SZ) + misalign;
+     assert(new_size>0 && new_size<(long)(2*MINSIZE));
+     if(!prev_inuse(p))
+       new_size += p->prev_size;
+-- 
+1.7.12
+
