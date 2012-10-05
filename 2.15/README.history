@@ -1,3 +1,6 @@
+23		04 Oct 2012
+	+ 0030_all_glibc-2.17-ppc-fcntl-updates.patch
+
 22		25 Sep 2012
 	+ 0071_all_glibc-2.16-vfprintf-args.patch
 	+ 0075_all_glibc-2.16-avx-tests-bz13583.patch

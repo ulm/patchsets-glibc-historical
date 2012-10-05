@@ -1,3 +1,6 @@
+6		04 Oct 2012
+	+ 0030_all_glibc-2.17-ppc-fcntl-updates.patch
+
 5		24 Sep 2012
 	+ 0055_all_glibc-2.16-x32-malloc-align.patch
 
