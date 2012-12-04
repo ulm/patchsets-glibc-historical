@@ -1,4 +1,4 @@
-ripped from Debian
+http://sourceware.org/ml/libc-alpha/2004-09/msg00179.html
 
 ---
  sysdeps/unix/sysv/linux/posix_fadvise.c |   13 +++++++++++++
