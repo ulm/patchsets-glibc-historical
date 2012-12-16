@@ -1,7 +1,7 @@
 #!/sbin/runscript
 # Copyright 1999-2005 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/extra/etc/nscd,v 1.6 2012/07/03 20:05:39 vapier Exp $
+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/extra/etc/nscd,v 1.7 2012/12/16 22:27:28 vapier Exp $
 
 depend() {
 	use dns ldap net slapd
@@ -31,7 +31,7 @@ start() {
 	local secure=`while read curline ; do
 		table=${curline%:*}
 		entries=${curline##$table:}
-		table=${table%%[^a-z]*}
+		table=${table%%[!a-z]*}
 		case $table in
 			passwd*|group*|hosts)
 			for entry in $entries ; do
