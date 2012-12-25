@@ -1,0 +1,11 @@
+1		25 Dec 2012
+	+ 0085_all_glibc-disable-ldconfig.patch
+	+ 1005_all_glibc-sigaction.patch
+	+ 1008_all_glibc-2.16-fortify.patch
+	+ 1040_all_2.3.3-localedef-fix-trampoline.patch
+	+ 1055_all_glibc-resolv-dynamic.patch
+	+ 1505_all_glibc-nptl-stack-grows-up.patch
+	+ 3020_all_glibc-tests-sandbox-libdl-paths.patch
+	+ 5063_all_glibc-dont-build-timezone.patch
+	+ 6230_all_arm-glibc-hardened.patch
+	+ 6600_mips_librt-mips.patch
