@@ -1,0 +1,77 @@
+https://bugs.gentoo.org/448224
+
+From c9d6789ebe028a260d3e5be0c26b7d02fdfe99fe Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Wed, 28 Nov 2012 23:04:32 -0500
+Subject: [PATCH] byteswap.h: fix gcc ver test for __builtin_bswap{32,64}
+
+The __builtin_bswap* functions were introduced in gcc-4.3, not gcc-4.2.
+Fix the __GNUC_PREREQ tests to reflect this.
+
+Otherwise trying to compile code with gcc-4.2 falls down:
+In file included from /usr/include/endian.h:60,
+                 from /usr/include/ctype.h:40,
+/usr/include/bits/byteswap.h: In function 'unsigned int __bswap_32(unsigned int)':
+/usr/include/bits/byteswap.h:46: error: '__builtin_bswap32' was not declared in this scope
+/usr/include/bits/byteswap.h: In function 'long long unsigned int __bswap_64(long long unsigned int)':
+/usr/include/bits/byteswap.h:110: error: '__builtin_bswap64' was not declared in this scope
+
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+---
+ ChangeLog                   | 5 +++++
+ bits/byteswap.h             | 4 ++--
+ sysdeps/x86/bits/byteswap.h | 4 ++--
+ 3 files changed, 9 insertions(+), 4 deletions(-)
+
+2012-12-03  Mike Frysinger  <vapier@gentoo.org>
+
+	* bits/byteswap.h [__GNUC__]: Change __GNUC_PREREQ from 4.2 to 4.3.
+	* sysdeps/x86/bits/byteswap.h [__GNUC__]: Likewise.
+
+diff --git a/bits/byteswap.h b/bits/byteswap.h
+index e19e91a..7e5daed 100644
+--- a/bits/byteswap.h
++++ b/bits/byteswap.h
+@@ -39,7 +39,7 @@
+       (((x) & 0x0000ff00u) <<  8) | (((x) & 0x000000ffu) << 24))
+ 
+ #ifdef __GNUC__
+-# if __GNUC_PREREQ (4, 2)
++# if __GNUC_PREREQ (4, 3)
+ static __inline unsigned int
+ __bswap_32 (unsigned int __bsx)
+ {
+@@ -70,7 +70,7 @@ __bswap_32 (unsigned int __bsx)
+ 		     | (((x) & 0x000000000000ff00ull) << 40)		      \
+ 		     | (((x) & 0x00000000000000ffull) << 56)))
+ 
+-# if __GNUC_PREREQ (4, 2)
++# if __GNUC_PREREQ (4, 3)
+ static __inline unsigned long long int
+ __bswap_64 (unsigned long long int __bsx)
+ {
+diff --git a/sysdeps/x86/bits/byteswap.h b/sysdeps/x86/bits/byteswap.h
+index babe567..581687c 100644
+--- a/sysdeps/x86/bits/byteswap.h
++++ b/sysdeps/x86/bits/byteswap.h
+@@ -40,7 +40,7 @@
+       (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+ 
+ #ifdef __GNUC__
+-# if __GNUC_PREREQ (4, 2)
++# if __GNUC_PREREQ (4, 3)
+ static __inline unsigned int
+ __bswap_32 (unsigned int __bsx)
+ {
+@@ -104,7 +104,7 @@ __bswap_32 (unsigned int __bsx)
+ 		     | (((x) & 0x000000000000ff00ull) << 40)		      \
+ 		     | (((x) & 0x00000000000000ffull) << 56)))
+ 
+-# if __GNUC_PREREQ (4, 2)
++# if __GNUC_PREREQ (4, 3)
+ static __inline unsigned long long int
+ __bswap_64 (unsigned long long int __bsx)
+ {
+-- 
+1.8.0
+
