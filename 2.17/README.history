@@ -1,3 +1,6 @@
+2		08 Jan 2013
+	+ 1506_all_glibc-2.17-hppa-fpu.patch
+
 1		25 Dec 2012
 	+ 0085_all_glibc-disable-ldconfig.patch
 	+ 1005_all_glibc-sigaction.patch
