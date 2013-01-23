@@ -1,3 +1,6 @@
+10		23 Jan 2013
+	+ 0035_all_glibc-2.16-i386-math-feraiseexcept-overhead.patch
+
 9		28 Dec 2012
 	+ 0045_all_glibc-2.16-byteswap-gcc-4.2.patch
 	+ 0056_all_glibc-2.16-sed-version.patch
