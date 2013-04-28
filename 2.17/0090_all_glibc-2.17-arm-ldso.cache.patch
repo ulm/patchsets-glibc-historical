@@ -1,0 +1,111 @@
+https://bugs.gentoo.org/454200
+http://sourceware.org/bugzilla/show_bug.cgi?id=15006
+
+From b39949d21179bd0b08a083e4f7e35d0c98e11294 Mon Sep 17 00:00:00 2001
+From: Carlos O'Donell <carlos@redhat.com>
+Date: Fri, 8 Feb 2013 12:26:12 -0500
+Subject: [PATCH] ARM: Support loading unmarked objects from cache.
+
+ARM now supports loading unmarked objects from
+the dynamic loader cache. Unmarked objects can
+be used with the hard-float or soft-float ABI.
+We must support loading unmarked objects during
+the transition period from a binutils that does
+not mark objects to one that does mark them with
+the correct ELF flags.
+
+Signed-off-by: Carlos O'Donell <carlos@redhat.com>
+---
+ ChangeLog                                      | 5 +++++
+ elf/cache.c                                    | 4 ++++
+ ports/ChangeLog.arm                            | 8 ++++++++
+ ports/sysdeps/unix/sysv/linux/arm/dl-cache.h   | 9 +++++++--
+ ports/sysdeps/unix/sysv/linux/arm/readelflib.c | 6 ++++++
+ sysdeps/generic/ldconfig.h                     | 1 +
+ 6 files changed, 31 insertions(+), 2 deletions(-)
+
+2013-02-08  Carlos O'Donell  <carlos@redhat.com>
+
+	* sysdeps/generic/ldconfig.h: Define FLAG_ARM_LIBSF.
+	* elf/cache.c (print_entry): Add FLAG_ARM_LIBSF support.
+
+diff --git a/elf/cache.c b/elf/cache.c
+index 9901952..699550b 100644
+--- a/elf/cache.c
++++ b/elf/cache.c
+@@ -100,6 +100,10 @@ print_entry (const char *lib, int flag, unsigned int osversion,
+     case FLAG_AARCH64_LIB64:
+       fputs (",AArch64", stdout);
+       break;
++    /* Uses the ARM soft-float ABI.  */
++    case FLAG_ARM_LIBSF:
++      fputs (",soft-float", stdout);
++      break;
+     case 0:
+       break;
+     default:
+
+2013-02-08  Carlos O'Donell  <carlos@redhat.com>
+
+	* sysdeps/unix/sysv/linux/arm/dl-cache.h
+	[__ARM_PCS_VFP] (_dl_cache_check_flags): Allow plain FLAG_ELF_LIBC6.
+	[!__ARM_PCS_VFP] (_dl_cache_check_flags): Likewise.
+	* sysdeps/unix/sysv/linux/arm/readelflib.c (process_elf_file):
+	Set FLAG_ARM_LIBSF for soft-float ABI otherwise just FLAG_ELF_LIBC6.
+
+diff --git a/ports/sysdeps/unix/sysv/linux/arm/dl-cache.h b/ports/sysdeps/unix/sysv/linux/arm/dl-cache.h
+index acc4f28..504feca 100644
+--- a/ports/sysdeps/unix/sysv/linux/arm/dl-cache.h
++++ b/ports/sysdeps/unix/sysv/linux/arm/dl-cache.h
+@@ -18,12 +18,17 @@
+ 
+ #include <ldconfig.h>
+ 
++/* In order to support the transition from unmarked objects
++   to marked objects we must treat unmarked objects as
++   compatible with either FLAG_ARM_LIBHF or FLAG_ARM_LIBSF.  */
+ #ifdef __ARM_PCS_VFP
+ # define _dl_cache_check_flags(flags) \
+-  ((flags) == (FLAG_ARM_LIBHF | FLAG_ELF_LIBC6))
++  ((flags) == (FLAG_ARM_LIBHF | FLAG_ELF_LIBC6) \
++   || (flags) == FLAG_ELF_LIBC6)
+ #else
+ # define _dl_cache_check_flags(flags) \
+-  ((flags) == FLAG_ELF_LIBC6)
++  ((flags) == (FLAG_ARM_LIBSF | FLAG_ELF_LIBC6) \
++   || (flags) == FLAG_ELF_LIBC6)
+ #endif
+ 
+ #include_next <dl-cache.h>
+diff --git a/ports/sysdeps/unix/sysv/linux/arm/readelflib.c b/ports/sysdeps/unix/sysv/linux/arm/readelflib.c
+index 81e5ccb..3efb613 100644
+--- a/ports/sysdeps/unix/sysv/linux/arm/readelflib.c
++++ b/ports/sysdeps/unix/sysv/linux/arm/readelflib.c
+@@ -46,6 +46,12 @@ process_elf_file (const char *file_name, const char *lib, int *flag,
+ 	  if (elf32_header->e_flags & EF_ARM_ABI_FLOAT_HARD)
+ 	    *flag = FLAG_ARM_LIBHF|FLAG_ELF_LIBC6;
+ 	  else if (elf32_header->e_flags & EF_ARM_ABI_FLOAT_SOFT)
++	    *flag = FLAG_ARM_LIBSF|FLAG_ELF_LIBC6;
++	  else
++	    /* We must assume the unmarked objects are compatible
++	       with all ABI variants. Such objects may have been
++	       generated in a transitional period when the ABI
++	       tags were not added to all objects.  */
+ 	    *flag = FLAG_ELF_LIBC6;
+ 	}
+     }
+diff --git a/sysdeps/generic/ldconfig.h b/sysdeps/generic/ldconfig.h
+index 57a9a46..91190aa 100644
+--- a/sysdeps/generic/ldconfig.h
++++ b/sysdeps/generic/ldconfig.h
+@@ -36,6 +36,7 @@
+ #define FLAG_X8664_LIBX32	0x0800
+ #define FLAG_ARM_LIBHF		0x0900
+ #define FLAG_AARCH64_LIB64	0x0a00
++#define FLAG_ARM_LIBSF		0x0b00
+ 
+ /* Name of auxiliary cache.  */
+ #define _PATH_LDCONFIG_AUX_CACHE "/var/cache/ldconfig/aux-cache"
+-- 
+1.8.2.1
+

@@ -1,3 +1,6 @@
+5		27 Apr 2013
+	+ 0090_all_glibc-2.17-arm-ldso.cache.patch
+
 4		23 Jan 2013
 	+ 0035_all_glibc-2.16-i386-math-feraiseexcept-overhead.patch
 
