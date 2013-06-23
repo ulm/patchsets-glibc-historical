@@ -1,3 +1,6 @@
+6		23 Jun 2013
+	+ 0065_all_glibc-2.18-qecvt-guards.patch
+
 5		27 Apr 2013
 	+ 0090_all_glibc-2.17-arm-ldso.cache.patch
 
