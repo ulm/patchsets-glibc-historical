@@ -1,3 +1,8 @@
+7		26 Jun 2013
+	+ 0070_all_glibc-2.18-localedef-page-align-1.patch
+	+ 0071_all_glibc-2.18-localedef-page-align-2.patch
+	+ 0072_all_glibc-2.18-localedef-page-align-3.patch
+
 6		23 Jun 2013
 	+ 0065_all_glibc-2.18-qecvt-guards.patch
 
