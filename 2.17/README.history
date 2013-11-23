@@ -1,3 +1,9 @@
+8		22 Nov 2013
+	+ 0059_all_glibc-2.19-make-4.0.patch
+	+ 1507_all_hppa-ia64-DL_AUTO_FUNCTION_ADDRESS.patch
+	+ 1508_all_hppa-fanotify_mark.patch
+	+ 6024_all_alpha-fix-signal-thunk-unwind-info.patch
+
 7		26 Jun 2013
 	+ 0070_all_glibc-2.18-localedef-page-align-1.patch
 	+ 0071_all_glibc-2.18-localedef-page-align-2.patch

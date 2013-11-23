@@ -1,3 +1,9 @@
+12		22 Nov 2013
+	+ 0059_all_glibc-2.19-make-4.0.patch
+	+ 1507_all_hppa-ia64-DL_AUTO_FUNCTION_ADDRESS.patch
+	+ 1508_all_hppa-fanotify_mark.patch
+	+ 6024_all_alpha-fix-signal-thunk-unwind-info.patch
+
 11		23 Jun 2013
 	+ 0065_all_glibc-2.18-qecvt-guards.patch
 
