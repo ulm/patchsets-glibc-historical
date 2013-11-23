@@ -1,0 +1,62 @@
+https://bugs.gentoo.org/480740
+
+From 027e32bd42314e17095ba39df82ef293f4a72c09 Mon Sep 17 00:00:00 2001
+From: Richard Henderson <rth@twiddle.net>
+Date: Sat, 16 Nov 2013 06:34:39 +1000
+Subject: [PATCH] alpha: Fix signal thunk unwind info
+
+2013-11-16  Richard Henderson  <rth@redhat.com>
+
+	* sysdeps/unix/sysv/linux/alpha/rt_sigaction.S: Include a nop
+	before each signal thunk.
+
+---
+ ports/ChangeLog.alpha                              |  5 +++++
+ ports/sysdeps/unix/sysv/linux/alpha/rt_sigaction.S | 18 ++++++++++++++----
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/ports/sysdeps/unix/sysv/linux/alpha/rt_sigaction.S b/ports/sysdeps/unix/sysv/linux/alpha/rt_sigaction.S
+index 3d291fd..6efa738 100644
+--- a/ports/sysdeps/unix/sysv/linux/alpha/rt_sigaction.S
++++ b/ports/sysdeps/unix/sysv/linux/alpha/rt_sigaction.S
+@@ -83,14 +83,21 @@ PSEUDO_END(__syscall_rt_sigaction)
+ 	cfi_offset (64, \base + 2 * 8)
+ 	.endm
+ 
+-	.align	4
+-
+ 	cfi_startproc
+ 	cfi_return_column (64)
+ 	.cfi_signal_frame
+ 	SIGCONTEXT_REGS -648
+-
+ 	cfi_def_cfa_offset (648)
++
++	/* While this frame is marked as a signal frame, that only applies
++	   to how this return address is handled for the outer frame.
++	   The return address that arrived here, from the inner frame, is
++	   not marked as a signal frame and so the unwinder still tries to
++	   subtract 1 to examine the presumed call insn.  Thus we must
++	   extend the unwind info to a nop before the start.  */
++	nop
++	.align 4
++
+ __syscall_sigreturn:
+ 	mov	sp, a0
+ 	ldi	v0, __NR_sigreturn
+@@ -98,8 +105,11 @@ __syscall_sigreturn:
+ 	.size	__syscall_sigreturn, .-__syscall_sigreturn
+ 	.type	__syscall_sigreturn, @function
+ 
+-	.align 4
++	/* See above wrt including the nop.  */
+ 	cfi_def_cfa_offset (176 + 648)
++	nop
++	.align 4
++
+ __syscall_rt_sigreturn:
+ 	mov	sp,a0
+ 	ldi	v0,__NR_rt_sigreturn
+-- 
+1.8.4.3
+
