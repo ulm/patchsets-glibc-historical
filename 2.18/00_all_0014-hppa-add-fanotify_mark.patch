@@ -1,0 +1,40 @@
+From d8827b41e4a39c352bd8478671398b63a76dc03a Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 2 Sep 2013 23:13:57 -0400
+Subject: [PATCH 14/16] hppa: add fanotify_mark
+
+Another example of all the 64bit arches getting the definition via a
+common file, but the 32bit ones all adding it by themselves and hppa
+was missed.
+
+I'm not entirely sure about the usage of GLIBC_2.19 symbols here.
+We'd like to backport this so people can use it, but it means we'd
+be releasing a glibc-2.17/glibc-2.18 with a GLIBC_2.19 symbol in it.
+But maybe it won't be a big deal since you'd only get that 2.19 ref
+if you actually used the symbol ?
+
+There hasn't been a glibc release where hppa worked w/out a bunch of
+patches, so in reality there's only two distros that matter -- Gentoo
+and Debian.
+
+URL: https://bugs.gentoo.org/480268
+Reported-by: Jeroen Roovers <jer@gentoo.org>
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+
+(cherry picked from commit 18d4371683fbe347bf4fbaef05d18b5a4918887a)
+---
+ ports/sysdeps/unix/sysv/linux/hppa/syscalls.list | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ports/sysdeps/unix/sysv/linux/hppa/syscalls.list b/ports/sysdeps/unix/sysv/linux/hppa/syscalls.list
+index ae36d46..1fc10d9 100644
+--- a/ports/sysdeps/unix/sysv/linux/hppa/syscalls.list
++++ b/ports/sysdeps/unix/sysv/linux/hppa/syscalls.list
+@@ -36,3 +36,4 @@ socketpair	-	socketpair	i:iiif	__socketpair	socketpair
+ setrlimit	-	setrlimit	i:ip	__setrlimit	setrlimit
+ getrlimit	-	getrlimit	i:ip	__getrlimit	getrlimit
+ prlimit64	EXTRA	prlimit64	i:iipp	__prlimit64	prlimit64@@GLIBC_2.17
++fanotify_mark	EXTRA	fanotify_mark	i:iiiiis	fanotify_mark
+-- 
+1.8.4.3
+
