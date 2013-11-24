@@ -1,3 +1,9 @@
+2		24 Nov 2013
+	+ 00_all_0013-alpha-Fix-signal-thunk-unwind-info.patch
+	+ 00_all_0014-hppa-add-fanotify_mark.patch
+	+ 00_all_0015-Accept-make-versions-4.0-and-greater.patch
+	+ 00_all_0016-Don-t-use-broken-DL_AUTO_FUNCTION_ADDRESS.patch
+
 1		16 Aug 2013
 	+ 00_all_0001-disable-ldconfig-during-install.patch
 	+ 00_all_0002-workaround-crash-when-handling-signals-in-static-PIE.patch
