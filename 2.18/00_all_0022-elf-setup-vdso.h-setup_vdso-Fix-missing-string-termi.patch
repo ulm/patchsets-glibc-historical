@@ -1,0 +1,29 @@
+From c4efa458d767026ade69a4cb72362856a7495127 Mon Sep 17 00:00:00 2001
+From: Andreas Arnez <arnez@linux.vnet.ibm.com>
+Date: Thu, 31 Oct 2013 09:57:33 -0500
+Subject: [PATCH] * elf/setup-vdso.h (setup_vdso): Fix missing string
+ termination.
+
+backport of f315524e034cfc644157cb4af5ecc99f645dd067
+
+(cherry picked from commit f8a004f1fa412e3aae77faa30b4dfb654d721510)
+---
+ elf/setup-vdso.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/elf/setup-vdso.h b/elf/setup-vdso.h
+index a98dfec..056d885 100644
+--- a/elf/setup-vdso.h
++++ b/elf/setup-vdso.h
+@@ -89,7 +89,7 @@ setup_vdso (struct link_map *main_map __attribute__ ((unused)),
+ 	     addresses in the vsyscall DSO pages in writev() calls.  */
+ 	  const char *dsoname = ((char *) D_PTR (l, l_info[DT_STRTAB])
+ 				 + l->l_info[DT_SONAME]->d_un.d_val);
+-	  size_t len = strlen (dsoname);
++	  size_t len = strlen (dsoname) + 1;
+ 	  char *copy = malloc (len);
+ 	  if (copy == NULL)
+ 	    _dl_fatal_printf ("out of memory\n");
+-- 
+1.8.4.3
+

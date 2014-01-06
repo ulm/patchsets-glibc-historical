@@ -1,0 +1,47 @@
+From 6c42eca168f60bc50ed5e57ce59d1bfdf19120e2 Mon Sep 17 00:00:00 2001
+From: Adhemerval Zanella <azanella@linux.vnet.ibm.com>
+Date: Thu, 5 Sep 2013 09:32:56 -0500
+Subject: [PATCH] PowerPC: fix POWER7 memrchr for some large inputs
+
+(cherry picked from commit b51679672648410c6627a4bd169e076c5b36f47b)
+
+Conflicts:
+	ChangeLog
+---
+ sysdeps/powerpc/powerpc32/power7/memrchr.S | 4 ++--
+ sysdeps/powerpc/powerpc64/power7/memrchr.S | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/sysdeps/powerpc/powerpc32/power7/memrchr.S b/sysdeps/powerpc/powerpc32/power7/memrchr.S
+index d1e3fda..defd832 100644
+--- a/sysdeps/powerpc/powerpc32/power7/memrchr.S
++++ b/sysdeps/powerpc/powerpc32/power7/memrchr.S
+@@ -101,8 +101,8 @@ L(loop):
+ 	/* We're here because the counter reached 0, and that means we
+ 	   didn't have any matches for BYTE in the whole range.  Just return
+ 	   the original range.  */
+-	addi	r9,r8,4
+-	cmplw	cr6,r9,r7
++	addi	r8,r8,4
++	cmplw	cr6,r8,r7
+ 	bgt	cr6,L(loop_small)
+ 	b	L(null)
+ 
+diff --git a/sysdeps/powerpc/powerpc64/power7/memrchr.S b/sysdeps/powerpc/powerpc64/power7/memrchr.S
+index d24fbbb..c499952 100644
+--- a/sysdeps/powerpc/powerpc64/power7/memrchr.S
++++ b/sysdeps/powerpc/powerpc64/power7/memrchr.S
+@@ -102,8 +102,8 @@ L(loop):
+ 	/* We're here because the counter reached 0, and that means we
+ 	   didn't have any matches for BYTE in the whole range.  Just return
+ 	   the original range.  */
+-	addi	r9,r8,8
+-	cmpld	cr6,r9,r7
++	addi	r8,r8,8
++	cmpld	cr6,r8,r7
+ 	bgt	cr6,L(loop_small)
+ 	b	L(null)
+ 
+-- 
+1.8.4.3
+

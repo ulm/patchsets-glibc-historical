@@ -1,0 +1,90 @@
+From 3cd70f9e650bafef5c73c19229e6f0176604bb9e Mon Sep 17 00:00:00 2001
+From: "David S. Miller" <davem@davemloft.net>
+Date: Tue, 12 Nov 2013 12:48:01 -0800
+Subject: [PATCH] Fix sparc 64-bit GMP ifunc resolution in static builds.
+
+	[BZ #16150]
+	* sysdeps/sparc/sparc64/multiarch/add_n.S: Resolve to the correct generic
+	symbol in the non-vis3 case in static builds.
+	* sysdeps/sparc/sparc64/multiarch/addmul_1.S: Likewise.
+	* sysdeps/sparc/sparc64/multiarch/mul_1.S: Likewise.
+	* sysdeps/sparc/sparc64/multiarch/sub_n.S: Likewise.
+	* sysdeps/sparc/sparc64/multiarch/submul_1.S: Likewise.
+
+(cherry picked from commit 2293d2b10a583486cd22ce578796848f4c3a8b6d)
+---
+ sysdeps/sparc/sparc64/multiarch/add_n.S    | 2 +-
+ sysdeps/sparc/sparc64/multiarch/addmul_1.S | 2 +-
+ sysdeps/sparc/sparc64/multiarch/mul_1.S    | 2 +-
+ sysdeps/sparc/sparc64/multiarch/sub_n.S    | 2 +-
+ sysdeps/sparc/sparc64/multiarch/submul_1.S | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/sysdeps/sparc/sparc64/multiarch/add_n.S b/sysdeps/sparc/sparc64/multiarch/add_n.S
+index 25cae39..22c6e58 100644
+--- a/sysdeps/sparc/sparc64/multiarch/add_n.S
++++ b/sysdeps/sparc/sparc64/multiarch/add_n.S
+@@ -42,7 +42,7 @@ ENTRY(__mpn_add_n)
+ 	sethi	%gdop_hix22(__mpn_add_n_generic), %o1
+ 	xor	%o1, %gdop_lox10(__mpn_add_n_generic), %o1
+ # else
+-	set	__mpn_add_n_vis3, %o1
++	set	__mpn_add_n_generic, %o1
+ # endif
+ 10:
+ # ifdef SHARED
+diff --git a/sysdeps/sparc/sparc64/multiarch/addmul_1.S b/sysdeps/sparc/sparc64/multiarch/addmul_1.S
+index a1659e4..a65c934 100644
+--- a/sysdeps/sparc/sparc64/multiarch/addmul_1.S
++++ b/sysdeps/sparc/sparc64/multiarch/addmul_1.S
+@@ -42,7 +42,7 @@ ENTRY(__mpn_addmul_1)
+ 	sethi	%gdop_hix22(__mpn_addmul_1_generic), %o1
+ 	xor	%o1, %gdop_lox10(__mpn_addmul_1_generic), %o1
+ # else
+-	set	__mpn_addmul_1_vis3, %o1
++	set	__mpn_addmul_1_generic, %o1
+ # endif
+ 10:
+ # ifdef SHARED
+diff --git a/sysdeps/sparc/sparc64/multiarch/mul_1.S b/sysdeps/sparc/sparc64/multiarch/mul_1.S
+index 25f51bf..811754e 100644
+--- a/sysdeps/sparc/sparc64/multiarch/mul_1.S
++++ b/sysdeps/sparc/sparc64/multiarch/mul_1.S
+@@ -42,7 +42,7 @@ ENTRY(__mpn_mul_1)
+ 	sethi	%gdop_hix22(__mpn_mul_1_generic), %o1
+ 	xor	%o1, %gdop_lox10(__mpn_mul_1_generic), %o1
+ # else
+-	set	__mpn_mul_1_vis3, %o1
++	set	__mpn_mul_1_generic, %o1
+ # endif
+ 10:
+ # ifdef SHARED
+diff --git a/sysdeps/sparc/sparc64/multiarch/sub_n.S b/sysdeps/sparc/sparc64/multiarch/sub_n.S
+index 5e15bea..3963790 100644
+--- a/sysdeps/sparc/sparc64/multiarch/sub_n.S
++++ b/sysdeps/sparc/sparc64/multiarch/sub_n.S
+@@ -42,7 +42,7 @@ ENTRY(__mpn_sub_n)
+ 	sethi	%gdop_hix22(__mpn_sub_n_generic), %o1
+ 	xor	%o1, %gdop_lox10(__mpn_sub_n_generic), %o1
+ # else
+-	set	__mpn_sub_n_vis3, %o1
++	set	__mpn_sub_n_generic, %o1
+ # endif
+ 10:
+ # ifdef SHARED
+diff --git a/sysdeps/sparc/sparc64/multiarch/submul_1.S b/sysdeps/sparc/sparc64/multiarch/submul_1.S
+index 68552e9..6c4c3a3 100644
+--- a/sysdeps/sparc/sparc64/multiarch/submul_1.S
++++ b/sysdeps/sparc/sparc64/multiarch/submul_1.S
+@@ -42,7 +42,7 @@ ENTRY(__mpn_submul_1)
+ 	sethi	%gdop_hix22(__mpn_submul_1_generic), %o1
+ 	xor	%o1, %gdop_lox10(__mpn_submul_1_generic), %o1
+ # else
+-	set	__mpn_submul_1_vis3, %o1
++	set	__mpn_submul_1_generic, %o1
+ # endif
+ 10:
+ # ifdef SHARED
+-- 
+1.8.4.3
+

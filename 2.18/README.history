@@ -1,3 +1,22 @@
+3		06 Jan 2013
+	+ 00_all_0017-ptrace.h-add-__-prefix-to-ptrace_peeksiginfo_args.patch
+	+ 00_all_0018-ia64-add-__-prefix-to-pt_all_user_regs-ia64_fpreg-BZ.patch
+	+ 00_all_0019-ARM-Fix-clone-code-when-built-for-Thumb.patch
+	+ 00_all_0020-Fix-PI-mutex-check-in-pthread_cond_broadcast-and-pth.patch
+	+ 00_all_0021-CVE-2013-4237-BZ-14699-Buffer-overflow-in-readdir_r.patch
+	+ 00_all_0022-elf-setup-vdso.h-setup_vdso-Fix-missing-string-termi.patch
+	+ 00_all_0023-PowerPC-fix-POWER7-memrchr-for-some-large-inputs.patch
+	+ 00_all_0024-Fix-memory-leaks-in-libio-on-allocation-failure.patch
+	+ 00_all_0025-Fix-memory-leak-in-stdlib-isomac.c.patch
+	+ 00_all_0026-Fix-stack-overflow-due-to-large-AF_INET6-requests.patch
+	+ 00_all_0027-BZ-15754-CVE-2013-4788.patch
+	+ 00_all_0028-malloc-Check-for-integer-overflow-in-pvalloc.patch
+	+ 00_all_0029-malloc-Check-for-integer-overflow-in-valloc.patch
+	+ 00_all_0030-malloc-Check-for-integer-overflow-in-memalign.patch
+	+ 00_all_0031-PowerPC-Fix-POINTER_CHK_GUARD-thread-register-for-PP.patch
+	+ 00_all_0032-Fix-build-on-pre-v9-32-bit-Sparc.patch
+	+ 00_all_0033-Fix-sparc-64-bit-GMP-ifunc-resolution-in-static-buil.patch
+
 2		24 Nov 2013
 	+ 00_all_0013-alpha-Fix-signal-thunk-unwind-info.patch
 	+ 00_all_0014-hppa-add-fanotify_mark.patch

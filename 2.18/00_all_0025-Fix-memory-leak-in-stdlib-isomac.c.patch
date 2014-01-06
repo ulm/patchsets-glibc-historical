@@ -1,0 +1,25 @@
+From cbee0562887196f6c87dc538aaeeb494c79daa15 Mon Sep 17 00:00:00 2001
+From: Allan McRae <allan@archlinux.org>
+Date: Mon, 9 Sep 2013 22:52:58 +1000
+Subject: [PATCH] Fix memory leak in stdlib/isomac.c
+
+(cherry picked from commit 3f71830d35d7bf4ac11664f0c48c3c68d250618b)
+---
+ stdlib/isomac.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/stdlib/isomac.c b/stdlib/isomac.c
+index 2c9009b..621b515 100644
+--- a/stdlib/isomac.c
++++ b/stdlib/isomac.c
+@@ -263,6 +263,7 @@ get_null_defines (void)
+   if (system (command))
+     {
+       puts ("system() returned nonzero");
++      free (command);
+       return NULL;
+     }
+   free (command);
+-- 
+1.8.4.3
+

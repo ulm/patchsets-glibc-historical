@@ -1,0 +1,47 @@
+From 45560694ca0b6d80ccbba23b51d1c4aa8cd228ab Mon Sep 17 00:00:00 2001
+From: Allan McRae <allan@archlinux.org>
+Date: Mon, 9 Sep 2013 22:50:41 +1000
+Subject: [PATCH] Fix memory leaks in libio on allocation failure
+
+(cherry picked from commit 8e395175c4786ad9679851e3ed3c0c54a6f4e1f0)
+---
+ libio/memstream.c  | 5 ++++-
+ libio/wmemstream.c | 6 ++++--
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/libio/memstream.c b/libio/memstream.c
+index 34534e2..3cb1bd7 100644
+--- a/libio/memstream.c
++++ b/libio/memstream.c
+@@ -84,7 +84,10 @@ open_memstream (bufloc, sizeloc)
+ 
+   buf = calloc (1, _IO_BUFSIZ);
+   if (buf == NULL)
+-    return NULL;
++    {
++      free (new_f);
++      return NULL;
++    }
+   _IO_init (&new_f->fp._sf._sbf._f, 0);
+   _IO_JUMPS ((struct _IO_FILE_plus *) &new_f->fp._sf._sbf) = &_IO_mem_jumps;
+   _IO_str_init_static_internal (&new_f->fp._sf, buf, _IO_BUFSIZ, buf);
+diff --git a/libio/wmemstream.c b/libio/wmemstream.c
+index 65738d4..fd7fe44 100644
+--- a/libio/wmemstream.c
++++ b/libio/wmemstream.c
+@@ -85,8 +85,10 @@ open_wmemstream (bufloc, sizeloc)
+ 
+   buf = calloc (1, _IO_BUFSIZ);
+   if (buf == NULL)
+-    return NULL;
+-
++    {
++      free (new_f);
++      return NULL;
++    }
+   _IO_no_init (&new_f->fp._sf._sbf._f, 0, 0, &new_f->wd, &_IO_wmem_jumps);
+   _IO_fwide (&new_f->fp._sf._sbf._f, 1);
+   _IO_wstr_init_static (&new_f->fp._sf._sbf._f, buf,
+-- 
+1.8.4.3
+
