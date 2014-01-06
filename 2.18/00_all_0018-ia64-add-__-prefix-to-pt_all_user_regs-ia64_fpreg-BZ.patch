@@ -1,0 +1,82 @@
+https://bugs.gentoo.org/480218
+
+From 50219dba1e5108fd32de15b0533a6a53db0085ed Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sun, 5 Jan 2014 16:23:42 -0500
+Subject: [PATCH] ia64: add __ prefix to pt_all_user_regs/ia64_fpreg [BZ #762]
+
+This addresses a long standing collision between userspace headers and
+kernel headers only on ia64 systems.  All other types have a __ prefix
+in the ptrace headers except these two.  Let's finally namespace these.
+
+Verified that at least strace still builds after this change, as well
+as after deleting all the struct hacks it has specifically for ia64.
+
+URL: https://sourceware.org/bugzilla/show_bug.cgi?id=762
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+---
+ ports/sysdeps/unix/sysv/linux/ia64/bits/sigcontext.h | 4 ++--
+ ports/sysdeps/unix/sysv/linux/ia64/sys/procfs.h      | 2 +-
+ ports/sysdeps/unix/sysv/linux/ia64/sys/ptrace.h      | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/ports/sysdeps/unix/sysv/linux/ia64/bits/sigcontext.h b/ports/sysdeps/unix/sysv/linux/ia64/bits/sigcontext.h
+index 3b8e4a7..94e608b 100644
+--- a/ports/sysdeps/unix/sysv/linux/ia64/bits/sigcontext.h
++++ b/ports/sysdeps/unix/sysv/linux/ia64/bits/sigcontext.h
+@@ -27,7 +27,7 @@
+ #include <stddef.h>
+ #include <bits/sigstack.h>
+ 
+-struct ia64_fpreg
++struct __ia64_fpreg
+   {
+     union
+       {
+@@ -55,7 +55,7 @@ struct sigcontext
+   unsigned long int sc_pr;	/* predicate registers */
+   unsigned long int sc_br[8];	/* branch registers */
+   unsigned long int sc_gr[32];	/* general registers (static partition) */
+-  struct ia64_fpreg sc_fr[128];	/* floating-point registers */
++  struct __ia64_fpreg sc_fr[128];	/* floating-point registers */
+   unsigned long int sc_rbs_base;/* NULL or new base of sighandler's rbs */
+   unsigned long int sc_loadrs;	/* see description above */
+   unsigned long int sc_ar25;	/* cmp8xchg16 uses this */
+diff --git a/ports/sysdeps/unix/sysv/linux/ia64/sys/procfs.h b/ports/sysdeps/unix/sysv/linux/ia64/sys/procfs.h
+index 29d1c42..663e0b0 100644
+--- a/ports/sysdeps/unix/sysv/linux/ia64/sys/procfs.h
++++ b/ports/sysdeps/unix/sysv/linux/ia64/sys/procfs.h
+@@ -46,7 +46,7 @@ struct elf_siginfo
+ typedef unsigned long elf_greg_t;
+ typedef elf_greg_t elf_gregset_t[ELF_NGREG];
+ 
+-typedef struct ia64_fpreg elf_fpreg_t;
++typedef struct __ia64_fpreg elf_fpreg_t;
+ typedef elf_fpreg_t elf_fpregset_t[ELF_NFPREG];
+ 
+ typedef elf_greg_t greg_t;
+diff --git a/ports/sysdeps/unix/sysv/linux/ia64/sys/ptrace.h b/ports/sysdeps/unix/sysv/linux/ia64/sys/ptrace.h
+index cda5209..4628c3f 100644
+--- a/ports/sysdeps/unix/sysv/linux/ia64/sys/ptrace.h
++++ b/ports/sysdeps/unix/sysv/linux/ia64/sys/ptrace.h
+@@ -144,7 +144,7 @@ enum __ptrace_flags
+ };
+ 
+ /* pt_all_user_regs is used for PTRACE_GETREGS/PTRACE_SETREGS.  */
+-struct pt_all_user_regs
++struct __pt_all_user_regs
+   {
+     unsigned long nat;
+     unsigned long cr_iip;
+@@ -155,7 +155,7 @@ struct pt_all_user_regs
+     unsigned long gr[32];
+     unsigned long br[8];
+     unsigned long ar[128];
+-    struct ia64_fpreg fr[128];
++    struct __ia64_fpreg fr[128];
+   };
+ 
+ /* Options set using PTRACE_SETOPTIONS.  */
+-- 
+1.8.4.3
+
