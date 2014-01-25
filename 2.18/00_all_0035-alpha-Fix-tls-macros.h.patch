@@ -1,0 +1,54 @@
+From 787172fdbbdf78fc30f222748f1197d396b05f96 Mon Sep 17 00:00:00 2001
+From: Richard Henderson <rth@twiddle.net>
+Date: Fri, 24 Jan 2014 09:07:04 -0800
+Subject: [PATCH] alpha: Fix tls-macros.h
+
+Reported to the gcc bugzilla, there was a missing dependency on $gp
+that let the compiler generated $gp reload be scheduled across the
+macros here.
+
+(cherry picked from commit 4ab6acaebd0047dc37c6493946484be9f1b4920b)
+---
+ ports/sysdeps/alpha/tls-macros.h | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/ports/sysdeps/alpha/tls-macros.h b/ports/sysdeps/alpha/tls-macros.h
+index 0385d93..00489c2 100644
+--- a/ports/sysdeps/alpha/tls-macros.h
++++ b/ports/sysdeps/alpha/tls-macros.h
+@@ -2,21 +2,21 @@
+ 
+ extern void *__tls_get_addr (void *);
+ 
+-# define TLS_GD(x)						\
+-  ({ void *__result;						\
+-     asm ("lda %0, " #x "($gp) !tlsgd" : "=r" (__result));	\
++# define TLS_GD(x)							\
++  ({ register void *__gp asm ("$29"); void *__result;			\
++     asm ("lda %0, " #x "($gp) !tlsgd" : "=r" (__result) : "r"(__gp));	\
+      __tls_get_addr (__result); })
+ 
+-# define TLS_LD(x)						\
+-  ({ void *__result;						\
+-     asm ("lda %0, " #x "($gp) !tlsldm" : "=r" (__result));	\
+-     __result = __tls_get_addr (__result);			\
+-     asm ("lda %0, " #x "(%0) !dtprel" : "+r" (__result));	\
++# define TLS_LD(x)							\
++  ({ register void *__gp asm ("$29"); void *__result;			\
++     asm ("lda %0, " #x "($gp) !tlsldm" : "=r" (__result) : "r"(__gp));	\
++     __result = __tls_get_addr (__result);				\
++     asm ("lda %0, " #x "(%0) !dtprel" : "+r" (__result));		\
+      __result; })
+ 
+-# define TLS_IE(x)						\
+-  ({ long ofs;							\
+-     asm ("ldq %0, " #x "($gp) !gottprel" : "=r"(ofs));		\
++# define TLS_IE(x)							\
++  ({ register void *__gp asm ("$29"); long ofs;				\
++     asm ("ldq %0, " #x "($gp) !gottprel" : "=r"(ofs) : "r"(__gp));	\
+      __builtin_thread_pointer () + ofs; })
+ 
+ # define TLS_LE(x)						\
+-- 
+1.8.5.3
+

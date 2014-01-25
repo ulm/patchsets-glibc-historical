@@ -1,4 +1,8 @@
-3		06 Jan 2013
+4		25 Jan 2014
+	+ 00_all_0034-ARM-Fix-clone-build-for-ARMv4.patch
+	+ 00_all_0035-alpha-Fix-tls-macros.h.patch
+
+3		06 Jan 2014
 	+ 00_all_0017-ptrace.h-add-__-prefix-to-ptrace_peeksiginfo_args.patch
 	+ 00_all_0018-ia64-add-__-prefix-to-pt_all_user_regs-ia64_fpreg-BZ.patch
 	+ 00_all_0019-ARM-Fix-clone-code-when-built-for-Thumb.patch
