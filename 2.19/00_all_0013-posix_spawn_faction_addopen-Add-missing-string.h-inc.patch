@@ -1,0 +1,31 @@
+From e1449bcd91f738ea4b0b6d75bb3e1f21827cf047 Mon Sep 17 00:00:00 2001
+From: Stefan Liebler <stli@linux.vnet.ibm.com>
+Date: Thu, 12 Jun 2014 14:15:25 +0200
+Subject: [PATCH 13/14] posix_spawn_faction_addopen: Add missing string.h
+ include directive
+
+This is needed to avoid a PLT call on s390.
+
+(cherry picked from commit 35a5e3e338ae17f3d42c60a708763c5d498fb840)
+
+https://bugs.gentoo.org/513090
+https://sourceware.org/bugzilla/show_bug.cgi?id=17048
+---
+ posix/spawn_faction_addopen.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/posix/spawn_faction_addopen.c b/posix/spawn_faction_addopen.c
+index 40800b8..eba158c 100644
+--- a/posix/spawn_faction_addopen.c
++++ b/posix/spawn_faction_addopen.c
+@@ -18,6 +18,7 @@
+ #include <errno.h>
+ #include <spawn.h>
+ #include <unistd.h>
++#include <string.h>
+ 
+ #include "spawn_int.h"
+ 
+-- 
+2.0.0
+
