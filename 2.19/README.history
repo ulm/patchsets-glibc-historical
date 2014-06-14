@@ -1,3 +1,8 @@
+2		14 Jun 2014
+	+ 00_all_0012-posix_spawn_file_actions_addopen-needs-to-copy-the-p.patch
+	+ 00_all_0013-posix_spawn_faction_addopen-Add-missing-string.h-inc.patch
+	+ 00_all_0014-Fix-sign-of-input-to-bsloww1-BZ-16623.patch
+
 1		08 Feb 2014
 	+ 00_all_0001-disable-ldconfig-during-install.patch
 	+ 00_all_0002-workaround-crash-when-handling-signals-in-static-PIE.patch
