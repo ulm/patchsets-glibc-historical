@@ -1,3 +1,11 @@
+3		10 Aug 2014
+	+ 00_all_0015-hppa-name-setjmp-union.patch
+	+ 00_all_0016-hppa-fix-build-problems-with-atomic-code.patch
+	+ 00_all_0017-hppa-fix-bug-in-floating-point-exception-support.patch
+	+ 00_all_0018-hppa-fix-pthread-spinlock.patch
+	+ 00_all_0019-hppa-fix-__O_SYNC-to-match-the-kernel.patch
+	+ 00_all_0020-nptl-handle-EAGAIN-with-some-futex-operations.patch
+
 2		14 Jun 2014
 	+ 00_all_0012-posix_spawn_file_actions_addopen-needs-to-copy-the-p.patch
 	+ 00_all_0013-posix_spawn_faction_addopen-Add-missing-string.h-inc.patch
