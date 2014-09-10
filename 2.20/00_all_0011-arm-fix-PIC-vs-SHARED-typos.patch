@@ -1,0 +1,68 @@
+From 5f825bd3c37b691b58d2b34ba4a8780f86adca41 Mon Sep 17 00:00:00 2001
+From: David Lamparter <equinox-gentoo@diac24.net>
+Date: Fri, 16 Aug 2013 15:06:34 -0400
+Subject: [PATCH] arm: fix PIC vs SHARED typos
+
+the logic in setjmp/__longjmp incorrectly tie to "PIC" to figure out
+whether the code is going into a shared library when it should be using
+"SHARED".  otherwise, building static PIC code goes wrong.
+
+https://bugs.gentoo.org/336914
+http://sourceware.org/ml/libc-ports/2011-09/msg00018.html
+
+2011-09-19  David Lamparter  <equinox-gentoo@diac24.net>
+
+	* sysdeps/arm/setjmp.S: Change PIC to SHARED.
+	* sysdeps/arm/__longjmp.S: Likewise
+---
+ sysdeps/arm/__longjmp.S | 4 ++--
+ sysdeps/arm/setjmp.S    | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/sysdeps/arm/__longjmp.S b/sysdeps/arm/__longjmp.S
+index 27d1b71..351fc62 100644
+--- a/sysdeps/arm/__longjmp.S
++++ b/sysdeps/arm/__longjmp.S
+@@ -83,7 +83,7 @@ ENTRY (__longjmp)
+ 	add	a4, a4, a3
+ 	ldr	a4, [a4, #RTLD_GLOBAL_RO_DL_HWCAP_OFFSET]
+ # else
+-#  ifdef PIC
++#  ifdef SHARED
+ 	ldr	a4, 1f
+ 	ldr	a3, .Lrtld_global_ro
+ 0:	add	a4, pc, a4
+@@ -144,7 +144,7 @@ ENTRY (__longjmp)
+ .Lrtld_local_ro:
+ 	.long	C_SYMBOL_NAME(_rtld_local_ro)(GOTOFF)
+ # else
+-#  ifdef PIC
++#  ifdef SHARED
+ 1:	.long	_GLOBAL_OFFSET_TABLE_ - 0b - PC_OFS
+ .Lrtld_global_ro:
+ 	.long	C_SYMBOL_NAME(_rtld_global_ro)(GOT)
+diff --git a/sysdeps/arm/setjmp.S b/sysdeps/arm/setjmp.S
+index 17a16c9..cf4ff86 100644
+--- a/sysdeps/arm/setjmp.S
++++ b/sysdeps/arm/setjmp.S
+@@ -64,7 +64,7 @@ ENTRY (__sigsetjmp)
+ 	add	a3, a3, a4
+ 	ldr	a3, [a3, #RTLD_GLOBAL_RO_DL_HWCAP_OFFSET]
+ # else
+-#  ifdef PIC
++#  ifdef SHARED
+ 	ldr	a3, 1f
+ 	ldr	a4, .Lrtld_global_ro
+ 0:	add	a3, pc, a3
+@@ -120,7 +120,7 @@ ENTRY (__sigsetjmp)
+ .Lrtld_local_ro:
+ 	.long	C_SYMBOL_NAME(_rtld_local_ro)(GOTOFF)
+ # else
+-#  ifdef PIC
++#  ifdef SHARED
+ 1:	.long	_GLOBAL_OFFSET_TABLE_ - 0b - PC_OFS
+ .Lrtld_global_ro:
+ 	.long	C_SYMBOL_NAME(_rtld_global_ro)(GOT)
+-- 
+2.0.0
+

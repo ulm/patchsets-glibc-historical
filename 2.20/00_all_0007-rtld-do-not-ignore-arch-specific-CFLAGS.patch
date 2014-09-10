@@ -1,0 +1,28 @@
+From 2bba691b99e07fbcb52434f40f6e9ba217b592a3 Mon Sep 17 00:00:00 2001
+From: Guy Martin <gmsoft@tuxicoman.be>
+Date: Fri, 16 Aug 2013 15:00:05 -0400
+Subject: [PATCH] rtld: do not ignore arch-specific CFLAGS
+
+https://bugs.gentoo.org/452184
+http://sourceware.org/bugzilla/show_bug.cgi?id=15005
+http://sourceware.org/ml/libc-alpha/2013-01/msg00247.html
+---
+ elf/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/elf/Makefile b/elf/Makefile
+index 25012cc..3036b9b 100644
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -433,7 +433,7 @@ CFLAGS-ldconfig.c = $(SYSCONF-FLAGS) -D'LIBDIR="$(libdir)"' \
+ 		    -D'SLIBDIR="$(slibdir)"' -DIS_IN_ldconfig=1
+ CFLAGS-dl-cache.c = $(SYSCONF-FLAGS)
+ CFLAGS-cache.c = $(SYSCONF-FLAGS)
+-CFLAGS-rtld.c = $(SYSCONF-FLAGS)
++CFLAGS-rtld.c += $(SYSCONF-FLAGS)
+ 
+ CPPFLAGS-.os += $(if $(filter $(@F),$(patsubst %,%.os,$(all-rtld-routines))),\
+ 		     -DNOT_IN_libc=1 -DIS_IN_rtld=1 -DIN_LIB=rtld)
+-- 
+2.0.0
+
