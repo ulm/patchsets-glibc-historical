@@ -3,15 +3,6 @@ What is all this garbage you may wonder.
 c_stubs/ (pulled from glibc-fedora-20060501T0751.tar.bz2)
 	read c_stubs/README
 
-ctype_b.c
-	read the top of the file
-
-glibc-compat/ (pulled from glibc-fedora-20041219T2331.tar.bz2)
-	some compat code for really old/broken binary-only applications.
-	these applications suck and need to die, but since users don't
-	want to hear that, we stole this subdir from Fedora.
-	emerge glibc with USE=glibc-compat20
-
 locale/
 	a port/rewrite of Debian's locale-gen.  see the man pages in the
 	subdir for more information.
