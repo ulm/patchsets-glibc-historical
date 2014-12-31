@@ -1,3 +1,9 @@
+3		30 Dec 2014
+	+ 00_all_0018-arm-drop-EABI-check.patch
+
+2
+	update to extra/ files
+
 1		09 Sep 2014
 	+ 00_all_0001-disable-ldconfig-during-install.patch
 	+ 00_all_0002-workaround-crash-when-handling-signals-in-static-PIE.patch

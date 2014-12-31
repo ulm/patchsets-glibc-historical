@@ -1,0 +1,67 @@
+From 1b08ac828aeafeff86fa67108a8ad285d32f70e6 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 20 Nov 2014 02:28:22 -0500
+Subject: [PATCH] arm: drop EABI check
+
+GCC marked OABI obsolete in 4.7 and dropped it in 4.8.  So the number
+of people this is catching is shrinking every day.  At this point,
+it's not terribly useful, so just drop it.
+
+(cherry picked from commit 34d97d87bb1c08e34d08a9d4be24a3b1d53a4ddb)
+---
+ sysdeps/arm/preconfigure    | 22 ----------------------
+ sysdeps/arm/preconfigure.ac |  5 -----
+ 2 files changed, 27 deletions(-)
+
+diff --git a/sysdeps/arm/preconfigure b/sysdeps/arm/preconfigure
+index 59d776d..33e9501 100644
+--- a/sysdeps/arm/preconfigure
++++ b/sysdeps/arm/preconfigure
+@@ -3,28 +3,6 @@
+ 
+ case "$machine" in
+ arm*)
+-
+-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+-/* end confdefs.h.  */
+-
+-#if !__ARM_EABI__
+-#error
+-#endif
+-int
+-main ()
+-{
+-
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-if ac_fn_c_try_compile "$LINENO"; then :
+-
+-else
+-  as_fn_error $? "Old ABI no longer supported" "$LINENO" 5
+-fi
+-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+-
+   # If the compiler enables unwind tables by default, this causes
+   # problems with undefined symbols in -nostdlib link tests.  To
+   # avoid this, add -fno-unwind-tables here and remove it in
+diff --git a/sysdeps/arm/preconfigure.ac b/sysdeps/arm/preconfigure.ac
+index d78817b..20de5bc 100644
+--- a/sysdeps/arm/preconfigure.ac
++++ b/sysdeps/arm/preconfigure.ac
+@@ -3,11 +3,6 @@ GLIBC_PROVIDES dnl See aclocal.m4 in the top level source directory.
+ 
+ case "$machine" in
+ arm*)
+-  AC_TRY_COMPILE([
+-#if !__ARM_EABI__
+-#error
+-#endif], [], [], [AC_MSG_ERROR([Old ABI no longer supported])])
+-
+   # If the compiler enables unwind tables by default, this causes
+   # problems with undefined symbols in -nostdlib link tests.  To
+   # avoid this, add -fno-unwind-tables here and remove it in
+-- 
+2.2.1
+
