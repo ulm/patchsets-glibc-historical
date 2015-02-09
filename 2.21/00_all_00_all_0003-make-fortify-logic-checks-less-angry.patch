@@ -1,0 +1,34 @@
+From 49f7d0d663a0d14646778e7b1ea409aa03e1315d Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sat, 4 May 2013 14:12:58 -0400
+Subject: [PATCH] make fortify logic checks less angry
+
+the fortify/optimization check does not play well with our default gcc specs
+
+http://sourceware.org/ml/libc-alpha/2012-06/msg00068.html
+---
+ include/features.h | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/include/features.h b/include/features.h
+index afaa05c..d252583 100644
+--- a/include/features.h
++++ b/include/features.h
+@@ -323,10 +323,11 @@
+ # define __USE_REENTRANT	1
+ #endif
+ 
++#if !defined __OPTIMIZE__ || __OPTIMIZE__ <= 0
++# undef _FORTIFY_SOURCE
++#endif
+ #if defined _FORTIFY_SOURCE && _FORTIFY_SOURCE > 0
+-# if !defined __OPTIMIZE__ || __OPTIMIZE__ <= 0
+-#  warning _FORTIFY_SOURCE requires compiling with optimization (-O)
+-# elif !__GNUC_PREREQ (4, 1)
++# if !__GNUC_PREREQ (4, 1)
+ #  warning _FORTIFY_SOURCE requires GCC 4.1 or later
+ # elif _FORTIFY_SOURCE > 1
+ #  define __USE_FORTIFY_LEVEL 2
+-- 
+2.2.1
+
