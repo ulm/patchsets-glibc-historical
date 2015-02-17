@@ -1,0 +1,44 @@
+From 2930c79afaf31158f990949cbb7cd6c03d9c0d74 Mon Sep 17 00:00:00 2001
+From: Allan McRae <allan@archlinux.org>
+Date: Thu, 9 Oct 2014 22:11:30 +1000
+Subject: [PATCH] Update French translation
+
+(cherry picked from commit b6dcfe8c2408958be246dd61f1c5415ed7667a2a)
+---
+ ChangeLog | 4 ++++
+ po/fr.po  | 4 ++--
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 890c3c6..81641a9 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,7 @@
++2014-10-09  Allan McRae  <allan@archlinux.org>
++
++	* po/fr.po: Update French translation from translation project.
++
+ 2014-09-16  Siddhesh Poyarekar  <siddhesh@redhat.com>
+ 
+ 	[BZ #17370]
+diff --git a/po/fr.po b/po/fr.po
+index fbf564a..bb7a924 100644
+--- a/po/fr.po
++++ b/po/fr.po
+@@ -6673,11 +6673,11 @@ msgstr "Erreur d'entrée/sortie sur l'hôte cible"
+ 
+ #: sysdeps/gnu/errlist.c:1399
+ msgid "No medium found"
+-msgstr "Aucun medium trouvé"
++msgstr "Aucun médium trouvé"
+ 
+ #: sysdeps/gnu/errlist.c:1407
+ msgid "Wrong medium type"
+-msgstr "Mauvais type de medium"
++msgstr "Mauvais type de médium"
+ 
+ #: sysdeps/gnu/errlist.c:1415
+ msgid "Required key not available"
+-- 
+2.3.0
+

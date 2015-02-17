@@ -1,0 +1,140 @@
+From 1b198b7fc764c013d41d1bd7b83fed0ad3dee038 Mon Sep 17 00:00:00 2001
+From: Roland McGrath <roland@hack.frob.com>
+Date: Wed, 8 Oct 2014 15:36:12 -0700
+Subject: [PATCH] BZ#17460: Fix buffer overrun in nscd --help.
+
+(cherry picked from commit c763c5d27112be055920c46f3be8d05bc8b669da)
+
+Conflicts:
+	NEWS
+---
+ ChangeLog        |  8 ++++++++
+ NEWS             |  2 +-
+ nscd/nscd.c      | 45 ++++++++++++++++++++++++---------------------
+ nscd/nscd_conf.c |  3 ---
+ 4 files changed, 33 insertions(+), 25 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 81641a9..0f9a3e1 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,11 @@
++2014-10-08  Roland McGrath  <roland@hack.frob.com>
++
++	[BZ #17460]
++	* nscd/nscd.c (more_help): Rewrite list of tables collection
++	using xstrdup and asprintf.
++
++	* nscd/nscd_conf.c: Remove local xstrdup declaration.
++
+ 2014-10-09  Allan McRae  <allan@archlinux.org>
+ 
+ 	* po/fr.po: Update French translation from translation project.
+diff --git a/NEWS b/NEWS
+index c555f75..a1d3053 100644
+--- a/NEWS
++++ b/NEWS
+@@ -9,7 +9,7 @@ Version 2.20.1
+ 
+ * The following bugs are resolved with this release:
+ 
+-  17266, 17370, 17371.
++  17266, 17370, 17371, 17460.
+ 
+ Version 2.20
+ 
+diff --git a/nscd/nscd.c b/nscd/nscd.c
+index 7131ead..b7704b3 100644
+--- a/nscd/nscd.c
++++ b/nscd/nscd.c
+@@ -451,33 +451,36 @@ parse_opt (int key, char *arg, struct argp_state *state)
+ static char *
+ more_help (int key, const char *text, void *input)
+ {
+-  char *tables, *tp = NULL;
+-
+   switch (key)
+     {
+     case ARGP_KEY_HELP_EXTRA:
+       {
+-	dbtype cnt;
++	/* We print some extra information.  */
+ 
+-	tables = xmalloc (sizeof (dbnames) + 1);
+-	for (cnt = 0; cnt < lastdb; cnt++)
++	char *tables = xstrdup (dbnames[0]);
++	for (dbtype i = 1; i < lastdb; ++i)
+ 	  {
+-	    strcat (tables, dbnames[cnt]);
+-	    strcat (tables, " ");
++	    char *more_tables;
++	    if (asprintf (&more_tables, "%s %s", tables, dbnames[i]) < 0)
++	      more_tables = NULL;
++	    free (tables);
++	    if (more_tables == NULL)
++	      return NULL;
++	    tables = more_tables;
+ 	  }
+-      }
+ 
+-      /* We print some extra information.  */
+-      if (asprintf (&tp, gettext ("\
++	char *tp;
++	if (asprintf (&tp, gettext ("\
+ Supported tables:\n\
+ %s\n\
+ \n\
+ For bug reporting instructions, please see:\n\
+ %s.\n\
+ "), tables, REPORT_BUGS_TO) < 0)
+-	tp = NULL;
+-      free (tables);
+-      return tp;
++	  tp = NULL;
++	free (tables);
++	return tp;
++      }
+ 
+     default:
+       break;
+@@ -622,15 +625,15 @@ monitor_child (int fd)
+ 	}
+ 
+       if (WIFEXITED (status))
+-        {
+-          child_ret = WEXITSTATUS (status);
+-          fprintf (stderr, _("child exited with status %d\n"), child_ret);
+-        }
++	{
++	  child_ret = WEXITSTATUS (status);
++	  fprintf (stderr, _("child exited with status %d\n"), child_ret);
++	}
+       if (WIFSIGNALED (status))
+-        {
+-          child_ret = WTERMSIG (status);
+-          fprintf (stderr, _("child terminated by signal %d\n"), child_ret);
+-        }
++	{
++	  child_ret = WTERMSIG (status);
++	  fprintf (stderr, _("child terminated by signal %d\n"), child_ret);
++	}
+     }
+ 
+   /* We have the child status, so exit with that code.  */
+diff --git a/nscd/nscd_conf.c b/nscd/nscd_conf.c
+index 7856ed9..c8e194d 100644
+--- a/nscd/nscd_conf.c
++++ b/nscd/nscd_conf.c
+@@ -32,9 +32,6 @@
+ #include "dbg_log.h"
+ #include "nscd.h"
+ 
+-/* Wrapper functions with error checking for standard functions.  */
+-extern char *xstrdup (const char *s);
+-
+ 
+ /* Names of the databases.  */
+ const char *const dbnames[lastdb] =
+-- 
+2.3.0
+

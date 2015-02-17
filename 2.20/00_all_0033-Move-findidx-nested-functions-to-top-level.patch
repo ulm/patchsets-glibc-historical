@@ -1,0 +1,404 @@
+From b0694b9e98ee64cb25490de0921ce307f3872749 Mon Sep 17 00:00:00 2001
+From: Roland McGrath <roland@hack.frob.com>
+Date: Thu, 11 Sep 2014 16:02:17 -0700
+Subject: [PATCH] Move findidx nested functions to top-level.
+
+Needed in order to backport strxfrm_l security fix cleanly.
+
+(cherry picked from commit 8c0ab919f63dc03a420751172602a52d2bea59a8)
+
+Conflicts:
+	ChangeLog
+---
+ ChangeLog              | 35 +++++++++++++++++++++++++++++++++++
+ locale/weight.h        | 13 ++++++++++---
+ locale/weightwc.h      | 13 ++++++++++---
+ posix/fnmatch.c        |  8 ++++++++
+ posix/fnmatch_loop.c   | 17 ++++++-----------
+ posix/regcomp.c        | 10 ++++++----
+ posix/regex_internal.h |  7 +++++--
+ posix/regexec.c        |  8 +++++---
+ string/strcoll_l.c     |  9 ++++-----
+ string/strxfrm_l.c     |  5 ++---
+ 10 files changed, 91 insertions(+), 34 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index e416cd0..dbf7e86 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,38 @@
++2015-02-16  Kostya Serebryany  <konstantin.s.serebryany@gmail.com>
++	    Roland McGrath  <roland@hack.frob.com>
++
++	* locale/weight.h: Add include guard.
++	(findidx): Make static rather than auto; take new parameters
++	TABLE, INDIRECT, and EXTRA instead of getting them as outer locals.
++	* locale/weightwc.h: Likewise.
++	* posix/fnmatch_loop.c
++	(FCT): Change type of EXTRA from int32_t to wint_t.
++	Don't include either header inside the function.
++	Call FINDIDX rather than findidx, and pass new arguments.
++	#undef FINDIDX at the end of the file.
++	* posix/fnmatch.c [_LIBC]: #include <locale/weight.h> and define
++	FINDIDX before including fnmatch_loop.c for the non-wide version.
++	[_LIBC] [HANDLE_MULTIBYTE]: #define findidx to findidxwc around
++	#include <locale/weightwc.h>, and define FINDIDX to findidxwc
++	for the wide version.
++	* posix/regcomp.c [_LIBC]: #include <locale/weight.h>.
++	(build_equiv_class) [_LIBC]: Don't #include it inside the function.
++	Pass new arguments to findidx.
++	* posix/regexec.c [RE_ENABLE_I18N] [_LIBC]: #include <locale/weight.h>.
++	[RE_ENABLE_I18N] (check_node_accept_bytes) [_LIBC]:
++	Don't #include it inside the function.  Pass new arguments to findidx.
++	* posix/regex_internal.h
++	[!NOT_IN_libc] [_LIBC]: #include <locale/weight.h>.
++	(re_string_elem_size_at): Don't #include it inside the function.
++	Pass new arguments to findidx.
++	* string/strcoll_l.c: #include WEIGHT_H at top level.
++	(get_next_seq): Don't #include it inside the function.
++	Pass new arguments to findidx.
++	(get_next_seq_nocache): Likewise.
++	* string/strxfrm_l.c: #include WEIGHT_H at top level.
++	(STRXFRM): Don't #include it inside the function.
++	Pass new arguments to findidx.
++
+ 2014-12-16  Florian Weimer  <fweimer@redhat.com>
+ 
+ 	[BZ #17630]
+diff --git a/locale/weight.h b/locale/weight.h
+index 9eb8ac6..9d93fdc 100644
+--- a/locale/weight.h
++++ b/locale/weight.h
+@@ -16,10 +16,15 @@
+    License along with the GNU C Library; if not, see
+    <http://www.gnu.org/licenses/>.  */
+ 
++#ifndef _WEIGHT_H_
++#define _WEIGHT_H_	1
++
+ /* Find index of weight.  */
+-auto inline int32_t
+-__attribute ((always_inline))
+-findidx (const unsigned char **cpp, size_t len)
++static inline int32_t __attribute__ ((always_inline))
++findidx (const int32_t *table,
++	 const int32_t *indirect,
++	 const unsigned char *extra,
++	 const unsigned char **cpp, size_t len)
+ {
+   int_fast32_t i = table[*(*cpp)++];
+   const unsigned char *cp;
+@@ -130,3 +135,5 @@ findidx (const unsigned char **cpp, size_t len)
+   /* NOTREACHED */
+   return 0x43219876;
+ }
++
++#endif	/* weight.h */
+diff --git a/locale/weightwc.h b/locale/weightwc.h
+index 8f047e3..0f70b00 100644
+--- a/locale/weightwc.h
++++ b/locale/weightwc.h
+@@ -16,10 +16,15 @@
+    License along with the GNU C Library; if not, see
+    <http://www.gnu.org/licenses/>.  */
+ 
++#ifndef _WEIGHTWC_H_
++#define _WEIGHTWC_H_	1
++
+ /* Find index of weight.  */
+-auto inline int32_t
+-__attribute ((always_inline))
+-findidx (const wint_t **cpp, size_t len)
++static inline int32_t __attribute__ ((always_inline))
++findidx (const int32_t *table,
++	 const int32_t *indirect,
++	 const wint_t *extra,
++	 const wint_t **cpp, size_t len)
+ {
+   wint_t ch = *(*cpp)++;
+   int32_t i = __collidx_table_lookup ((const char *) table, ch);
+@@ -109,3 +114,5 @@ findidx (const wint_t **cpp, size_t len)
+   /* NOTREACHED */
+   return 0x43219876;
+ }
++
++#endif	/* weightwc.h */
+diff --git a/posix/fnmatch.c b/posix/fnmatch.c
+index c330a12..85a6ec2 100644
+--- a/posix/fnmatch.c
++++ b/posix/fnmatch.c
+@@ -221,6 +221,8 @@ __wcschrnul (s, c)
+ # define MEMCHR(S, C, N) memchr (S, C, N)
+ # define STRCOLL(S1, S2) strcoll (S1, S2)
+ # define WIDE_CHAR_VERSION 0
++# include <locale/weight.h>
++# define FINDIDX findidx
+ # include "fnmatch_loop.c"
+ 
+ 
+@@ -246,6 +248,12 @@ __wcschrnul (s, c)
+ #  define MEMCHR(S, C, N) wmemchr (S, C, N)
+ #  define STRCOLL(S1, S2) wcscoll (S1, S2)
+ #  define WIDE_CHAR_VERSION 1
++/* Change the name the header defines so it doesn't conflict with
++   the <locale/weight.h> version included above.  */
++#  define findidx findidxwc
++#  include <locale/weightwc.h>
++#  undef findidx
++#  define FINDIDX findidxwc
+ 
+ #  undef IS_CHAR_CLASS
+ /* We have to convert the wide character string in a multibyte string.  But
+diff --git a/posix/fnmatch_loop.c b/posix/fnmatch_loop.c
+index 1957397..db6d9d7 100644
+--- a/posix/fnmatch_loop.c
++++ b/posix/fnmatch_loop.c
+@@ -376,7 +376,7 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
+ 			const int32_t *table;
+ # if WIDE_CHAR_VERSION
+ 			const int32_t *weights;
+-			const int32_t *extra;
++			const wint_t *extra;
+ # else
+ 			const unsigned char *weights;
+ 			const unsigned char *extra;
+@@ -385,19 +385,12 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
+ 			int32_t idx;
+ 			const UCHAR *cp = (const UCHAR *) str;
+ 
+-			/* This #include defines a local function!  */
+-# if WIDE_CHAR_VERSION
+-#  include <locale/weightwc.h>
+-# else
+-#  include <locale/weight.h>
+-# endif
+-
+ # if WIDE_CHAR_VERSION
+ 			table = (const int32_t *)
+ 			  _NL_CURRENT (LC_COLLATE, _NL_COLLATE_TABLEWC);
+ 			weights = (const int32_t *)
+ 			  _NL_CURRENT (LC_COLLATE, _NL_COLLATE_WEIGHTWC);
+-			extra = (const int32_t *)
++			extra = (const wint_t *)
+ 			  _NL_CURRENT (LC_COLLATE, _NL_COLLATE_EXTRAWC);
+ 			indirect = (const int32_t *)
+ 			  _NL_CURRENT (LC_COLLATE, _NL_COLLATE_INDIRECTWC);
+@@ -412,7 +405,7 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
+ 			  _NL_CURRENT (LC_COLLATE, _NL_COLLATE_INDIRECTMB);
+ # endif
+ 
+-			idx = findidx (&cp, 1);
++			idx = FINDIDX (table, indirect, extra, &cp, 1);
+ 			if (idx != 0)
+ 			  {
+ 			    /* We found a table entry.  Now see whether the
+@@ -422,7 +415,8 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends, alloca_used)
+ 			    int32_t idx2;
+ 			    const UCHAR *np = (const UCHAR *) n;
+ 
+-			    idx2 = findidx (&np, string_end - n);
++			    idx2 = FINDIDX (table, indirect, extra,
++					    &np, string_end - n);
+ 			    if (idx2 != 0
+ 				&& (idx >> 24) == (idx2 >> 24)
+ 				&& len == weights[idx2 & 0xffffff])
+@@ -1277,3 +1271,4 @@ EXT (INT opt, const CHAR *pattern, const CHAR *string, const CHAR *string_end,
+ #undef L
+ #undef BTOWC
+ #undef WIDE_CHAR_VERSION
++#undef FINDIDX
+diff --git a/posix/regcomp.c b/posix/regcomp.c
+index 8f2747b..897fe27 100644
+--- a/posix/regcomp.c
++++ b/posix/regcomp.c
+@@ -19,6 +19,10 @@
+ 
+ #include <stdint.h>
+ 
++#ifdef _LIBC
++# include <locale/weight.h>
++#endif
++
+ static reg_errcode_t re_compile_internal (regex_t *preg, const char * pattern,
+ 					  size_t length, reg_syntax_t syntax);
+ static void re_compile_fastmap_iter (regex_t *bufp,
+@@ -3426,8 +3430,6 @@ build_equiv_class (bitset_t sbcset, const unsigned char *name)
+       int32_t idx1, idx2;
+       unsigned int ch;
+       size_t len;
+-      /* This #include defines a local function!  */
+-# include <locale/weight.h>
+       /* Calculate the index for equivalence class.  */
+       cp = name;
+       table = (const int32_t *) _NL_CURRENT (LC_COLLATE, _NL_COLLATE_TABLEMB);
+@@ -3437,7 +3439,7 @@ build_equiv_class (bitset_t sbcset, const unsigned char *name)
+ 						   _NL_COLLATE_EXTRAMB);
+       indirect = (const int32_t *) _NL_CURRENT (LC_COLLATE,
+ 						_NL_COLLATE_INDIRECTMB);
+-      idx1 = findidx (&cp, -1);
++      idx1 = findidx (table, indirect, extra, &cp, -1);
+       if (BE (idx1 == 0 || *cp != '\0', 0))
+ 	/* This isn't a valid character.  */
+ 	return REG_ECOLLATE;
+@@ -3448,7 +3450,7 @@ build_equiv_class (bitset_t sbcset, const unsigned char *name)
+ 	{
+ 	  char_buf[0] = ch;
+ 	  cp = char_buf;
+-	  idx2 = findidx (&cp, 1);
++	  idx2 = findidx (table, indirect, extra, &cp, 1);
+ /*
+ 	  idx2 = table[ch];
+ */
+diff --git a/posix/regex_internal.h b/posix/regex_internal.h
+index 4bbf6a8..d1ed3dc 100644
+--- a/posix/regex_internal.h
++++ b/posix/regex_internal.h
+@@ -733,6 +733,10 @@ re_string_wchar_at (const re_string_t *pstr, int idx)
+ }
+ 
+ # ifndef NOT_IN_libc
++#  ifdef _LIBC
++#   include <locale/weight.h>
++#  endif
++
+ static int
+ internal_function __attribute__ ((pure, unused))
+ re_string_elem_size_at (const re_string_t *pstr, int idx)
+@@ -740,7 +744,6 @@ re_string_elem_size_at (const re_string_t *pstr, int idx)
+ #  ifdef _LIBC
+   const unsigned char *p, *extra;
+   const int32_t *table, *indirect;
+-#   include <locale/weight.h>
+   uint_fast32_t nrules = _NL_CURRENT_WORD (LC_COLLATE, _NL_COLLATE_NRULES);
+ 
+   if (nrules != 0)
+@@ -751,7 +754,7 @@ re_string_elem_size_at (const re_string_t *pstr, int idx)
+       indirect = (const int32_t *) _NL_CURRENT (LC_COLLATE,
+ 						_NL_COLLATE_INDIRECTMB);
+       p = pstr->mbs + idx;
+-      findidx (&p, pstr->len - idx);
++      findidx (table, indirect, extra, &p, pstr->len - idx);
+       return p - pstr->mbs - idx;
+     }
+   else
+diff --git a/posix/regexec.c b/posix/regexec.c
+index 7032da7..c840b38 100644
+--- a/posix/regexec.c
++++ b/posix/regexec.c
+@@ -3749,6 +3749,10 @@ group_nodes_into_DFAstates (const re_dfa_t *dfa, const re_dfastate_t *state,
+    one collating element like '.', '[a-z]', opposite to the other nodes
+    can only accept one byte.  */
+ 
++# ifdef _LIBC
++#  include <locale/weight.h>
++# endif
++
+ static int
+ internal_function
+ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
+@@ -3868,8 +3872,6 @@ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
+ 	  const int32_t *table, *indirect;
+ 	  const unsigned char *weights, *extra;
+ 	  const char *collseqwc;
+-	  /* This #include defines a local function!  */
+-#  include <locale/weight.h>
+ 
+ 	  /* match with collating_symbol?  */
+ 	  if (cset->ncoll_syms)
+@@ -3925,7 +3927,7 @@ check_node_accept_bytes (const re_dfa_t *dfa, int node_idx,
+ 		_NL_CURRENT (LC_COLLATE, _NL_COLLATE_EXTRAMB);
+ 	      indirect = (const int32_t *)
+ 		_NL_CURRENT (LC_COLLATE, _NL_COLLATE_INDIRECTMB);
+-	      int32_t idx = findidx (&cp, elem_len);
++	      int32_t idx = findidx (table, indirect, extra, &cp, elem_len);
+ 	      if (idx > 0)
+ 		for (i = 0; i < cset->nequiv_classes; ++i)
+ 		  {
+diff --git a/string/strcoll_l.c b/string/strcoll_l.c
+index 10ce4a6..d4f42a3 100644
+--- a/string/strcoll_l.c
++++ b/string/strcoll_l.c
+@@ -41,6 +41,7 @@
+ #define CONCAT1(a,b) a##b
+ 
+ #include "../locale/localeinfo.h"
++#include WEIGHT_H
+ 
+ /* Track status while looking for sequences in a string.  */
+ typedef struct
+@@ -152,7 +153,6 @@ get_next_seq (coll_seq *seq, int nrules, const unsigned char *rulesets,
+ 	      const USTRING_TYPE *weights, const int32_t *table,
+ 	      const USTRING_TYPE *extra, const int32_t *indirect)
+ {
+-#include WEIGHT_H
+   size_t val = seq->val = 0;
+   int len = seq->len;
+   size_t backw_stop = seq->backw_stop;
+@@ -194,7 +194,7 @@ get_next_seq (coll_seq *seq, int nrules, const unsigned char *rulesets,
+ 
+ 	  while (*us != L('\0'))
+ 	    {
+-	      int32_t tmp = findidx (&us, -1);
++	      int32_t tmp = findidx (table, indirect, extra, &us, -1);
+ 	      rulearr[idxmax] = tmp >> 24;
+ 	      idxarr[idxmax] = tmp & 0xffffff;
+ 	      idxcnt = idxmax++;
+@@ -242,7 +242,6 @@ get_next_seq_nocache (coll_seq *seq, int nrules, const unsigned char *rulesets,
+ 		      const USTRING_TYPE *extra, const int32_t *indirect,
+ 		      int pass)
+ {
+-#include WEIGHT_H
+   size_t val = seq->val = 0;
+   int len = seq->len;
+   size_t backw_stop = seq->backw_stop;
+@@ -285,7 +284,7 @@ get_next_seq_nocache (coll_seq *seq, int nrules, const unsigned char *rulesets,
+ 	      us = seq->back_us;
+ 	      while (i < backw)
+ 		{
+-		  int32_t tmp = findidx (&us, -1);
++		  int32_t tmp = findidx (table, indirect, extra, &us, -1);
+ 		  idx = tmp & 0xffffff;
+ 		  i++;
+ 		}
+@@ -300,7 +299,7 @@ get_next_seq_nocache (coll_seq *seq, int nrules, const unsigned char *rulesets,
+ 
+ 	  while (*us != L('\0'))
+ 	    {
+-	      int32_t tmp = findidx (&us, -1);
++	      int32_t tmp = findidx (table, indirect, extra, &us, -1);
+ 	      unsigned char rule = tmp >> 24;
+ 	      prev_idx = idx;
+ 	      idx = tmp & 0xffffff;
+diff --git a/string/strxfrm_l.c b/string/strxfrm_l.c
+index 04b9338..2d3f1bd 100644
+--- a/string/strxfrm_l.c
++++ b/string/strxfrm_l.c
+@@ -41,6 +41,7 @@
+ #define CONCAT1(a,b) a##b
+ 
+ #include "../locale/localeinfo.h"
++#include WEIGHT_H
+ 
+ 
+ #ifndef WIDE_CHAR_VERSION
+@@ -104,8 +105,6 @@ STRXFRM (STRING_TYPE *dest, const STRING_TYPE *src, size_t n, __locale_t l)
+   size_t idxcnt;
+   int use_malloc;
+ 
+-#include WEIGHT_H
+-
+   if (nrules == 0)
+     {
+       if (n != 0)
+@@ -174,7 +173,7 @@ STRXFRM (STRING_TYPE *dest, const STRING_TYPE *src, size_t n, __locale_t l)
+   idxmax = 0;
+   do
+     {
+-      int32_t tmp = findidx (&usrc, -1);
++      int32_t tmp = findidx (table, indirect, extra, &usrc, -1);
+       rulearr[idxmax] = tmp >> 24;
+       idxarr[idxmax] = tmp & 0xffffff;
+ 
+-- 
+2.3.0
+

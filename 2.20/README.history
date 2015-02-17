@@ -1,3 +1,24 @@
+4		17 Feb 2014
+	R 00_all_0018-arm-drop-EABI-check.patch -> 00_all_0029-arm-drop-EABI-check.patch
+	+ 00_all_0018-Update-Russian-translation.patch
+	+ 00_all_0019-Add-new-Linux-3.16-constants-to-netinet-udp.h.patch
+	+ 00_all_0020-Handle-zero-prefix-length-in-getifaddrs-BZ-17371.patch
+	+ 00_all_0021-Revert-to-defining-__extern_inline-only-for-gcc-4.3-.patch
+	+ 00_all_0022-Fix-memory-leak-in-libio-wfileops.c-do_ftell_wide-BZ.patch
+	+ 00_all_0023-Fix-memory-leak-in-error-path-of-do_ftell_wide-BZ-17.patch
+	+ 00_all_0024-Update-French-translation.patch
+	+ 00_all_0025-BZ-17460-Fix-buffer-overrun-in-nscd-help.patch
+	+ 00_all_0026-MIPS-Avoid-a-dangling-vfork-GLIBC_2.0-reference.patch
+	+ 00_all_0027-AArch64-End-frame-record-chain-correctly.patch
+	+ 00_all_0028-CVE-2014-7817-wordexp-fails-to-honour-WRDE_NOCMD.patch
+	+ 00_all_0030-Make-__extern_always_inline-usable-on-clang-again.patch
+	+ 00_all_0031-CVE-2012-3406-Stack-overflow-in-vfprintf-BZ-16617.patch
+	+ 00_all_0032-Avoid-infinite-loop-in-nss_dns-getnetbyname-BZ-17630.patch
+	+ 00_all_0033-Move-findidx-nested-functions-to-top-level.patch
+	+ 00_all_0034-Fix-memory-handling-in-strxfrm_l-BZ-16009.patch
+	+ 00_all_0035-Use-AVX-unaligned-memcpy-only-if-AVX2-is-available.patch
+	+ 00_all_0036-CVE-2015-1472-wscanf-allocates-too-little-memory.patch
+
 3		30 Dec 2014
 	+ 00_all_0018-arm-drop-EABI-check.patch
 

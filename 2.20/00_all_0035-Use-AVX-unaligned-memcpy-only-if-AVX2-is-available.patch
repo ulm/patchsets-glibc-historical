@@ -1,0 +1,220 @@
+From 1bf9d48aec087062e2a14b77cb5ee1fa81be334c Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Fri, 30 Jan 2015 06:50:20 -0800
+Subject: [PATCH] Use AVX unaligned memcpy only if AVX2 is available
+
+memcpy with unaligned 256-bit AVX register loads/stores are slow on older
+processorsl like Sandy Bridge.  This patch adds bit_AVX_Fast_Unaligned_Load
+and sets it only when AVX2 is available.
+
+	[BZ #17801]
+	* sysdeps/x86_64/multiarch/init-arch.c (__init_cpu_features):
+	Set the bit_AVX_Fast_Unaligned_Load bit for AVX2.
+	* sysdeps/x86_64/multiarch/init-arch.h (bit_AVX_Fast_Unaligned_Load):
+	New.
+	(index_AVX_Fast_Unaligned_Load): Likewise.
+	(HAS_AVX_FAST_UNALIGNED_LOAD): Likewise.
+	* sysdeps/x86_64/multiarch/memcpy.S (__new_memcpy): Check the
+	bit_AVX_Fast_Unaligned_Load bit instead of the bit_AVX_Usable bit.
+	* sysdeps/x86_64/multiarch/memcpy_chk.S (__memcpy_chk): Likewise.
+	* sysdeps/x86_64/multiarch/mempcpy.S (__mempcpy): Likewise.
+	* sysdeps/x86_64/multiarch/mempcpy_chk.S (__mempcpy_chk): Likewise.
+	* sysdeps/x86_64/multiarch/memmove.c (__libc_memmove): Replace
+	HAS_AVX with HAS_AVX_FAST_UNALIGNED_LOAD.
+	* sysdeps/x86_64/multiarch/memmove_chk.c (__memmove_chk): Likewise.
+
+(cherry picked from commit 5f3d0b78e011d2a72f9e88b0e9ef5bc081d18f97)
+
+Conflicts:
+	ChangeLog
+	NEWS
+---
+ ChangeLog                              | 18 ++++++++++++++++++
+ NEWS                                   |  3 ++-
+ sysdeps/x86_64/multiarch/init-arch.c   |  9 +++++++--
+ sysdeps/x86_64/multiarch/init-arch.h   |  4 ++++
+ sysdeps/x86_64/multiarch/memcpy.S      |  2 +-
+ sysdeps/x86_64/multiarch/memcpy_chk.S  |  2 +-
+ sysdeps/x86_64/multiarch/memmove.c     |  2 +-
+ sysdeps/x86_64/multiarch/memmove_chk.c |  2 +-
+ sysdeps/x86_64/multiarch/mempcpy.S     |  2 +-
+ sysdeps/x86_64/multiarch/mempcpy_chk.S |  2 +-
+ 10 files changed, 37 insertions(+), 9 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 7a2e6c9..a6461e6 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,21 @@
++2015-02-16  H.J. Lu  <hongjiu.lu@intel.com>
++
++	[BZ #17801]
++	* sysdeps/x86_64/multiarch/init-arch.c (__init_cpu_features):
++	Set the bit_AVX_Fast_Unaligned_Load bit for AVX2.
++	* sysdeps/x86_64/multiarch/init-arch.h (bit_AVX_Fast_Unaligned_Load):
++	New.
++	(index_AVX_Fast_Unaligned_Load): Likewise.
++	(HAS_AVX_FAST_UNALIGNED_LOAD): Likewise.
++	* sysdeps/x86_64/multiarch/memcpy.S (__new_memcpy): Check the
++	bit_AVX_Fast_Unaligned_Load bit instead of the bit_AVX_Usable bit.
++	* sysdeps/x86_64/multiarch/memcpy_chk.S (__memcpy_chk): Likewise.
++	* sysdeps/x86_64/multiarch/mempcpy.S (__mempcpy): Likewise.
++	* sysdeps/x86_64/multiarch/mempcpy_chk.S (__mempcpy_chk): Likewise.
++	* sysdeps/x86_64/multiarch/memmove.c (__libc_memmove): Replace
++	HAS_AVX with HAS_AVX_FAST_UNALIGNED_LOAD.
++	* sysdeps/x86_64/multiarch/memmove_chk.c (__memmove_chk): Likewise.
++
+ 2015-02-16  Leonhard Holz  <leonhard.holz@web.de>
+ 
+ 	[BZ #16009]
+diff --git a/NEWS b/NEWS
+index f578805..0eb3fb3 100644
+--- a/NEWS
++++ b/NEWS
+@@ -9,7 +9,8 @@ Version 2.20.1
+ 
+ * The following bugs are resolved with this release:
+ 
+-  16009, 16617, 17266, 17370, 17371, 17460, 17485, 17555, 17625, 17630.
++  16009, 16617, 17266, 17370, 17371, 17460, 17485, 17555, 17625, 17630,
++  17801.
+ 
+ * CVE-2104-7817 The wordexp function could ignore the WRDE_NOCMD flag
+   under certain input conditions resulting in the execution of a shell for
+diff --git a/sysdeps/x86_64/multiarch/init-arch.c b/sysdeps/x86_64/multiarch/init-arch.c
+index 2a6dcb7..f7c1bbe 100644
+--- a/sysdeps/x86_64/multiarch/init-arch.c
++++ b/sysdeps/x86_64/multiarch/init-arch.c
+@@ -167,9 +167,14 @@ __init_cpu_features (void)
+ 	  /* Determine if AVX is usable.  */
+ 	  if (CPUID_AVX)
+ 	    __cpu_features.feature[index_AVX_Usable] |= bit_AVX_Usable;
+-	  /* Determine if AVX2 is usable.  */
++#if index_AVX2_Usable != index_AVX_Fast_Unaligned_Load
++# error index_AVX2_Usable != index_AVX_Fast_Unaligned_Load
++#endif
++	  /* Determine if AVX2 is usable.  Unaligned load with 256-bit
++	     AVX registers are faster on processors with AVX2.  */
+ 	  if (CPUID_AVX2)
+-	    __cpu_features.feature[index_AVX2_Usable] |= bit_AVX2_Usable;
++	    __cpu_features.feature[index_AVX2_Usable]
++	      |= bit_AVX2_Usable | bit_AVX_Fast_Unaligned_Load;
+ 	  /* Determine if FMA is usable.  */
+ 	  if (CPUID_FMA)
+ 	    __cpu_features.feature[index_FMA_Usable] |= bit_FMA_Usable;
+diff --git a/sysdeps/x86_64/multiarch/init-arch.h b/sysdeps/x86_64/multiarch/init-arch.h
+index ef0abbd..2fc7c7c 100644
+--- a/sysdeps/x86_64/multiarch/init-arch.h
++++ b/sysdeps/x86_64/multiarch/init-arch.h
+@@ -25,6 +25,7 @@
+ #define bit_FMA4_Usable			(1 << 8)
+ #define bit_Slow_SSE4_2			(1 << 9)
+ #define bit_AVX2_Usable			(1 << 10)
++#define bit_AVX_Fast_Unaligned_Load	(1 << 11)
+ 
+ /* CPUID Feature flags.  */
+ 
+@@ -74,6 +75,7 @@
+ # define index_FMA4_Usable		FEATURE_INDEX_1*FEATURE_SIZE
+ # define index_Slow_SSE4_2		FEATURE_INDEX_1*FEATURE_SIZE
+ # define index_AVX2_Usable		FEATURE_INDEX_1*FEATURE_SIZE
++# define index_AVX_Fast_Unaligned_Load	FEATURE_INDEX_1*FEATURE_SIZE
+ 
+ #else	/* __ASSEMBLER__ */
+ 
+@@ -169,6 +171,7 @@ extern const struct cpu_features *__get_cpu_features (void)
+ # define index_FMA4_Usable		FEATURE_INDEX_1
+ # define index_Slow_SSE4_2		FEATURE_INDEX_1
+ # define index_AVX2_Usable		FEATURE_INDEX_1
++# define index_AVX_Fast_Unaligned_Load	FEATURE_INDEX_1
+ 
+ # define HAS_ARCH_FEATURE(name) \
+   ((__get_cpu_features ()->feature[index_##name] & (bit_##name)) != 0)
+@@ -181,5 +184,6 @@ extern const struct cpu_features *__get_cpu_features (void)
+ # define HAS_AVX2			HAS_ARCH_FEATURE (AVX2_Usable)
+ # define HAS_FMA			HAS_ARCH_FEATURE (FMA_Usable)
+ # define HAS_FMA4			HAS_ARCH_FEATURE (FMA4_Usable)
++# define HAS_AVX_FAST_UNALIGNED_LOAD	HAS_ARCH_FEATURE (AVX_Fast_Unaligned_Load)
+ 
+ #endif	/* __ASSEMBLER__ */
+diff --git a/sysdeps/x86_64/multiarch/memcpy.S b/sysdeps/x86_64/multiarch/memcpy.S
+index e666695..10bbd39 100644
+--- a/sysdeps/x86_64/multiarch/memcpy.S
++++ b/sysdeps/x86_64/multiarch/memcpy.S
+@@ -33,7 +33,7 @@ ENTRY(__new_memcpy)
+ 	jne	1f
+ 	call	__init_cpu_features
+ 1:	leaq	__memcpy_avx_unaligned(%rip), %rax
+-	testl	$bit_AVX_Usable, __cpu_features+FEATURE_OFFSET+index_AVX_Usable(%rip)
++	testl	$bit_AVX_Fast_Unaligned_Load, __cpu_features+FEATURE_OFFSET+index_AVX_Fast_Unaligned_Load(%rip)
+ 	jz 1f
+ 	ret
+ 1:	leaq	__memcpy_sse2(%rip), %rax
+diff --git a/sysdeps/x86_64/multiarch/memcpy_chk.S b/sysdeps/x86_64/multiarch/memcpy_chk.S
+index 076b19a..30cca20 100644
+--- a/sysdeps/x86_64/multiarch/memcpy_chk.S
++++ b/sysdeps/x86_64/multiarch/memcpy_chk.S
+@@ -39,7 +39,7 @@ ENTRY(__memcpy_chk)
+ 	testl	$bit_Fast_Copy_Backward, __cpu_features+FEATURE_OFFSET+index_Fast_Copy_Backward(%rip)
+ 	jz	2f
+ 	leaq	__memcpy_chk_ssse3_back(%rip), %rax
+-	testl   $bit_AVX_Usable, __cpu_features+FEATURE_OFFSET+index_AVX_Usable(%rip)
++	testl   $bit_AVX_Fast_Unaligned_Load, __cpu_features+FEATURE_OFFSET+index_AVX_Fast_Unaligned_Load(%rip)
+ 	jz  2f
+ 	leaq    __memcpy_chk_avx_unaligned(%rip), %rax
+ 2:	ret
+diff --git a/sysdeps/x86_64/multiarch/memmove.c b/sysdeps/x86_64/multiarch/memmove.c
+index 0c9af7e..2c86a4a 100644
+--- a/sysdeps/x86_64/multiarch/memmove.c
++++ b/sysdeps/x86_64/multiarch/memmove.c
+@@ -49,7 +49,7 @@ extern __typeof (__redirect_memmove) __memmove_avx_unaligned attribute_hidden;
+    ifunc symbol properly.  */
+ extern __typeof (__redirect_memmove) __libc_memmove;
+ libc_ifunc (__libc_memmove,
+-	    HAS_AVX
++	    HAS_AVX_FAST_UNALIGNED_LOAD
+ 	    ? __memmove_avx_unaligned
+ 	    : (HAS_SSSE3
+ 	       ? (HAS_FAST_COPY_BACKWARD
+diff --git a/sysdeps/x86_64/multiarch/memmove_chk.c b/sysdeps/x86_64/multiarch/memmove_chk.c
+index 44344f2..5ffcaec 100644
+--- a/sysdeps/x86_64/multiarch/memmove_chk.c
++++ b/sysdeps/x86_64/multiarch/memmove_chk.c
+@@ -30,7 +30,7 @@ extern __typeof (__memmove_chk) __memmove_chk_avx_unaligned attribute_hidden;
+ #include "debug/memmove_chk.c"
+ 
+ libc_ifunc (__memmove_chk,
+-	    HAS_AVX ? __memmove_chk_avx_unaligned :
++	    HAS_AVX_FAST_UNALIGNED_LOAD ? __memmove_chk_avx_unaligned :
+ 	    (HAS_SSSE3
+ 	    ? (HAS_FAST_COPY_BACKWARD
+ 	       ? __memmove_chk_ssse3_back : __memmove_chk_ssse3)
+diff --git a/sysdeps/x86_64/multiarch/mempcpy.S b/sysdeps/x86_64/multiarch/mempcpy.S
+index 7589d8c..e205ef5 100644
+--- a/sysdeps/x86_64/multiarch/mempcpy.S
++++ b/sysdeps/x86_64/multiarch/mempcpy.S
+@@ -37,7 +37,7 @@ ENTRY(__mempcpy)
+ 	testl	$bit_Fast_Copy_Backward, __cpu_features+FEATURE_OFFSET+index_Fast_Copy_Backward(%rip)
+ 	jz	2f
+ 	leaq	__mempcpy_ssse3_back(%rip), %rax
+-	testl	$bit_AVX_Usable, __cpu_features+FEATURE_OFFSET+index_AVX_Usable(%rip)
++	testl	$bit_AVX_Fast_Unaligned_Load, __cpu_features+FEATURE_OFFSET+index_AVX_Fast_Unaligned_Load(%rip)
+ 	jz	2f
+ 	leaq	__mempcpy_avx_unaligned(%rip), %rax
+ 2:	ret
+diff --git a/sysdeps/x86_64/multiarch/mempcpy_chk.S b/sysdeps/x86_64/multiarch/mempcpy_chk.S
+index 88e0b74..dd777df 100644
+--- a/sysdeps/x86_64/multiarch/mempcpy_chk.S
++++ b/sysdeps/x86_64/multiarch/mempcpy_chk.S
+@@ -39,7 +39,7 @@ ENTRY(__mempcpy_chk)
+ 	testl	$bit_Fast_Copy_Backward, __cpu_features+FEATURE_OFFSET+index_Fast_Copy_Backward(%rip)
+ 	jz	2f
+ 	leaq	__mempcpy_chk_ssse3_back(%rip), %rax
+-	testl	$bit_AVX_Usable, __cpu_features+FEATURE_OFFSET+index_AVX_Usable(%rip)
++	testl	$bit_AVX_Fast_Unaligned_Load, __cpu_features+FEATURE_OFFSET+index_AVX_Fast_Unaligned_Load(%rip)
+ 	jz	2f
+ 	leaq	__mempcpy_chk_avx_unaligned(%rip), %rax
+ 2:	ret
+-- 
+2.3.0
+
