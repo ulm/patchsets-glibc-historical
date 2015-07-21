@@ -1,3 +1,6 @@
+5		21 Jul 2015
+	+ 00_all_0037-sparc-fix-sigaction-for-32bit-builds-BZ-18694.patch
+
 4		17 Feb 2014
 	R 00_all_0018-arm-drop-EABI-check.patch -> 00_all_0029-arm-drop-EABI-check.patch
 	+ 00_all_0018-Update-Russian-translation.patch
