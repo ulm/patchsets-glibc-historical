@@ -1,0 +1,46 @@
+From 1c416311f5d92922788c1bef42de5b9ccd812bac Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 20 Jul 2015 07:29:15 -0400
+Subject: [PATCH] sparc: fix sigaction for 32bit builds [BZ #18694]
+
+Commit a059d359d86130b5fa74e04a978c8523a0293f77 changed the sigaction
+struct to pass conform tests, but it ended up also changing the ABI for
+32 bit builds.  For 64 bit builds, changing the long to two ints works,
+but for 32 bit builds, it inserts 4 extra bytes.  This leads to many
+packages randomly failing like bash that spews things like:
+	configure: line 471: wait_for: No record of process 0
+
+Bracket the new member by a wordsize check to fix the ABI for 32bit.
+
+(cherry picked from commit 7fde904c73c57faea48c9679bbdc0932d81b3a2f)
+(cherry picked from commit d679497db20c23e3aaaa150821ce9134cc666a18)
+---
+ sysdeps/unix/sysv/linux/sparc/bits/sigaction.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/sysdeps/unix/sysv/linux/sparc/bits/sigaction.h b/sysdeps/unix/sysv/linux/sparc/bits/sigaction.h
+index 0750b52..3af5541 100644
+--- a/sysdeps/unix/sysv/linux/sparc/bits/sigaction.h
++++ b/sysdeps/unix/sysv/linux/sparc/bits/sigaction.h
+@@ -20,6 +20,8 @@
+ # error "Never include <bits/sigaction.h> directly; use <signal.h> instead."
+ #endif
+ 
++#include <bits/wordsize.h>
++
+ /* Structure describing the action to be taken when a signal arrives.  */
+ struct sigaction
+   {
+@@ -43,7 +45,9 @@ struct sigaction
+     __sigset_t sa_mask;
+ 
+     /* Special flags.  */
++#if __WORDSIZE == 64
+     int __glibc_reserved0;
++#endif
+     int sa_flags;
+ 
+     /* Not used by Linux/Sparc yet.  */
+-- 
+2.4.4
+
