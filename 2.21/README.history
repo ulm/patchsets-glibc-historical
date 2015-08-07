@@ -1,3 +1,6 @@
+4		27 Jul 2015
+	+ 00_all_0021-ia64-atomic.h-fix-atomic_exchange_and_add-64bit-hand.patch
+
 3		21 Jul 2015
 	+ 00_all_0017-CVE-2015-1781-resolv-nss_dns-dns-host.c-buffer-overf.patch
 	+ 00_all_0018-sparc-fix-sigaction-for-32bit-builds-BZ-18694.patch
