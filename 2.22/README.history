@@ -1,3 +1,6 @@
+2		07 Aug 2015
+	+ 00_all_0014-hppa-_dl_symbol_address-add-missing-hidden-def.patch
+
 1		05 Aug 2015
 	+ 00_all_0001-disable-ldconfig-during-install.patch
 	+ 00_all_0002-workaround-crash-when-handling-signals-in-static-PIE.patch
