@@ -1,3 +1,7 @@
+4		12 Aug 2015
+	+ 00_all_0017-Readd-O_LARGEFILE-flag-for-openat64-bug-18781.patch
+	+ 00_all_0018-Clear-DF_1_NODELETE-flag-only-for-failed-to-load-lib.patch
+
 3		09 Aug 2015
 	+ 00_all_0015-microblaze-include-unix-sysdep.h.patch
 	+ 00_all_0016-hppa-Fix-miscompilation-of-sched_setaffinity-BZ-1848.patch
