@@ -1,3 +1,6 @@
+7		29 Aug 2015
+	+ 00_all_0021-getmntent-fix-memory-corruption-w-blank-lines-BZ-188.patch
+
 6		21 Aug 2015
 	+ 00_all_0020-manual-skip-build-when-perl-is-unavailable.patch
 
