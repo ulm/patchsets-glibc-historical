@@ -1,3 +1,6 @@
+8		26 Sep 2015
+	+ 00_all_0022-BZ-17250-Fix-static-dlopen-default-library-search-pa.patch
+
 7		29 Aug 2015
 	+ 00_all_0021-getmntent-fix-memory-corruption-w-blank-lines-BZ-188.patch
 
