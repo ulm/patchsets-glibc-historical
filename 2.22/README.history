@@ -1,3 +1,9 @@
+9		17 Oct 2015
+	+ 00_all_0023-Fix-non-v9-32-bit-sparc-build.patch
+	+ 00_all_0024-BZ-18921-Fix-opendir-inverted-o_directory_works-test.patch
+	+ 00_all_0025-Use-HOST_NAME_MAX-for-MAXHOSTNAMELEN-in-sys-param.h.patch
+	+ 00_all_0026-Always-enable-pointer-guard-BZ-18928.patch
+
 8		26 Sep 2015
 	+ 00_all_0022-BZ-17250-Fix-static-dlopen-default-library-search-pa.patch
 
