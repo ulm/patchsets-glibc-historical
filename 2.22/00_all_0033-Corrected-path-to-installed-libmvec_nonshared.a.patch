@@ -1,0 +1,29 @@
+From b84ee767b4303b77a5a284b2d03f56c98d89263c Mon Sep 17 00:00:00 2001
+From: Andrew Senkevich <andrew.senkevich@intel.com>
+Date: Thu, 3 Dec 2015 20:54:52 +0300
+Subject: [PATCH] Corrected path to installed libmvec_nonshared.a
+
+    * math/Makefile ($(inst_libdir)/libm.so): Corrected path to
+    libmvec_nonshared.a
+
+(cherry picked from commit 13ff0739fdca293adab02b9f4fe78395de251086)
+---
+ math/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/math/Makefile b/math/Makefile
+index 76f99fb..2c9d72d 100644
+--- a/math/Makefile
++++ b/math/Makefile
+@@ -98,7 +98,7 @@ $(inst_libdir)/libm.so: $(common-objpfx)format.lds \
+ 	(echo '/* GNU ld script'; echo '*/';\
+ 	 cat $<; \
+ 	 echo 'GROUP ( $(slibdir)/libm.so$(libm.so-version) ' \
+-	      'AS_NEEDED ( $(slibdir)/libmvec_nonshared.a $(slibdir)/libmvec.so$(libmvec.so-version) ) )' \
++	      'AS_NEEDED ( $(libdir)/libmvec_nonshared.a $(slibdir)/libmvec.so$(libmvec.so-version) ) )' \
+ 	) > $@
+ endif
+ 
+-- 
+2.6.2
+

@@ -1,0 +1,103 @@
+From 23f12d0a815e55ab60a0e6d973fc3f4730ca6980 Mon Sep 17 00:00:00 2001
+From: Paul Murphy <murphyp@linux.vnet.ibm.com>
+Date: Thu, 27 Aug 2015 09:48:04 -0500
+Subject: [PATCH] powerpc: Fix usage of elision transient failure adapt param
+
+The skip_lock_out_of_tbegin_retries adaptive parameter was
+not being used correctly, nor as described.  This prevents
+a fallback for all users of the lock if a transient abort
+occurs within the accepted number of retries.
+
+	[BZ #19174]
+	* sysdeps/powerpc/nptl/elide.h (__elide_lock): Fix usage of
+	.skip_lock_out_of_tbegin_retries.
+	* sysdeps/unix/sysv/linux/powerpc/elision-lock.c
+	(__lll_lock_elision): Likewise, and respect a value of
+	try_tbegin <= 0.
+
+(cherry picked from commit 72f1463df85a522bfd1568e47bd81371522ee358)
+
+Conflicts:
+	NEWS
+
+(cherry picked from commit cd51b1424477652cccdb83e7a95644d198fd4513)
+---
+ sysdeps/powerpc/nptl/elide.h                   |  6 +++---
+ sysdeps/unix/sysv/linux/powerpc/elision-lock.c | 15 ++++++---------
+ 2 files changed, 9 insertions(+), 12 deletions(-)
+
+diff --git a/sysdeps/powerpc/nptl/elide.h b/sysdeps/powerpc/nptl/elide.h
+index 12171f4..2e1e443 100644
+--- a/sysdeps/powerpc/nptl/elide.h
++++ b/sysdeps/powerpc/nptl/elide.h
+@@ -27,7 +27,7 @@
+    configurations.  Returns true if the system should retry again or false
+    otherwise.  */
+ static inline bool
+-__get_new_count (uint8_t *adapt_count)
++__get_new_count (uint8_t *adapt_count, int attempt)
+ {
+   /* A persistent failure indicates that a retry will probably
+      result in another failure.  Use normal locking now and
+@@ -40,7 +40,7 @@ __get_new_count (uint8_t *adapt_count)
+     }
+   /* Same logic as above, but for a number of temporary failures in a
+      a row.  */
+-  else if (__elision_aconf.skip_lock_out_of_tbegin_retries > 0
++  else if (attempt <= 1 && __elision_aconf.skip_lock_out_of_tbegin_retries > 0
+ 	   && __elision_aconf.try_tbegin > 0)
+     *adapt_count = __elision_aconf.skip_lock_out_of_tbegin_retries;
+   return true;
+@@ -78,7 +78,7 @@ __get_new_count (uint8_t *adapt_count)
+ 	      __builtin_tabort (_ABORT_LOCK_BUSY);			\
+ 	    }								\
+ 	  else								\
+-	    if (!__get_new_count(&adapt_count))				\
++	    if (!__get_new_count (&adapt_count,i))			\
+ 	      break;							\
+ 	}								\
+     ret;								\
+diff --git a/sysdeps/unix/sysv/linux/powerpc/elision-lock.c b/sysdeps/unix/sysv/linux/powerpc/elision-lock.c
+index 7f9bcc2..c6731ca 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/elision-lock.c
++++ b/sysdeps/unix/sysv/linux/powerpc/elision-lock.c
+@@ -72,8 +72,7 @@ __lll_lock_elision (int *lock, short *adapt_count, EXTRAARG int pshared)
+       goto use_lock;
+     }
+ 
+-  int try_begin = aconf.try_tbegin;
+-  while (1)
++  for (int i = aconf.try_tbegin; i > 0; i--)
+     {
+       if (__builtin_tbegin (0))
+ 	{
+@@ -87,21 +86,19 @@ __lll_lock_elision (int *lock, short *adapt_count, EXTRAARG int pshared)
+ 	  /* A persistent failure indicates that a retry will probably
+ 	     result in another failure.  Use normal locking now and
+ 	     for the next couple of calls.  */
+-	  if (try_begin-- <= 0
+-	      || _TEXASRU_FAILURE_PERSISTENT (__builtin_get_texasru ()))
++	  if (_TEXASRU_FAILURE_PERSISTENT (__builtin_get_texasru ()))
+ 	    {
+ 	      if (aconf.skip_lock_internal_abort > 0)
+ 		*adapt_count = aconf.skip_lock_internal_abort;
+ 	      goto use_lock;
+ 	    }
+-	  /* Same logic as above, but for for a number of temporary failures
+-	     in a row.  */
+-	  else if (aconf.skip_lock_out_of_tbegin_retries > 0
+-                   && aconf.try_tbegin > 0)
+-	    *adapt_count = aconf.skip_lock_out_of_tbegin_retries;
+ 	}
+      }
+ 
++  /* Fall back to locks for a bit if retries have been exhausted */
++  if (aconf.try_tbegin > 0 && aconf.skip_lock_out_of_tbegin_retries > 0)
++    *adapt_count = aconf.skip_lock_out_of_tbegin_retries;
++
+ use_lock:
+   return LLL_LOCK ((*lock), pshared);
+ }
+-- 
+2.6.2
+

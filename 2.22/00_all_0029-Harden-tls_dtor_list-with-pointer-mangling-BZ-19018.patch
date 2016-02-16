@@ -1,0 +1,44 @@
+From 0f74aed2de00dfbcae8e0217d6abdd5634e1c69c Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Tue, 6 Oct 2015 13:12:36 +0200
+Subject: [PATCH] Harden tls_dtor_list with pointer mangling [BZ #19018]
+
+(cherry picked from commit f586e1328681b400078c995a0bb6ad301ef73549)
+(cherry picked from commit 5fb7924cb6cf606ce865122e5bbac9df934db14e)
+---
+ stdlib/cxa_thread_atexit_impl.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/stdlib/cxa_thread_atexit_impl.c b/stdlib/cxa_thread_atexit_impl.c
+index 2d5d56a..5717f09 100644
+--- a/stdlib/cxa_thread_atexit_impl.c
++++ b/stdlib/cxa_thread_atexit_impl.c
+@@ -98,6 +98,10 @@ static __thread struct link_map *lm_cache;
+ int
+ __cxa_thread_atexit_impl (dtor_func func, void *obj, void *dso_symbol)
+ {
++#ifdef PTR_MANGLE
++  PTR_MANGLE (func);
++#endif
++
+   /* Prepend.  */
+   struct dtor_list *new = calloc (1, sizeof (struct dtor_list));
+   new->func = func;
+@@ -142,9 +146,13 @@ __call_tls_dtors (void)
+   while (tls_dtor_list)
+     {
+       struct dtor_list *cur = tls_dtor_list;
++      dtor_func func = cur->func;
++#ifdef PTR_DEMANGLE
++      PTR_DEMANGLE (func);
++#endif
+ 
+       tls_dtor_list = tls_dtor_list->next;
+-      cur->func (cur->obj);
++      func (cur->obj);
+ 
+       /* Ensure that the MAP dereference happens before
+ 	 l_tls_dtor_count decrement.  That way, we protect this access from a
+-- 
+2.6.2
+

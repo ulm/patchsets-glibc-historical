@@ -1,0 +1,73 @@
+From 5b4ed59d74ed8ff011fc9a7a08c27d616b7fe528 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Mon, 7 Dec 2015 15:40:01 +0100
+Subject: [PATCH] alpha/hppa: fix libc.abilist sorting wrt fmemopen
+
+Commit fdb7d390 introduced the fmemopen symbol at the wrong location
+in alpha/libc.abilist and hppa/libc.abilist. The file needs to keep
+sorted, fix that.
+
+Note: this is for 2.22 only, for master the format has been changed in
+commit 8c77b6ad.
+
+	* sysdeps/unix/sysv/linux/alpha/libc.abilist [GLIBC_2.22]: Move
+	to keep the file sorted.
+	* sysdeps/unix/sysv/linux/hppa/libc.abilist [GLIBC_2.22]: Likewise.
+
+(cherry picked from commit 3b54d911809643fb6a293807333b7f2cf15a3b50)
+---
+ sysdeps/unix/sysv/linux/alpha/libc.abilist | 6 +++---
+ sysdeps/unix/sysv/linux/hppa/libc.abilist  | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/alpha/libc.abilist b/sysdeps/unix/sysv/linux/alpha/libc.abilist
+index 58c8b32..aa20e22 100644
+--- a/sysdeps/unix/sysv/linux/alpha/libc.abilist
++++ b/sysdeps/unix/sysv/linux/alpha/libc.abilist
+@@ -1822,9 +1822,6 @@ GLIBC_2.17
+ GLIBC_2.18
+  GLIBC_2.18 A
+  __cxa_thread_atexit_impl F
+-GLIBC_2.22
+- GLIBC_2.22 A
+- fmemopen F
+ GLIBC_2.2
+  GLIBC_2.2 A
+  _IO_adjust_wcolumn F
+@@ -2015,6 +2012,9 @@ GLIBC_2.2.4
+ GLIBC_2.2.6
+  GLIBC_2.2.6 A
+  __nanosleep F
++GLIBC_2.22
++ GLIBC_2.22 A
++ fmemopen F
+ GLIBC_2.3
+  GLIBC_2.3 A
+  __ctype_b_loc F
+diff --git a/sysdeps/unix/sysv/linux/hppa/libc.abilist b/sysdeps/unix/sysv/linux/hppa/libc.abilist
+index cf0ad90..224e1f3 100644
+--- a/sysdeps/unix/sysv/linux/hppa/libc.abilist
++++ b/sysdeps/unix/sysv/linux/hppa/libc.abilist
+@@ -95,9 +95,6 @@ GLIBC_2.18
+ GLIBC_2.19
+  GLIBC_2.19 A
+  fanotify_mark F
+-GLIBC_2.22
+- GLIBC_2.22 A
+- fmemopen F
+ GLIBC_2.2
+  GLIBC_2.2 A
+  _Exit F
+@@ -1863,6 +1860,9 @@ GLIBC_2.2.4
+ GLIBC_2.2.6
+  GLIBC_2.2.6 A
+  __nanosleep F
++GLIBC_2.22
++ GLIBC_2.22 A
++ fmemopen F
+ GLIBC_2.3
+  GLIBC_2.3 A
+  __ctype_b_loc F
+-- 
+2.6.2
+

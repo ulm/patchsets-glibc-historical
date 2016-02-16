@@ -1,0 +1,178 @@
+From b4f19537f9d26dbf95bd2e7d9c056400ad1b5723 Mon Sep 17 00:00:00 2001
+From: Tulio Magno Quites Machado Filho <tuliom@linux.vnet.ibm.com>
+Date: Wed, 22 Jul 2015 09:26:02 -0300
+Subject: [PATCH] PowerPC: Fix a race condition when eliding a lock
+
+The previous code used to evaluate the preprocessor token is_lock_free to
+a variable before starting a transaction.  This behavior can cause an
+error if another thread got the lock (without using a transaction)
+between the evaluation of the token and the beginning of the transaction.
+
+This bug can be triggered with the following order of events:
+1. The lock accessed by is_lock_free is free.
+2. Thread T1 evaluates is_lock_free and stores into register R1 that the
+   lock is free.
+3. Thread T2 acquires the same lock used in is_lock_free.
+4. T1 begins the transaction, creating a memory barrier where is_lock_free
+   is false, but R1 is true.
+5. T1 reads R1 and doesn't abort the transaction.
+6. T1 calls ELIDE_UNLOCK, which reads false from is_lock_free and decides
+   to unlock a lock acquired by T2, leading to undefined behavior.
+
+This patch delays the evaluation of is_lock_free to inside a transaction
+by moving this part of the code to the macro ELIDE_LOCK.
+
+	[BZ #18743]
+	* sysdeps/powerpc/nptl/elide.h (__elide_lock): Move most of this
+	code to...
+	(ELIDE_LOCK): ...here.
+	(__get_new_count): New function with part of the code from
+	__elide_lock that updates the value of adapt_count after a
+	transaction abort.
+	(__elided_trylock): Moved this code to...
+	(ELIDE_TRYLOCK): ...here.
+
+(cherry picked from commit 6ec52bf634b7650b57ff67b5f5053bce8992d549)
+(cherry picked from commit 5b319ce2949cf6fb97862ff81558944f76c704f1)
+---
+ sysdeps/powerpc/nptl/elide.h | 115 ++++++++++++++++++++++++-------------------
+ 1 file changed, 63 insertions(+), 52 deletions(-)
+
+diff --git a/sysdeps/powerpc/nptl/elide.h b/sysdeps/powerpc/nptl/elide.h
+index 389f5a5..12171f4 100644
+--- a/sysdeps/powerpc/nptl/elide.h
++++ b/sysdeps/powerpc/nptl/elide.h
+@@ -23,67 +23,78 @@
+ # include <htm.h>
+ # include <elision-conf.h>
+ 
+-/* Returns true if the lock defined by is_lock_free as elided.
+-   ADAPT_COUNT is a pointer to per-lock state variable. */
+-
++/* Get the new value of adapt_count according to the elision
++   configurations.  Returns true if the system should retry again or false
++   otherwise.  */
+ static inline bool
+-__elide_lock (uint8_t *adapt_count, int is_lock_free)
++__get_new_count (uint8_t *adapt_count)
+ {
+-  if (*adapt_count > 0)
++  /* A persistent failure indicates that a retry will probably
++     result in another failure.  Use normal locking now and
++     for the next couple of calls.  */
++  if (_TEXASRU_FAILURE_PERSISTENT (__builtin_get_texasru ()))
+     {
+-      (*adapt_count)--;
++      if (__elision_aconf.skip_lock_internal_abort > 0)
++	*adapt_count = __elision_aconf.skip_lock_internal_abort;
+       return false;
+     }
+-
+-  for (int i = __elision_aconf.try_tbegin; i > 0; i--)
+-    {
+-      if (__builtin_tbegin (0))
+-	{
+-	  if (is_lock_free)
+-	    return true;
+-	  /* Lock was busy.  */
+-	  __builtin_tabort (_ABORT_LOCK_BUSY);
+-	}
+-      else
+-	{
+-	  /* A persistent failure indicates that a retry will probably
+-	     result in another failure.  Use normal locking now and
+-	     for the next couple of calls.  */
+-	  if (_TEXASRU_FAILURE_PERSISTENT (__builtin_get_texasru ()))
+-	    {
+-	      if (__elision_aconf.skip_lock_internal_abort > 0)
+-		*adapt_count = __elision_aconf.skip_lock_internal_abort;
+-	      break;
+-	    }
+-	  /* Same logic as above, but for a number of temporary failures in a
+-	     a row.  */
+-	  else if (__elision_aconf.skip_lock_out_of_tbegin_retries > 0
+-		   && __elision_aconf.try_tbegin > 0)
+-	    *adapt_count = __elision_aconf.skip_lock_out_of_tbegin_retries;
+-	}
+-     }
+-
+-  return false;
++  /* Same logic as above, but for a number of temporary failures in a
++     a row.  */
++  else if (__elision_aconf.skip_lock_out_of_tbegin_retries > 0
++	   && __elision_aconf.try_tbegin > 0)
++    *adapt_count = __elision_aconf.skip_lock_out_of_tbegin_retries;
++  return true;
+ }
+ 
+-# define ELIDE_LOCK(adapt_count, is_lock_free) \
+-  __elide_lock (&(adapt_count), is_lock_free)
+-
+-
+-static inline bool
+-__elide_trylock (uint8_t *adapt_count, int is_lock_free, int write)
+-{
+-  if (__elision_aconf.try_tbegin > 0)
+-    {
+-      if (write)
+-	__builtin_tabort (_ABORT_NESTED_TRYLOCK);
+-      return __elide_lock (adapt_count, is_lock_free);
+-    }
+-  return false;
+-}
++/* CONCURRENCY NOTES:
++
++   The evaluation of the macro expression is_lock_free encompasses one or
++   more loads from memory locations that are concurrently modified by other
++   threads.  For lock elision to work, this evaluation and the rest of the
++   critical section protected by the lock must be atomic because an
++   execution with lock elision must be equivalent to an execution in which
++   the lock would have been actually acquired and released.  Therefore, we
++   evaluate is_lock_free inside of the transaction that represents the
++   critical section for which we want to use lock elision, which ensures
++   the atomicity that we require.  */
++
++/* Returns 0 if the lock defined by is_lock_free was elided.
++   ADAPT_COUNT is a per-lock state variable.  */
++# define ELIDE_LOCK(adapt_count, is_lock_free)				\
++  ({									\
++    int ret = 0;							\
++    if (adapt_count > 0)						\
++      (adapt_count)--;							\
++    else								\
++      for (int i = __elision_aconf.try_tbegin; i > 0; i--)		\
++	{								\
++	  if (__builtin_tbegin (0))					\
++	    {								\
++	      if (is_lock_free)						\
++		{							\
++		  ret = 1;						\
++		  break;						\
++		}							\
++	      __builtin_tabort (_ABORT_LOCK_BUSY);			\
++	    }								\
++	  else								\
++	    if (!__get_new_count(&adapt_count))				\
++	      break;							\
++	}								\
++    ret;								\
++  })
+ 
+ # define ELIDE_TRYLOCK(adapt_count, is_lock_free, write)	\
+-  __elide_trylock (&(adapt_count), is_lock_free, write)
++  ({								\
++    int ret = 0;						\
++    if (__elision_aconf.try_tbegin > 0)				\
++      {								\
++	if (write)						\
++	  __builtin_tabort (_ABORT_NESTED_TRYLOCK);		\
++	ret = ELIDE_LOCK (adapt_count, is_lock_free);		\
++      }								\
++    ret;							\
++  })
+ 
+ 
+ static inline bool
+-- 
+2.6.2
+

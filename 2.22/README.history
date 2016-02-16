@@ -1,3 +1,20 @@
+10		16 Feb 2016
+	+ 00_all_0027-BZ-18796.patch
+	+ 00_all_0028-strcoll-Remove-incorrect-STRDIFF-based-optimization-.patch
+	+ 00_all_0029-Harden-tls_dtor_list-with-pointer-mangling-BZ-19018.patch
+	+ 00_all_0030-PowerPC-Fix-a-race-condition-when-eliding-a-lock.patch
+	+ 00_all_0031-Keep-only-ELF_RTYPE_CLASS_-PLT-COPY-bits-for-prelink.patch
+	+ 00_all_0032-Better-workaround-for-aliases-of-_finite-symbols-in-.patch
+	+ 00_all_0033-Corrected-path-to-installed-libmvec_nonshared.a.patch
+	+ 00_all_0034-powerpc-Fix-usage-of-elision-transient-failure-adapt.patch
+	+ 00_all_0035-alpha-hppa-fix-libc.abilist-sorting-wrt-fmemopen.patch
+	+ 00_all_0036-Fix-BZ-17905.patch
+	+ 00_all_0037-Fix-BZ-18985-out-of-range-data-to-strftime-causes-a-.patch
+	+ 00_all_0038-Gracefully-handle-incompatible-locale-data.patch
+	+ 00_all_0039-Handle-overflow-in-__hcreate_r.patch
+	+ 00_all_0040-Improve-check-against-integer-wraparound-in-hcreate_.patch
+	+ 10_all_glibc-CVE-2015-7547.patch
+
 9		17 Oct 2015
 	+ 00_all_0023-Fix-non-v9-32-bit-sparc-build.patch
 	+ 00_all_0024-BZ-18921-Fix-opendir-inverted-o_directory_works-test.patch
