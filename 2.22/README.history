@@ -1,3 +1,7 @@
+11		[pending]
+	+ 00_all_0041-CVE-2015-7547-getaddrinfo-stack-based-buffer-overflo.patch
+	D 10_all_glibc-CVE-2015-7547.patch
+
 10		16 Feb 2016
 	+ 00_all_0027-BZ-18796.patch
 	+ 00_all_0028-strcoll-Remove-incorrect-STRDIFF-based-optimization-.patch
