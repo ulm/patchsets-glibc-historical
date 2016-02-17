@@ -1,0 +1,29 @@
+From 741e293d9b93e6c8a8926724502237417bd0adbc Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@suse.de>
+Date: Mon, 2 Mar 2015 15:47:56 +0100
+Subject: [PATCH] Fix parallel build error
+
+https://bugs.gentoo.org/74948
+
+(cherry picked from commit e8b6be0016f131c2ac72bf3213eabdb59800e63b)
+(cherry picked from commit e04da210f7cd564c46a8db0e15a0c6e726f3977e)
+---
+ elf/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/elf/Makefile b/elf/Makefile
+index 4882410..4813fcc 100644
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -358,7 +358,7 @@ $(objpfx)interp.os: $(elf-objpfx)runtime-linker.h
+ 
+ $(elf-objpfx)runtime-linker.h: $(elf-objpfx)runtime-linker.st; @:
+ $(elf-objpfx)runtime-linker.st: $(common-objpfx)config.make
+-	$(name-target-directory)
++	$(make-target-directory)
+ 	echo '#define RUNTIME_LINKER "$(rtlddir)/$(rtld-installed-name)"' \
+ 		> ${@:st=T}
+ 	$(move-if-change) ${@:st=T} ${@:st=h}
+-- 
+2.6.2
+

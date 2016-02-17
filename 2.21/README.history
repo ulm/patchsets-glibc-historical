@@ -1,6 +1,7 @@
-7		[pending]
+7		17 Feb 2016
 	+ 00_all_0028-CVE-2015-7547-getaddrinfo-stack-based-buffer-overflo.patch
 	D 10_all_glibc-CVE-2015-7547.patch
+	+ 00_all_0029-Fix-parallel-build-error.patch
 
 6		16 Feb 2016
 	+ 00_all_0023-CVE-2014-8121-Do-not-close-NSS-files-database-during.patch
