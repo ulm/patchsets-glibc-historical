@@ -1,0 +1,28 @@
+From 1053a4902ebff0ba30098fdcad614d963de87c3d Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Tue, 29 Dec 2015 17:54:31 -0500
+Subject: [PATCH] sys/types.h: drop sys/sysmacros.h include
+
+We want to break apart this include path due to namespace pollution.
+https://sourceware.org/ml/libc-alpha/2015-11/msg00253.html
+---
+ posix/sys/types.h | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/posix/sys/types.h b/posix/sys/types.h
+index a728567..b3007db 100644
+--- a/posix/sys/types.h
++++ b/posix/sys/types.h
+@@ -217,9 +217,6 @@ typedef int register_t __attribute__ ((__mode__ (__word__)));
+ 
+ /* It also defines `fd_set' and the FD_* macros for `select'.  */
+ # include <sys/select.h>
+-
+-/* BSD defines these symbols, so we follow.  */
+-# include <sys/sysmacros.h>
+ #endif /* Use misc.  */
+ 
+ 
+-- 
+2.6.2
+
