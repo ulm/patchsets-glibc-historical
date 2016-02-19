@@ -20,7 +20,11 @@
 #include <features.h>
 #include <string.h>
 #include <wchar.h>
-#include <bits/libc-lock.h>
+#if __GLIBC_PREREQ(2, 23)
+# include <libc-lock.h>
+#else
+# include <bits/libc-lock.h>
+#endif
 #if __GNUC_PREREQ(3, 3)
 # include <gconv_int.h>
 #else
