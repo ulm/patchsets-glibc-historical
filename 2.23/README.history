@@ -1,3 +1,8 @@
+2		07 Mar 2016
+	+ 00_all_0010-x86_64-Set-DL_RUNTIME_UNALIGNED_VEC_SIZE-to-8.patch
+	+ 00_all_0011-Don-t-use-long-double-math-functions-if-NO_LONG_DOUB.patch
+	+ 00_all_0012-sln-use-stat64.patch
+
 1		19 Feb 2016
 	+ 00_all_0001-Updated-translations-for-2.23.patch
 	+ 00_all_0002-Regenerate-libc.pot-for-2.23.patch

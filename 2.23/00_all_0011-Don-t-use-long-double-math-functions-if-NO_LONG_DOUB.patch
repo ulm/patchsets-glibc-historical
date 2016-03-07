@@ -1,0 +1,36 @@
+From f571b1c53a6c4970969ef9fdb4aad2589d0b0427 Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@suse.de>
+Date: Tue, 23 Feb 2016 16:27:56 +0100
+Subject: [PATCH] Don't use long double math functions if NO_LONG_DOUBLE
+
+(cherry picked from commit 591b7e37e6be2a2d6672b683ba1191095b10d6d5)
+---
+ math/test-math-isinff.cc | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/math/test-math-isinff.cc b/math/test-math-isinff.cc
+index 195d753..ecff1dc 100644
+--- a/math/test-math-isinff.cc
++++ b/math/test-math-isinff.cc
+@@ -30,12 +30,17 @@ do_test (void)
+      header fix this test will not compile.  */
+   if (isinff (1.0f)
+       || !isinff (INFINITY)
++#ifndef NO_LONG_DOUBLE
+       || isinfl (1.0L)
+       || !isinfl (INFINITY)
++#endif
+       || isnanf (2.0f)
+       || !isnanf (NAN)
++#ifndef NO_LONG_DOUBLE
+       || isnanl (2.0L)
+-      || !isnanl (NAN))
++      || !isnanl (NAN)
++#endif
++      )
+     {
+       printf ("FAIL: Failed to call is* functions.\n");
+       exit (1);
+-- 
+2.6.2
+
