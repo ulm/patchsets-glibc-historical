@@ -1,0 +1,56 @@
+From 3f749c2e7b8226eb8c6f16fb180987dc7efe35ba Mon Sep 17 00:00:00 2001
+From: Hongjiu Zhang <noctuorare@gmail.com>
+Date: Sun, 6 Mar 2016 20:18:21 -0500
+Subject: [PATCH] sln: use stat64
+
+When using sln on some filesystems which return 64-bit inodes,
+the stat call might fail during install like so:
+	.../elf/sln .../elf/symlink.list
+	/lib32/libc.so.6: invalid destination: Value too large for defined data type
+	/lib32/ld-linux.so.2: invalid destination: Value too large for defined data type
+	Makefile:104: recipe for target 'install-symbolic-link' failed
+
+Switch to using stat64 all the time to avoid this.
+
+URL: https://bugs.gentoo.org/576396
+(cherry picked from commit f5e753c8c3a18a1e3c715dd11bf4dc341b5c481f)
+(cherry picked from commit d6778fc4b0039b2116f88218212618ca357fee2f)
+---
+ ChangeLog | 5 +++++
+ elf/sln.c | 4 ++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 95cc5a2..7663053 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,8 @@
++2016-03-07  Hongjiu Zhang  <noctuorare@gmail.com>
++
++	* elf/sln.c (makesymlink): Change struct stat to stat64, and lstat
++	to lstat64.
++
+ 2015-08-05  Mike Frysinger  <vapier@gentoo.org>
+ 
+ 	* nptl/allocatestack.c (allocate_stack): Move stacktop decl down to
+diff --git a/elf/sln.c b/elf/sln.c
+index 1a7d24e..c6601fd 100644
+--- a/elf/sln.c
++++ b/elf/sln.c
+@@ -167,11 +167,11 @@ makesymlink (src, dest)
+      const char *src;
+      const char *dest;
+ {
+-  struct stat stats;
++  struct stat64 stats;
+   const char *error;
+ 
+   /* Destination must not be a directory. */
+-  if (lstat (dest, &stats) == 0)
++  if (lstat64 (dest, &stats) == 0)
+     {
+       if (S_ISDIR (stats.st_mode))
+ 	{
+-- 
+2.6.2
+

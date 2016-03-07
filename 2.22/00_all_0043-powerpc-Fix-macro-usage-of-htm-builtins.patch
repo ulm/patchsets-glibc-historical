@@ -1,0 +1,35 @@
+From 78b80a22769f07fcd83763d5b8b3625fe4920574 Mon Sep 17 00:00:00 2001
+From: "Paul E. Murphy" <murphyp@linux.vnet.ibm.com>
+Date: Wed, 20 Jan 2016 10:33:19 -0600
+Subject: [PATCH] powerpc: Fix macro usage of htm builtins
+
+Some extraneous semicolons were included in a
+recent patch which causes a build failure with
+newer compilers.
+
+(cherry picked from commit af8ea0f449af7d3847351a4a5bafcd435a22ac31)
+(cherry picked from commit a33d347c181cfa0d84c37e9961ebf030495ed248)
+---
+ sysdeps/unix/sysv/linux/powerpc/htm.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/powerpc/htm.h b/sysdeps/unix/sysv/linux/powerpc/htm.h
+index f9a2587..7b49817 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/htm.h
++++ b/sysdeps/unix/sysv/linux/powerpc/htm.h
+@@ -128,9 +128,9 @@
+ 
+ # ifdef __TM_FENCE__
+    /* New GCC behavior.  */
+-#  define __libc_tbegin(R)  __builtin_tbegin (R);
+-#  define __libc_tend(R)    __builtin_tend (R);
+-#  define __libc_tabort(R)  __builtin_tabort (R);
++#  define __libc_tbegin(R)  __builtin_tbegin (R)
++#  define __libc_tend(R)    __builtin_tend (R)
++#  define __libc_tabort(R)  __builtin_tabort (R)
+ # else
+    /* Workaround an old GCC behavior. Earlier releases of GCC 4.9 and 5.0,
+       didn't use to treat __builtin_tbegin, __builtin_tend and
+-- 
+2.6.2
+

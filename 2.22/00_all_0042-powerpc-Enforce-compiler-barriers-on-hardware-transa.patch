@@ -1,0 +1,194 @@
+From e012eafca47020da292f828fe128f3aca50026e1 Mon Sep 17 00:00:00 2001
+From: Tulio Magno Quites Machado Filho <tuliom@linux.vnet.ibm.com>
+Date: Mon, 28 Dec 2015 12:24:43 -0200
+Subject: [PATCH] powerpc: Enforce compiler barriers on hardware transactions
+
+Work around a GCC behavior with hardware transactional memory built-ins.
+GCC doesn't treat the PowerPC transactional built-ins as compiler
+barriers, moving instructions past the transaction boundaries and
+altering their atomicity.
+
+(cherry picked from commit 42bf1c897170ff951c7fd0ee9da25f97ff787396)
+
+Conflicts:
+	sysdeps/unix/sysv/linux/powerpc/elision-trylock.c
+
+(cherry picked from commit 3803874b4a368eb8245fbf091651b6c8edd90b23)
+---
+ sysdeps/powerpc/nptl/elide.h                      |  8 ++---
+ sysdeps/powerpc/sysdep.h                          |  2 +-
+ sysdeps/unix/sysv/linux/powerpc/elision-lock.c    |  4 +--
+ sysdeps/unix/sysv/linux/powerpc/elision-trylock.c |  6 ++--
+ sysdeps/unix/sysv/linux/powerpc/elision-unlock.c  |  2 +-
+ sysdeps/unix/sysv/linux/powerpc/htm.h             | 39 ++++++++++++++++++++---
+ 6 files changed, 46 insertions(+), 15 deletions(-)
+
+diff --git a/sysdeps/powerpc/nptl/elide.h b/sysdeps/powerpc/nptl/elide.h
+index 2e1e443..02f8f3b 100644
+--- a/sysdeps/powerpc/nptl/elide.h
++++ b/sysdeps/powerpc/nptl/elide.h
+@@ -68,14 +68,14 @@ __get_new_count (uint8_t *adapt_count, int attempt)
+     else								\
+       for (int i = __elision_aconf.try_tbegin; i > 0; i--)		\
+ 	{								\
+-	  if (__builtin_tbegin (0))					\
++	  if (__libc_tbegin (0))					\
+ 	    {								\
+ 	      if (is_lock_free)						\
+ 		{							\
+ 		  ret = 1;						\
+ 		  break;						\
+ 		}							\
+-	      __builtin_tabort (_ABORT_LOCK_BUSY);			\
++	      __libc_tabort (_ABORT_LOCK_BUSY);				\
+ 	    }								\
+ 	  else								\
+ 	    if (!__get_new_count (&adapt_count,i))			\
+@@ -90,7 +90,7 @@ __get_new_count (uint8_t *adapt_count, int attempt)
+     if (__elision_aconf.try_tbegin > 0)				\
+       {								\
+ 	if (write)						\
+-	  __builtin_tabort (_ABORT_NESTED_TRYLOCK);		\
++	  __libc_tabort (_ABORT_NESTED_TRYLOCK);		\
+ 	ret = ELIDE_LOCK (adapt_count, is_lock_free);		\
+       }								\
+     ret;							\
+@@ -102,7 +102,7 @@ __elide_unlock (int is_lock_free)
+ {
+   if (is_lock_free)
+     {
+-      __builtin_tend (0);
++      __libc_tend (0);
+       return true;
+     }
+   return false;
+diff --git a/sysdeps/powerpc/sysdep.h b/sysdeps/powerpc/sysdep.h
+index e32168e..f424fe4 100644
+--- a/sysdeps/powerpc/sysdep.h
++++ b/sysdeps/powerpc/sysdep.h
+@@ -180,7 +180,7 @@
+ # define ABORT_TRANSACTION \
+   ({ 						\
+     if (THREAD_GET_TM_CAPABLE ())		\
+-      __builtin_tabort (_ABORT_SYSCALL);	\
++      __libc_tabort (_ABORT_SYSCALL);	\
+   })
+ #else
+ # define ABORT_TRANSACTION
+diff --git a/sysdeps/unix/sysv/linux/powerpc/elision-lock.c b/sysdeps/unix/sysv/linux/powerpc/elision-lock.c
+index c6731ca..e11ad1d 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/elision-lock.c
++++ b/sysdeps/unix/sysv/linux/powerpc/elision-lock.c
+@@ -74,12 +74,12 @@ __lll_lock_elision (int *lock, short *adapt_count, EXTRAARG int pshared)
+ 
+   for (int i = aconf.try_tbegin; i > 0; i--)
+     {
+-      if (__builtin_tbegin (0))
++      if (__libc_tbegin (0))
+ 	{
+ 	  if (*lock == 0)
+ 	    return 0;
+ 	  /* Lock was busy.  Fall back to normal locking.  */
+-	  __builtin_tabort (_ABORT_LOCK_BUSY);
++	  __libc_tabort (_ABORT_LOCK_BUSY);
+ 	}
+       else
+ 	{
+diff --git a/sysdeps/unix/sysv/linux/powerpc/elision-trylock.c b/sysdeps/unix/sysv/linux/powerpc/elision-trylock.c
+index 7b6d1b9..edec155 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/elision-trylock.c
++++ b/sysdeps/unix/sysv/linux/powerpc/elision-trylock.c
+@@ -31,7 +31,7 @@ int
+ __lll_trylock_elision (int *futex, short *adapt_count)
+ {
+   /* Implement POSIX semantics by forbiding nesting elided trylocks.  */
+-  __builtin_tabort (_ABORT_NESTED_TRYLOCK);
++  __libc_tabort (_ABORT_NESTED_TRYLOCK);
+ 
+   /* Only try a transaction if it's worth it.  */
+   if (*adapt_count > 0)
+@@ -40,13 +40,13 @@ __lll_trylock_elision (int *futex, short *adapt_count)
+       goto use_lock;
+     }
+ 
+-  if (__builtin_tbegin (0))
++  if (__libc_tbegin (0))
+     {
+       if (*futex == 0)
+ 	return 0;
+ 
+       /* Lock was busy.  Fall back to normal locking.  */
+-      __builtin_tabort (_ABORT_LOCK_BUSY);
++      __libc_tabort (_ABORT_LOCK_BUSY);
+     }
+   else
+     {
+diff --git a/sysdeps/unix/sysv/linux/powerpc/elision-unlock.c b/sysdeps/unix/sysv/linux/powerpc/elision-unlock.c
+index f04c339..7234db6 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/elision-unlock.c
++++ b/sysdeps/unix/sysv/linux/powerpc/elision-unlock.c
+@@ -25,7 +25,7 @@ __lll_unlock_elision(int *lock, int pshared)
+ {
+   /* When the lock was free we're in a transaction.  */
+   if (*lock == 0)
+-    __builtin_tend (0);
++    __libc_tend (0);
+   else
+     lll_unlock ((*lock), pshared);
+   return 0;
+diff --git a/sysdeps/unix/sysv/linux/powerpc/htm.h b/sysdeps/unix/sysv/linux/powerpc/htm.h
+index 57d5cd6..f9a2587 100644
+--- a/sysdeps/unix/sysv/linux/powerpc/htm.h
++++ b/sysdeps/unix/sysv/linux/powerpc/htm.h
+@@ -118,13 +118,44 @@
+      __ret;				\
+   })
+ 
+-#define __builtin_tbegin(tdb)       _tbegin ()
+-#define __builtin_tend(nested)      _tend ()
+-#define __builtin_tabort(abortcode) _tabort (abortcode)
+-#define __builtin_get_texasru()     _texasru ()
++#define __libc_tbegin(tdb)       _tbegin ()
++#define __libc_tend(nested)      _tend ()
++#define __libc_tabort(abortcode) _tabort (abortcode)
++#define __builtin_get_texasru()  _texasru ()
+ 
+ #else
+ # include <htmintrin.h>
++
++# ifdef __TM_FENCE__
++   /* New GCC behavior.  */
++#  define __libc_tbegin(R)  __builtin_tbegin (R);
++#  define __libc_tend(R)    __builtin_tend (R);
++#  define __libc_tabort(R)  __builtin_tabort (R);
++# else
++   /* Workaround an old GCC behavior. Earlier releases of GCC 4.9 and 5.0,
++      didn't use to treat __builtin_tbegin, __builtin_tend and
++      __builtin_tabort as compiler barriers, moving instructions into and
++      out the transaction.
++      Remove this when glibc drops support for GCC 5.0.  */
++#  define __libc_tbegin(R)			\
++   ({ __asm__ volatile("" ::: "memory");	\
++     unsigned int __ret = __builtin_tbegin (R);	\
++     __asm__ volatile("" ::: "memory");		\
++     __ret;					\
++   })
++#  define __libc_tabort(R)			\
++  ({ __asm__ volatile("" ::: "memory");		\
++    unsigned int __ret = __builtin_tabort (R);	\
++    __asm__ volatile("" ::: "memory");		\
++    __ret;					\
++  })
++#  define __libc_tend(R)			\
++   ({ __asm__ volatile("" ::: "memory");	\
++     unsigned int __ret = __builtin_tend (R);	\
++     __asm__ volatile("" ::: "memory");		\
++     __ret;					\
++   })
++# endif /* __TM_FENCE__  */
+ #endif /* __HTM__  */
+ 
+ #endif /* __ASSEMBLER__ */
+-- 
+2.6.2
+

@@ -1,5 +1,9 @@
-11		[pending]
+11		07 Mar 2016
 	+ 00_all_0041-CVE-2015-7547-getaddrinfo-stack-based-buffer-overflo.patch
+	+ 00_all_0042-powerpc-Enforce-compiler-barriers-on-hardware-transa.patch
+	+ 00_all_0043-powerpc-Fix-macro-usage-of-htm-builtins.patch
+	+ 00_all_0044-S390-Do-not-use-direct-socket-syscalls-if-build-on-k.patch
+	+ 00_all_0045-sln-use-stat64.patch
 	D 10_all_glibc-CVE-2015-7547.patch
 
 10		16 Feb 2016
