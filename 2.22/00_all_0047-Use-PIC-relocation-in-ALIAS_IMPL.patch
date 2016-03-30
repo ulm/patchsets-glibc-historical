@@ -1,0 +1,35 @@
+From 3ffe1a9e559b88ed2c1096a798cec5fb17194e99 Mon Sep 17 00:00:00 2001
+From: Andrew Senkevich <andrew.senkevich@intel.com>
+Date: Wed, 17 Feb 2016 14:23:32 -0800
+Subject: [PATCH] Use PIC relocation in ALIAS_IMPL
+
+Since libmvec_nonshared.a may be linked into shared objects, ALIAS_IMPL
+should use PIC relocation.
+
+	[BZ #19590]
+	* sysdeps/x86_64/fpu/svml_finite_alias.S (ALIAS_IMPL): Use PIC
+	relocation.
+
+(cherry picked from commit a5df3210a641c175138052037fcdad34298bfa4d)
+(cherry picked from commit 2b8ab5c3f618e4d9e0a9147c24f8cf6bbf35a1d8)
+---
+ sysdeps/x86_64/fpu/svml_finite_alias.S | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/sysdeps/x86_64/fpu/svml_finite_alias.S b/sysdeps/x86_64/fpu/svml_finite_alias.S
+index f8bcfeb..aed1661 100644
+--- a/sysdeps/x86_64/fpu/svml_finite_alias.S
++++ b/sysdeps/x86_64/fpu/svml_finite_alias.S
+@@ -23,8 +23,7 @@
+ 
+ #define ALIAS_IMPL(alias, target) \
+ ENTRY (alias); \
+-	call target; \
+-	ret; \
++	jmp *target@GOTPCREL(%rip); \
+ END (alias)
+ 
+ 	.text
+-- 
+2.7.4
+

@@ -1,0 +1,41 @@
+From 209606141fb74f9bfa8ad4ca56900077f0cad2b7 Mon Sep 17 00:00:00 2001
+From: Joseph Myers <joseph@codesourcery.com>
+Date: Thu, 24 Sep 2015 16:48:32 +0000
+Subject: [PATCH] Fix x86_64 fma4 pow inappropriate contraction (bug 19003).
+
+The x86_64 fma4 version of pow fails to disable contraction of
+operations other than those explicitly intended to use fma
+instructions, so resulting in large ulps errors on processors with
+fma4 instructions, as in bug 18104 (165ulp for the test added for that
+bug; error originally reported by "blaaa" on #glibc).  This patch adds
+$(config-cflags-nofma) for e_pow-fma4.c, corresponding to the use for
+e_pow.c in sysdeps/ieee754/dbl-64/Makefile.
+
+Tested for x86_64 on a processor with fma4.
+
+	[BZ #19003]
+	* sysdeps/x86_64/fpu/multiarch/Makefile (CFLAGS-e_pow-fma4.c): Add
+	$(config-cflags-nofma).
+
+(cherry picked from commit 51df2605064a2bfd44fa0655ef9815812347de80)
+(cherry picked from commit c95a56e2a8b16eeb911eed5c1bdc8fd26f337f4d)
+---
+ sysdeps/x86_64/fpu/multiarch/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sysdeps/x86_64/fpu/multiarch/Makefile b/sysdeps/x86_64/fpu/multiarch/Makefile
+index 86ea473..631534a 100644
+--- a/sysdeps/x86_64/fpu/multiarch/Makefile
++++ b/sysdeps/x86_64/fpu/multiarch/Makefile
+@@ -16,7 +16,7 @@ CFLAGS-e_asin-fma4.c = -mfma4
+ CFLAGS-e_atan2-fma4.c = -mfma4
+ CFLAGS-e_exp-fma4.c = -mfma4
+ CFLAGS-e_log-fma4.c = -mfma4
+-CFLAGS-e_pow-fma4.c = -mfma4
++CFLAGS-e_pow-fma4.c = -mfma4 $(config-cflags-nofma)
+ CFLAGS-halfulp-fma4.c = -mfma4
+ CFLAGS-mpa-fma4.c = -mfma4
+ CFLAGS-mpatan-fma4.c = -mfma4
+-- 
+2.7.4
+

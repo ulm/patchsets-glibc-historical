@@ -1,3 +1,9 @@
+12		30 Mar 2016
+	+ 00_all_0046-Fix-x86_64-fma4-pow-inappropriate-contraction-bug-19.patch
+	+ 00_all_0047-Use-PIC-relocation-in-ALIAS_IMPL.patch
+	+ 00_all_0048-Fix-resource-leak-in-resolver-bug-19257.patch
+	+ 00_all_0049-resolv-Always-set-resplen2-out-parameter-in-send_dg-.patch
+
 11		07 Mar 2016
 	+ 00_all_0041-CVE-2015-7547-getaddrinfo-stack-based-buffer-overflo.patch
 	+ 00_all_0042-powerpc-Enforce-compiler-barriers-on-hardware-transa.patch
