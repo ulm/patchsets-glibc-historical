@@ -1,5 +1,11 @@
-3		[pending]
+3		30 Mar 2016
 	+ 00_all_0013-Add-sys-auxv.h-wrapper-to-include-sys.patch
+	+ 00_all_0014-mips-terminate-the-FDE-before-the-return-trampoline-.patch
+	+ 00_all_0015-Use-HAS_ARCH_FEATURE-with-Fast_Rep_String.patch
+	+ 00_all_0016-Define-_HAVE_STRING_ARCH_mempcpy-to-1-for-x86.patch
+	+ 00_all_0017-Or-bit_Prefer_MAP_32BIT_EXEC-in-EXTRA_LD_ENVVARS.patch
+	+ 00_all_0018-Fix-resource-leak-in-resolver-bug-19257.patch
+	+ 00_all_0019-resolv-Always-set-resplen2-out-parameter-in-send_dg-.patch
 
 2		07 Mar 2016
 	+ 00_all_0010-x86_64-Set-DL_RUNTIME_UNALIGNED_VEC_SIZE-to-8.patch

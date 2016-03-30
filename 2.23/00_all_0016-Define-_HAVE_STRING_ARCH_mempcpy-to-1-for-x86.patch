@@ -1,0 +1,34 @@
+From 4b06de856395d37848fc97bbc032c8c3dce5eb52 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Tue, 8 Mar 2016 10:57:31 -0800
+Subject: [PATCH] Define _HAVE_STRING_ARCH_mempcpy to 1 for x86
+
+Since x86 has an optimized mempcpy and GCC can inline mempcpy on x86,
+define _HAVE_STRING_ARCH_mempcpy to 1 for x86.
+
+	[BZ #19759]
+	* sysdeps/x86/bits/string.h (_HAVE_STRING_ARCH_mempcpy): New.
+
+(cherry picked from commit 2b35e48c0c547b3f6f81996ce7ad7d67e24c7329)
+(cherry picked from commit b4456470a64a1e4e466a98dca3b51bf63fb5a13c)
+---
+ sysdeps/x86/bits/string.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sysdeps/x86/bits/string.h b/sysdeps/x86/bits/string.h
+index e4e019f..8dfce05 100644
+--- a/sysdeps/x86/bits/string.h
++++ b/sysdeps/x86/bits/string.h
+@@ -23,6 +23,9 @@
+ /* Use the unaligned string inline ABI.  */
+ #define _STRING_INLINE_unaligned 1
+ 
++/* Don't inline mempcpy into memcpy as x86 has an optimized mempcpy.  */
++#define _HAVE_STRING_ARCH_mempcpy 1
++
+ /* Enable inline functions only for i486 or better when compiling for
+    ia32.  */
+ #if !defined __x86_64__ && (defined __i486__ || defined __pentium__	      \
+-- 
+2.7.4
+
