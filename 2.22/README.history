@@ -1,3 +1,11 @@
+13		04 Apr 2016
+	+ 00_all_0050-CVE-2016-3075-Stack-overflow-in-_nss_dns_getnetbynam.patch
+	+ 00_all_0051-S390-Add-hwcaps-value-for-vector-facility.patch
+	+ 00_all_0052-S390-Add-new-s390-platform.patch
+	+ 00_all_0053-S390-configure-check-for-vector-instruction-support-.patch
+	+ 00_all_0054-S390-Save-and-restore-fprs-vrs-while-resolving-symbo.patch
+	+ 00_all_0055-S390-Extend-structs-La_s390_regs-La_s390_retval-with.patch
+
 12		30 Mar 2016
 	+ 00_all_0046-Fix-x86_64-fma4-pow-inappropriate-contraction-bug-19.patch
 	+ 00_all_0047-Use-PIC-relocation-in-ALIAS_IMPL.patch

@@ -1,0 +1,56 @@
+From ee91916b2158b68b8730e1bf815260466b4d0cbc Mon Sep 17 00:00:00 2001
+From: Stefan Liebler <stli@linux.vnet.ibm.com>
+Date: Mon, 4 Apr 2016 12:54:22 +0200
+Subject: [PATCH] S390: Add new s390 platform.
+
+The new IBM z13 is added to platform string array.
+The macro _DL_PLATFORMS_COUNT is incremented to 8,
+because it was not incremented by commit
+"S/390: Sync AUXV capabilities and archs with kernel".
+
+ChangeLog:
+
+	* sysdeps/s390/dl-procinfo.c (_dl_s390_cap_flags): Add z13.
+	* sysdeps/s390/dl-procinfo.h (_DL_PLATFORMS_COUNT): Increased.
+
+(cherry picked from commit a1b0488fc9df3d895a2e5eefbcd348d3f7fe0e52)
+(cherry picked from commit 942c502aca15983fde794e4465adbcf42b51c379)
+---
+ sysdeps/s390/dl-procinfo.c | 4 ++--
+ sysdeps/s390/dl-procinfo.h | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sysdeps/s390/dl-procinfo.c b/sysdeps/s390/dl-procinfo.c
+index 0f57f03..2bb1f21 100644
+--- a/sysdeps/s390/dl-procinfo.c
++++ b/sysdeps/s390/dl-procinfo.c
+@@ -62,11 +62,11 @@ PROCINFO_CLASS const char _dl_s390_cap_flags[12][9]
+ #if !defined PROCINFO_DECL && defined SHARED
+   ._dl_s390_platforms
+ #else
+-PROCINFO_CLASS const char _dl_s390_platforms[7][7]
++PROCINFO_CLASS const char _dl_s390_platforms[8][7]
+ #endif
+ #ifndef PROCINFO_DECL
+ = {
+-    "g5", "z900", "z990", "z9-109", "z10", "z196", "zEC12"
++    "g5", "z900", "z990", "z9-109", "z10", "z196", "zEC12", "z13"
+   }
+ #endif
+ #if !defined SHARED || defined PROCINFO_DECL
+diff --git a/sysdeps/s390/dl-procinfo.h b/sysdeps/s390/dl-procinfo.h
+index 151b891..78da65f 100644
+--- a/sysdeps/s390/dl-procinfo.h
++++ b/sysdeps/s390/dl-procinfo.h
+@@ -23,7 +23,7 @@
+ 
+ #define _DL_HWCAP_COUNT 12
+ 
+-#define _DL_PLATFORMS_COUNT	5
++#define _DL_PLATFORMS_COUNT	8
+ 
+ /* The kernel provides up to 32 capability bits with elf_hwcap.  */
+ #define _DL_FIRST_PLATFORM	32
+-- 
+2.7.4
+
