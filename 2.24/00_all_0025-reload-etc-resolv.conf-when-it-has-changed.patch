@@ -1,0 +1,51 @@
+From 727cea2ca77b47681f4678d5fb3180aab89fe9ab Mon Sep 17 00:00:00 2001
+From: Thorsten Kukuk <kukuk@suse.de>
+Date: Sun, 27 May 2007 14:44:22 -0400
+Subject: [PATCH] reload /etc/resolv.conf when it has changed
+
+if /etc/resolv.conf is updated, then make sure applications
+already running get the updated information.
+
+ripped from SuSE
+
+http://bugs.gentoo.org/177416
+---
+ resolv/res_libc.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/resolv/res_libc.c b/resolv/res_libc.c
+index a4b376f15b0b..848f77395877 100644
+--- a/resolv/res_libc.c
++++ b/resolv/res_libc.c
+@@ -25,6 +25,7 @@
+ #include <arpa/nameser.h>
+ #include <resolv.h>
+ #include <libc-lock.h>
++#include <sys/stat.h>
+ 
+ extern unsigned long long int __res_initstamp attribute_hidden;
+ /* We have atomic increment operations on 64-bit platforms.  */
+@@ -93,6 +94,20 @@ int
+ __res_maybe_init (res_state resp, int preinit)
+ {
+ 	if (resp->options & RES_INIT) {
++		static time_t last_mtime, last_check;
++		time_t now;
++		struct stat statbuf;
++
++		time (&now);
++		if (now != last_check) {
++			last_check = now;
++			if (stat (_PATH_RESCONF, &statbuf) == 0 && last_mtime != statbuf.st_mtime) {
++				last_mtime = statbuf.st_mtime;
++				atomicinclock (lock);
++				atomicinc (__res_initstamp);
++				atomicincunlock (lock);
++			}
++		}
+ 		if (__res_initstamp != resp->_u._ext.initstamp) {
+ 			if (resp->nscount > 0)
+ 				__res_iclose (resp, true);
+-- 
+2.10.2
+

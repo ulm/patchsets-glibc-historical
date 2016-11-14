@@ -1,0 +1,71 @@
+From 066437ad328b350a3768c5da773b884fcfb239c3 Mon Sep 17 00:00:00 2001
+From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
+Date: Wed, 14 Sep 2016 14:41:21 -0300
+Subject: [PATCH] posix: Correctly block/unblock all signals on Linux
+ posix_spawn
+
+This patch correctly block and unblocks all signals when executing
+Linux posix_spawn by using the __libc_signal_{un}block_all functions
+instead of default sigprocmask.  The latter might remove both
+SIGCANCEL and SIGSETXID from the blocked signal list.
+
+Checked on x86_64, i686, powerpc64le, and aarch64.
+
+	* sysdeps/unix/sysv/linux/spawni.c (__spawnix): Correctly block and unblock
+	all signals when executing the clone vfork child.
+	(SIGALL_SET): Remove macro.
+---
+ ChangeLog                        | 4 ++++
+ sysdeps/unix/sysv/linux/spawni.c | 8 ++------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 2dadf8de87fd..e0621c59a07f 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,9 @@
+ 2016-09-20  Adhemerval Zanella  <adhemerval.zanella@linaro.org>
+ 
++	* sysdeps/unix/sysv/linux/spawni.c (__spawnix): Correctly block and unblock
++	all signals when executing the clone vfork child.
++	(SIGALL_SET): Remove macro.
++
+ 	* nptl/Makefile (tests): Add tst-exec5.
+ 	* nptl/tst-exec5.c: New file.
+ 	* sysdeps/unix/sysv/linux/spawni.c (__spawni): Correctly enable and disable
+diff --git a/sysdeps/unix/sysv/linux/spawni.c b/sysdeps/unix/sysv/linux/spawni.c
+index 5c5fcad5f4d3..67e1c42426cf 100644
+--- a/sysdeps/unix/sysv/linux/spawni.c
++++ b/sysdeps/unix/sysv/linux/spawni.c
+@@ -58,10 +58,6 @@
+    normal program exit with the exit code 127.  */
+ #define SPAWN_ERROR	127
+ 
+-/* We need to block both SIGCANCEL and SIGSETXID.  */
+-#define SIGALL_SET \
+-  ((__sigset_t) { .__val = {[0 ...  _SIGSET_NWORDS-1 ] =  -1 } })
+-
+ #ifdef __ia64__
+ # define CLONE(__fn, __stack, __stacksize, __flags, __args) \
+   __clone2 (__fn, __stack, __stacksize, __flags, __args, 0, 0, 0)
+@@ -353,7 +349,7 @@ __spawnix (pid_t * pid, const char *file,
+   args.envp = envp;
+   args.xflags = xflags;
+ 
+-  __sigprocmask (SIG_BLOCK, &SIGALL_SET, &args.oldmask);
++  __libc_signal_block_all (&args.oldmask);
+ 
+   /* The clone flags used will create a new child that will run in the same
+      memory space (CLONE_VM) and the execution of calling thread will be
+@@ -386,7 +382,7 @@ __spawnix (pid_t * pid, const char *file,
+   if ((ec == 0) && (pid != NULL))
+     *pid = new_pid;
+ 
+-  __sigprocmask (SIG_SETMASK, &args.oldmask, 0);
++  __libc_signal_restore_set (&args.oldmask);
+ 
+   __libc_ptf_call (__pthread_setcancelstate, (state, NULL), 0);
+ 
+-- 
+2.10.2
+

@@ -1,0 +1,80 @@
+From fe783a26a5922fe409ffc3e378c5caaec1ed7f76 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Sun, 6 Nov 2016 21:33:10 +0100
+Subject: [PATCH] gconv.h: fix build with GCC 7
+
+gconv.h is using a flex array to define the __gconv_info member in an
+invalid way, causing GCC 7 to issue an error:
+
+| In file included from ../include/gconv.h:1:0,
+|                  from ../sysdeps/unix/sysv/linux/_G_config.h:32,
+|                  from ../libio/libio.h:31,
+|                  from ../include/libio.h:4,
+|                  from ../libio/stdio.h:74,
+|                  from ../include/stdio.h:5,
+|                  from test-math-isinff.cc:22:
+| ../iconv/gconv.h:142:50: error: flexible array member '__gconv_info::__data' not at end of 'struct _IO_codecvt'
+| In file included from ../include/libio.h:4:0,
+|                  from ../libio/stdio.h:74,
+|                  from ../include/stdio.h:5,
+|                  from test-math-isinff.cc:22:
+| ../libio/libio.h:211:14: note: next member '_G_iconv_t _IO_codecvt::__cd_out' declared here
+| ../libio/libio.h:187:8: note: in the definition of 'struct _IO_codecvt'
+| In file included from ../include/gconv.h:1:0,
+|                  from ../sysdeps/unix/sysv/linux/_G_config.h:32,
+|                  from ../libio/libio.h:31,
+|                  from ../include/libio.h:4,
+|                  from ../libio/stdio.h:74,
+|                  from ../include/stdio.h:5,
+|                  from test-math-isinff.cc:22:
+| ../iconv/gconv.h:142:50: error: flexible array member '__gconv_info::__data' not at end of 'struct _IO_wide_data'
+| In file included from ../include/libio.h:4:0,
+|                  from ../libio/stdio.h:74,
+|                  from ../include/stdio.h:5,
+|                  from test-math-isinff.cc:22:
+| ../libio/libio.h:211:14: note: next member '_G_iconv_t _IO_codecvt::__cd_out' declared here
+| ../libio/libio.h:215:8: note: in the definition of 'struct _IO_wide_data'
+
+This is basically a revert to the code from 15 years ago. More details
+are available in the GCC bug:
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78039
+
+Changelog:
+	* iconv/gconv.h (__gconv_info): Define __data element using a
+	zero-length array.
+
+(cherry picked from commit 0623b9e6a9c3441427cf8c421bcc81d09e48fdc1)
+---
+ ChangeLog     | 5 +++++
+ iconv/gconv.h | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 7a3669c33076..57e1a3a8a366 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,8 @@
++2016-11-06  Aurelien Jarno  <aurelien@aurel32.net>
++
++	* iconv/gconv.h (__gconv_info): Define __data element using a
++	zero-length array.
++
+ 2016-10-25  Joseph Myers  <joseph@codesourcery.com>
+ 
+ 	* sysdeps/powerpc/powerpc32/power6/memset.S (memset): Use cmplwi
+diff --git a/iconv/gconv.h b/iconv/gconv.h
+index 8d8ce5813b72..a87028047ba5 100644
+--- a/iconv/gconv.h
++++ b/iconv/gconv.h
+@@ -139,7 +139,7 @@ typedef struct __gconv_info
+ {
+   size_t __nsteps;
+   struct __gconv_step *__steps;
+-  __extension__ struct __gconv_step_data __data __flexarr;
++  __extension__ struct __gconv_step_data __data[0];
+ } *__gconv_t;
+ 
+ /* Transliteration using the locale's data.  */
+-- 
+2.10.2
+

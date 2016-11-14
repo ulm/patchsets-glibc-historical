@@ -1,0 +1,51 @@
+From 822305be765e0ae130820632e865d61710dc2746 Mon Sep 17 00:00:00 2001
+From: Joseph Myers <joseph@codesourcery.com>
+Date: Thu, 3 Nov 2016 22:47:02 +0000
+Subject: [PATCH] Fix linknamespace parallel test failures.
+
+Having found that with my script to build many glibc variants I could
+reproduce the linknamespace test failures in parallel builds (that
+various people had previously reported but I hadn't seen myself), I
+investigated those failures further.  This patch adds a missing
+dependency to those tests.
+
+Tested for x86_64, including the configuration where I saw those
+failures and where I don't see them with this patch.
+
+	* conform/Makefile ($(linknamespace-header-tests)): Also depend on
+	$(linknamespace-symlists-tests).
+
+(cherry picked from commit 6c50bb532bb1f47084762e16fbf52af9b5a752d8)
+---
+ ChangeLog        | 5 +++++
+ conform/Makefile | 1 +
+ 2 files changed, 6 insertions(+)
+
+diff --git a/ChangeLog b/ChangeLog
+index 57e1a3a8a366..a51771c97668 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,8 @@
++2016-11-03  Joseph Myers  <joseph@codesourcery.com>
++
++	* conform/Makefile ($(linknamespace-header-tests)): Also depend on
++	$(linknamespace-symlists-tests).
++
+ 2016-11-06  Aurelien Jarno  <aurelien@aurel32.net>
+ 
+ 	* iconv/gconv.h (__gconv_info): Define __data element using a
+diff --git a/conform/Makefile b/conform/Makefile
+index 32a0937b0682..762aac98fcb6 100644
+--- a/conform/Makefile
++++ b/conform/Makefile
+@@ -229,6 +229,7 @@ $(linknamespace-symlist-stdlibs-tests): $(objpfx)symlist-stdlibs-%: \
+ 
+ $(linknamespace-header-tests): $(objpfx)%/linknamespace.out: \
+ 			       linknamespace.pl \
++			       $(linknamespace-symlists-tests) \
+ 			       $(linknamespace-symlist-stdlibs-tests)
+ 	(set -e; std_hdr=$*; std=$${std_hdr%%/*}; hdr=$${std_hdr#*/}; \
+ 	 mkdir -p $(@D)/scratch; \
+-- 
+2.10.2
+
