@@ -1,0 +1,34 @@
+From ac9ca0ac4722f49198d092b96a1d359d2aad803c Mon Sep 17 00:00:00 2001
+From: John David Anglin <dave.anglin@bell.net>
+Date: Tue, 21 Jun 2016 18:35:22 -0400
+Subject: [PATCH] hppa: fix loading of global pointer in _start [BZ #20277]
+
+The patched change fixes a regression for executables compiled with the
+-p option and linked with gcrt1.o.  The executables crash on startup.
+
+This regression was introduced in 2.22 and was noticed in the gcc testsuite.
+
+(cherry picked from commit 9765ffa71030efd8bb4f2ea4ed6e020fcb4bb714)
+(cherry picked from commit 0903610fdc31efbea4309f69e5ee3e1d4f7ed29e)
+---
+ sysdeps/hppa/start.S | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sysdeps/hppa/start.S b/sysdeps/hppa/start.S
+index 90d4331f5ab9..b7ab830e9245 100644
+--- a/sysdeps/hppa/start.S
++++ b/sysdeps/hppa/start.S
+@@ -131,8 +131,10 @@ _start:
+ 	stw	%sp, -60(%sp)
+ 
+ #ifdef SHARED
++	/* load global */
+ 	addil	LT'.Lp__global, %r19
+ 	ldw	RT'.Lp__global(%r1), %dp
++	ldw	0(%dp), %dp
+ #else
+ 	/* load global */
+ 	ldil	L%$global$, %dp
+-- 
+2.10.2
+

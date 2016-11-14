@@ -1,0 +1,58 @@
+From efbeadd09aa89d8cdd5f9cdb4027b7677a03c4c3 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Mon, 2 May 2016 12:07:09 +0200
+Subject: [PATCH] hesiod: Remove RCS keywords
+
+(cherry picked from commit dbdc657dc0b962ef3ac61585c81e0828d8da42ee)
+(cherry picked from commit 8a756c076eee041f7d231334480f96bebb0d8e29)
+---
+ hesiod/hesiod.c   | 4 ----
+ hesiod/hesiod.h   | 4 ----
+ hesiod/hesiod_p.h | 4 ----
+ 3 files changed, 12 deletions(-)
+
+diff --git a/hesiod/hesiod.c b/hesiod/hesiod.c
+index 657dabebc144..76b9befde2dd 100644
+--- a/hesiod/hesiod.c
++++ b/hesiod/hesiod.c
+@@ -1,7 +1,3 @@
+-#if defined(LIBC_SCCS) && !defined(lint)
+-static const char rcsid[] = "$BINDId: hesiod.c,v 1.21 2000/02/28 14:51:08 vixie Exp $";
+-#endif
+-
+ /*
+  * Copyright (c) 1996,1999 by Internet Software Consortium.
+  *
+diff --git a/hesiod/hesiod.h b/hesiod/hesiod.h
+index 82fce30764e1..cb742b071739 100644
+--- a/hesiod/hesiod.h
++++ b/hesiod/hesiod.h
+@@ -19,10 +19,6 @@
+  * This file is primarily maintained by <tytso@mit.edu> and <ghudson@mit.edu>.
+  */
+ 
+-/*
+- * $BINDId: hesiod.h,v 1.7 1999/01/08 19:22:45 vixie Exp $
+- */
+-
+ #ifndef _HESIOD_H_INCLUDED
+ #define _HESIOD_H_INCLUDED
+ 
+diff --git a/hesiod/hesiod_p.h b/hesiod/hesiod_p.h
+index 5010d71bc918..7bd291997f62 100644
+--- a/hesiod/hesiod_p.h
++++ b/hesiod/hesiod_p.h
+@@ -20,10 +20,6 @@
+  */
+ 
+ /*
+- * $BINDId: hesiod_p.h,v 1.9 1999/01/08 19:24:39 vixie Exp $
+- */
+-
+-/*
+  * hesiod_p.h -- private definitions for the hesiod library
+  */
+ 
+-- 
+2.10.2
+

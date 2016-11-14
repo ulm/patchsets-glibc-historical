@@ -1,0 +1,98 @@
+From 1694dad05735fd76f46acc169632ff29c8c0041c Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Mon, 27 Jun 2016 16:45:45 +0200
+Subject: [PATCH] MIPS: run tst-mode-switch-{1,2,3}.c using test-skeleton.c
+
+For some reasons I have not investigated yet, tst-mode-switch-1 hangs on
+a MIPS UTM-8 machine running an o32 userland and a 3.6.1 kernel.
+
+This patch changes the test so that it runs under the test-skeleton
+framework, causing the test to fail after a timeout instead of hanging
+the whole testsuite. At the same time, also change the tst-mode-switch-2
+and tst-mode-switch-3 tests.
+
+Changelog:
+	* sysdeps/mips/tst-mode-switch-1.c (main): Converted to ...
+	(do_test): ... this.
+	(TEST_FUNCTION): New macro.
+	 Include test-skeleton.c.
+	* sysdeps/mips/tst-mode-switch-2.c (main): Likewise.
+	* sysdeps/mips/tst-mode-switch-3.c (main): Likewise.
+
+(cherry picked from commit 0cdaef4dac5a885af9848e158e77cc347ee781bb)
+(cherry picked from commit cacad9315ebcf5a0c067950500cc7c31b442af22)
+---
+ sysdeps/mips/tst-mode-switch-1.c | 7 +++++--
+ sysdeps/mips/tst-mode-switch-2.c | 7 +++++--
+ sysdeps/mips/tst-mode-switch-3.c | 7 +++++--
+ 3 files changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/sysdeps/mips/tst-mode-switch-1.c b/sysdeps/mips/tst-mode-switch-1.c
+index 1a26e4c7b509..ebbdd3d9ebc0 100644
+--- a/sysdeps/mips/tst-mode-switch-1.c
++++ b/sysdeps/mips/tst-mode-switch-1.c
+@@ -71,8 +71,8 @@ thread_function (void * arg __attribute__ ((unused)))
+   return NULL;
+ }
+ 
+-int
+-main (void)
++static int
++do_test (void)
+ {
+   int count = sysconf (_SC_NPROCESSORS_ONLN);
+   if (count <= 0)
+@@ -121,3 +121,6 @@ main (void)
+ 
+   return result;
+ }
++
++#define TEST_FUNCTION do_test ()
++#include "../../test-skeleton.c"
+diff --git a/sysdeps/mips/tst-mode-switch-2.c b/sysdeps/mips/tst-mode-switch-2.c
+index b41acf45d300..83dad80afee9 100644
+--- a/sysdeps/mips/tst-mode-switch-2.c
++++ b/sysdeps/mips/tst-mode-switch-2.c
+@@ -77,8 +77,8 @@ thread_function (void * arg __attribute__ ((unused)))
+   return NULL;
+ }
+ 
+-int
+-main (void)
++static int
++do_test (void)
+ {
+   int count = sysconf (_SC_NPROCESSORS_ONLN);
+   if (count <= 0)
+@@ -161,3 +161,6 @@ main (void)
+ 
+   return result;
+ }
++
++#define TEST_FUNCTION do_test ()
++#include "../../test-skeleton.c"
+diff --git a/sysdeps/mips/tst-mode-switch-3.c b/sysdeps/mips/tst-mode-switch-3.c
+index 65e2b5eebd83..b0c76737fafc 100644
+--- a/sysdeps/mips/tst-mode-switch-3.c
++++ b/sysdeps/mips/tst-mode-switch-3.c
+@@ -43,8 +43,8 @@ static jmp_buf env;
+ float check1 = 2.0;
+ double check2 = 3.0;
+ 
+-int
+-main (void)
++static int
++do_test (void)
+ {
+   int i;
+   int result = 0;
+@@ -88,3 +88,6 @@ main (void)
+ 
+   return result;
+ }
++
++#define TEST_FUNCTION do_test ()
++#include "../../test-skeleton.c"
+-- 
+2.10.2
+

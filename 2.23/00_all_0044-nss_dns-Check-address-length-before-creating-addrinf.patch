@@ -1,0 +1,118 @@
+From b7d81292bf651f176790011e83338a496dc9e778 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Wed, 27 Apr 2016 16:39:12 +0200
+Subject: [PATCH] nss_dns: Check address length before creating addrinfo result
+ [BZ #19831]
+
+Previously, we allocated room in the result space before the check,
+leaving uninitialized data there in case the check failed.
+
+This also consolidates the behavior between single (A or AAAA) and
+dual (A and AAAA in parallel) queries.  Single queries checked
+the record length against the QTYPE, not the RRTYPE.
+
+(cherry picked from commit 5e0c421cc07e2d06945b863ed3bb92395472705d)
+(cherry picked from commit 730244f49ad8f46308f5513e58365eed370423cb)
+---
+ resolv/nss_dns/dns-host.c | 59 +++++++++++++++++++++++++++++++----------------
+ 1 file changed, 39 insertions(+), 20 deletions(-)
+
+diff --git a/resolv/nss_dns/dns-host.c b/resolv/nss_dns/dns-host.c
+index fb1d21cad720..403a00581299 100644
+--- a/resolv/nss_dns/dns-host.c
++++ b/resolv/nss_dns/dns-host.c
+@@ -134,6 +134,22 @@ extern enum nss_status _nss_dns_gethostbyname3_r (const char *name, int af,
+ 						  char **canonp);
+ hidden_proto (_nss_dns_gethostbyname3_r)
+ 
++/* Return the expected RDATA length for an address record type (A or
++   AAAA).  */
++static int
++rrtype_to_rdata_length (int type)
++{
++  switch (type)
++    {
++    case T_A:
++      return INADDRSZ;
++    case T_AAAA:
++      return IN6ADDRSZ;
++    default:
++      return -1;
++    }
++}
++
+ enum nss_status
+ _nss_dns_gethostbyname3_r (const char *name, int af, struct hostent *result,
+ 			   char *buffer, size_t buflen, int *errnop,
+@@ -888,6 +904,15 @@ getanswer_r (const querybuf *answer, int anslen, const char *qname, int qtype,
+ 	      cp += n;
+ 	      continue;			/* XXX - had_error++ ? */
+ 	    }
++
++	  /* Stop parsing at a record whose length is incorrect.  */
++	  if (n != rrtype_to_rdata_length (type))
++	    {
++	      ++had_error;
++	      break;
++	    }
++
++	  /* Skip records of the wrong type.  */
+ 	  if (n != result->h_length)
+ 	    {
+ 	      cp += n;
+@@ -1124,25 +1149,25 @@ gaih_getanswer_slice (const querybuf *answer, int anslen, const char *qname,
+ 	    }
+ 	  continue;
+ 	}
+-#if 1
+-      // We should not see any types other than those explicitly listed
+-      // below.  Some types sent by server seem missing, though.  Just
+-      // collect the data for now.
+-      if (__glibc_unlikely (type != T_A && type != T_AAAA))
+-#else
+-      if (__builtin_expect (type == T_SIG, 0)
+-	  || __builtin_expect (type == T_KEY, 0)
+-	  || __builtin_expect (type == T_NXT, 0)
+-	  || __builtin_expect (type == T_PTR, 0)
+-	  || __builtin_expect (type == T_DNAME, 0))
+-#endif
++
++      /* Stop parsing if we encounter a record with incorrect RDATA
++	 length.  */
++      if (type == T_A || type == T_AAAA)
++	{
++	  if (n != rrtype_to_rdata_length (type))
++	    {
++	      ++had_error;
++	      continue;
++	    }
++	}
++      else
+ 	{
++	  /* Skip unknown records.  */
+ 	  cp += n;
+ 	  continue;
+ 	}
+-      if (type != T_A && type != T_AAAA)
+-	abort ();
+ 
++      assert (type == T_A || type == T_AAAA);
+       if (*pat == NULL)
+ 	{
+ 	  uintptr_t pad = (-(uintptr_t) buffer
+@@ -1176,12 +1201,6 @@ gaih_getanswer_slice (const querybuf *answer, int anslen, const char *qname,
+ 	}
+ 
+       (*pat)->family = type == T_A ? AF_INET : AF_INET6;
+-      if (__builtin_expect ((type == T_A && n != INADDRSZ)
+-			    || (type == T_AAAA && n != IN6ADDRSZ), 0))
+-	{
+-	  ++had_error;
+-	  continue;
+-	}
+       memcpy ((*pat)->addr, cp, n);
+       cp += n;
+       (*pat)->scopeid = 0;
+-- 
+2.10.2
+

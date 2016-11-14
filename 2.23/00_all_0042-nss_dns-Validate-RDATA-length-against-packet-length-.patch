@@ -1,0 +1,88 @@
+From 5a7f88f0858b67a00c631850a71d7c320ca773ab Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Wed, 27 Apr 2016 15:11:41 +0200
+Subject: [PATCH] nss_dns: Validate RDATA length against packet length [BZ
+ #19830]
+
+In _nss_dns_getcanonname_r, a check for the availability of RR metadata
+was missing as well.
+
+(cherry picked from commit f749498fa53df9ead81e291cd9378d67483c2452)
+(cherry picked from commit f233c608d11434aa4a802ded6acdcac1f092729f)
+---
+ resolv/nss_dns/dns-canon.c | 16 +++++++++++++---
+ resolv/nss_dns/dns-host.c  | 15 +++++++++++++++
+ 2 files changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/resolv/nss_dns/dns-canon.c b/resolv/nss_dns/dns-canon.c
+index fd73f19984c4..072104f21cc4 100644
+--- a/resolv/nss_dns/dns-canon.c
++++ b/resolv/nss_dns/dns-canon.c
+@@ -103,6 +103,11 @@ _nss_dns_getcanonname_r (const char *name, char *buffer, size_t buflen,
+ 
+ 	      ptr += s;
+ 
++	      /* Check that there are enough bytes for the RR
++		 metadata.  */
++	      if (endptr - ptr < 10)
++		goto unavail;
++
+ 	      /* Check whether type and class match.  */
+ 	      uint_fast16_t type;
+ 	      NS_GET16 (type, ptr);
+@@ -137,11 +142,16 @@ _nss_dns_getcanonname_r (const char *name, char *buffer, size_t buflen,
+ 	      if (__ns_get16 (ptr) != ns_c_in)
+ 		goto unavail;
+ 
+-	      /* Also skip over the TTL.  */
++	      /* Also skip over class and TTL.  */
+ 	      ptr += sizeof (uint16_t) + sizeof (uint32_t);
+ 
+-	      /* Skip over the data length and data.  */
+-	      ptr += sizeof (uint16_t) + __ns_get16 (ptr);
++	      /* Skip over RDATA length and RDATA itself.  */
++	      uint16_t rdatalen = __ns_get16 (ptr);
++	      ptr += sizeof (uint16_t);
++	      /* Not enough room for RDATA.  */
++	      if (endptr - ptr < rdatalen)
++		goto unavail;
++	      ptr += rdatalen;
+ 	    }
+ 	}
+ 
+diff --git a/resolv/nss_dns/dns-host.c b/resolv/nss_dns/dns-host.c
+index 8599f4c6a6ef..4bb0e6268a17 100644
+--- a/resolv/nss_dns/dns-host.c
++++ b/resolv/nss_dns/dns-host.c
+@@ -751,6 +751,14 @@ getanswer_r (const querybuf *answer, int anslen, const char *qname, int qtype,
+       cp += INT32SZ;			/* TTL */
+       n = __ns_get16 (cp);
+       cp += INT16SZ;			/* len */
++
++      if (end_of_message - cp < n)
++	{
++	  /* RDATA extends beyond the end of the packet.  */
++	  ++had_error;
++	  continue;
++	}
++
+       if (__glibc_unlikely (class != C_IN))
+ 	{
+ 	  /* XXX - debug? syslog? */
+@@ -1077,6 +1085,13 @@ gaih_getanswer_slice (const querybuf *answer, int anslen, const char *qname,
+       n = __ns_get16 (cp);
+       cp += INT16SZ;			/* len */
+ 
++      if (end_of_message - cp < n)
++	{
++	  /* RDATA extends beyond the end of the packet.  */
++	  ++had_error;
++	  continue;
++	}
++
+       if (class != C_IN)
+ 	{
+ 	  cp += n;
+-- 
+2.10.2
+

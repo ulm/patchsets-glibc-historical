@@ -1,0 +1,90 @@
+From b075014783f7fff739ed0c5cdd7c01379dc9f5ea Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sat, 9 Apr 2016 20:02:48 -0400
+Subject: [PATCH] configure: fix `test ==` usage
+
+POSIX defines the = operator, but not ==.  Fix the few places where we
+incorrectly used ==.
+
+(cherry picked from commit b2d4456b333970ab4cb01ed8045b9a8d2c4832f3)
+(cherry picked from commit f1e182acaaa84e844eb96462a92ba532e1c1fff4)
+---
+ sysdeps/i386/configure      | 2 +-
+ sysdeps/i386/configure.ac   | 2 +-
+ sysdeps/x86_64/configure    | 4 ++--
+ sysdeps/x86_64/configure.ac | 4 ++--
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/sysdeps/i386/configure b/sysdeps/i386/configure
+index 9515719daae2..5b55c5affe71 100644
+--- a/sysdeps/i386/configure
++++ b/sysdeps/i386/configure
+@@ -72,7 +72,7 @@ rm -f conftest*
+ fi
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $libc_cv_asm_mpx" >&5
+ $as_echo "$libc_cv_asm_mpx" >&6; }
+-if test $libc_cv_asm_mpx == yes; then
++if test $libc_cv_asm_mpx = yes; then
+   $as_echo "#define HAVE_MPX_SUPPORT 1" >>confdefs.h
+ 
+ fi
+diff --git a/sysdeps/i386/configure.ac b/sysdeps/i386/configure.ac
+index f8f9e44909af..19ef33f34a33 100644
+--- a/sysdeps/i386/configure.ac
++++ b/sysdeps/i386/configure.ac
+@@ -41,7 +41,7 @@ else
+   libc_cv_asm_mpx=no
+ fi
+ rm -f conftest*])
+-if test $libc_cv_asm_mpx == yes; then
++if test $libc_cv_asm_mpx = yes; then
+   AC_DEFINE(HAVE_MPX_SUPPORT)
+ fi
+ 
+diff --git a/sysdeps/x86_64/configure b/sysdeps/x86_64/configure
+index c72b9d3184f1..88fbfe457e6d 100644
+--- a/sysdeps/x86_64/configure
++++ b/sysdeps/x86_64/configure
+@@ -24,7 +24,7 @@ rm -f conftest*
+ fi
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $libc_cv_asm_avx512" >&5
+ $as_echo "$libc_cv_asm_avx512" >&6; }
+-if test $libc_cv_asm_avx512 == yes; then
++if test $libc_cv_asm_avx512 = yes; then
+   $as_echo "#define HAVE_AVX512_ASM_SUPPORT 1" >>confdefs.h
+ 
+ fi
+@@ -77,7 +77,7 @@ rm -f conftest*
+ fi
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $libc_cv_asm_mpx" >&5
+ $as_echo "$libc_cv_asm_mpx" >&6; }
+-if test $libc_cv_asm_mpx == yes; then
++if test $libc_cv_asm_mpx = yes; then
+   $as_echo "#define HAVE_MPX_SUPPORT 1" >>confdefs.h
+ 
+ fi
+diff --git a/sysdeps/x86_64/configure.ac b/sysdeps/x86_64/configure.ac
+index 37b1059af3f9..b39309e456ea 100644
+--- a/sysdeps/x86_64/configure.ac
++++ b/sysdeps/x86_64/configure.ac
+@@ -13,7 +13,7 @@ else
+   libc_cv_asm_avx512=no
+ fi
+ rm -f conftest*])
+-if test $libc_cv_asm_avx512 == yes; then
++if test $libc_cv_asm_avx512 = yes; then
+   AC_DEFINE(HAVE_AVX512_ASM_SUPPORT)
+ fi
+ 
+@@ -37,7 +37,7 @@ else
+   libc_cv_asm_mpx=no
+ fi
+ rm -f conftest*])
+-if test $libc_cv_asm_mpx == yes; then
++if test $libc_cv_asm_mpx = yes; then
+   AC_DEFINE(HAVE_MPX_SUPPORT)
+ fi
+ 
+-- 
+2.10.2
+

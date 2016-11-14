@@ -1,0 +1,71 @@
+From 61fdfa304bddb7e98a272fb44eac051ecec53a00 Mon Sep 17 00:00:00 2001
+From: Stefan Liebler <stli@linux.vnet.ibm.com>
+Date: Tue, 17 May 2016 10:45:48 +0200
+Subject: [PATCH] Fix tst-cancel17/tst-cancelx17, which sometimes segfaults
+ while exiting.
+
+The testcase tst-cancel[x]17 ends sometimes with a segmentation fault.
+This happens in one of 10000 cases. Then the real testcase has already
+exited with success and returned from do_test(). The segmentation fault
+occurs after returning from main in _dl_fini().
+
+In those cases, the aio_read(&a) was not canceled because the read
+request was already in progress. In the meanwhile aio_write(ap) wrote
+something to the pipe and the read request is able to read the
+requested byte.
+The read request hasn't finished before returning from do_test().
+After it finishes, it writes the return value and error code from the
+read syscall to the struct aiocb a, which lies on the stack of do_test.
+The stack of the subsequent function call of _dl_fini or _dl_sort_fini,
+which is inlined in _dl_fini is corrupted.
+
+In case of S390, it reads a zero and decrements it by 1:
+unsigned int k = nmaps - 1;
+struct link_map **runp = maps[k]->l_initfini;
+The load from unmapped memory leads to the segmentation fault.
+The stack corruption also happens on other architectures.
+I saw them e.g. on x86 and ppc, too.
+
+This patch adds an aio_suspend call to ensure, that the read request
+is finished before returning from do_test().
+
+ChangeLog:
+
+	* nptl/tst-cancel17.c (do_test): Wait for finishing aio_read(&a).
+
+(cherry picked from commit b3a810d0d3d5c6ce7ddfb61321cd7971808ca703)
+(cherry picked from commit 6bf10d196d2935195ed46a52466f97c517dd6075)
+---
+ nptl/tst-cancel17.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/nptl/tst-cancel17.c b/nptl/tst-cancel17.c
+index fb892920709c..eedd28e79220 100644
+--- a/nptl/tst-cancel17.c
++++ b/nptl/tst-cancel17.c
+@@ -333,6 +333,22 @@ do_test (void)
+ 
+   puts ("early cancellation succeeded");
+ 
++  if (ap == &a2)
++    {
++      /* The aio_read(&a) was not canceled because the read request was
++	 already in progress. In the meanwhile aio_write(ap) wrote something
++	 to the pipe and the read request either has already been finished or
++	 is able to read the requested byte.
++	 Wait for the read request before returning from this function because
++	 the return value and error code from the read syscall will be written
++	 to the struct aiocb a, which lies on the stack of this function.
++	 Otherwise the stack from subsequent function calls - e.g. _dl_fini -
++	 will be corrupted, which can lead to undefined behaviour like a
++	 segmentation fault.  */
++      const struct aiocb *l[1] = { &a };
++      TEMP_FAILURE_RETRY (aio_suspend(l, 1, NULL));
++    }
++
+   return 0;
+ }
+ 
+-- 
+2.10.2
+

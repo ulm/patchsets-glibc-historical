@@ -1,0 +1,27 @@
+From 48148b3e5235ac0abe6e73d534e5454180f94be6 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Mon, 2 May 2016 16:04:32 +0200
+Subject: [PATCH] hesiod: Avoid heap overflow in get_txt_records [BZ #20031]
+
+(cherry picked from commit 8a03ccbb77f52ec4b55062eeedddb8daec1a33e4)
+(cherry picked from commit 4c4b3cbb4638ec19de19c167d498e30fd67501ab)
+---
+ hesiod/hesiod.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hesiod/hesiod.c b/hesiod/hesiod.c
+index 5b13b3f1c443..98ddee39a401 100644
+--- a/hesiod/hesiod.c
++++ b/hesiod/hesiod.c
+@@ -411,7 +411,7 @@ get_txt_records(struct hesiod_p *ctx, int class, const char *name) {
+ 		cp += INT16SZ + INT32SZ;	/* skip the ttl, too */
+ 		rr.dlen = ns_get16(cp);
+ 		cp += INT16SZ;
+-		if (cp + rr.dlen > eom) {
++		if (rr.dlen == 0 || cp + rr.dlen > eom) {
+ 			__set_errno(EMSGSIZE);
+ 			goto cleanup;
+ 		}
+-- 
+2.10.2
+

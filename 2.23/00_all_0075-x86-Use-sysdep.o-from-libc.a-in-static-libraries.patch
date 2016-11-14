@@ -1,0 +1,37 @@
+From f6de5fee42f7698eab06e2ffb551680f4fb41258 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Thu, 4 Aug 2016 11:10:57 +0200
+Subject: [PATCH] x86: Use sysdep.o from libc.a in static libraries
+
+Static libraries can use the sysdep.o copy in libc.a without
+a performance penalty.  This results in a visible difference
+if libpthread.a is relinked into a single object file (which
+is needed to support libraries which check for the presence
+of certain symbols to enable threading support, which generally
+fails with static linking unless libpthread.a is relinked).
+
+(cherry picked from commit e67330ab57bfd0f964539576ae7dcc658c456724)
+(cherry picked from commit e3e0bedf697c8c5858cd7ad1a541a179a20a6320)
+---
+ sysdeps/unix/sysv/linux/i386/Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sysdeps/unix/sysv/linux/i386/Makefile b/sysdeps/unix/sysv/linux/i386/Makefile
+index 71ba61e9d75d..b015ff7c760c 100644
+--- a/sysdeps/unix/sysv/linux/i386/Makefile
++++ b/sysdeps/unix/sysv/linux/i386/Makefile
+@@ -48,9 +48,11 @@ endif
+ ifeq ($(subdir),nptl)
+ # pull in __syscall_error routine
+ libpthread-routines += sysdep
++libpthread-shared-only-routines += sysdep
+ endif
+ 
+ ifeq ($(subdir),rt)
+ # pull in __syscall_error routine
+ librt-routines += sysdep
++librt-shared-only-routines += sysdep
+ endif
+-- 
+2.10.2
+

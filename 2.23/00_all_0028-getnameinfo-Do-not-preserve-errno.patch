@@ -1,0 +1,62 @@
+From 3540bacbbefb27e0afbacecb6d845219521ee3f7 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Thu, 28 Apr 2016 17:41:49 +0200
+Subject: [PATCH] getnameinfo: Do not preserve errno
+
+POSIX does not require it, the companion getaddrinfo implementation
+does not do it, and this behavior is not documented in the manual
+page, either.
+
+(cherry picked from commit 2b54cbce2c363ab6ae89d10657d7465858116d7a)
+(cherry picked from commit 42a496388d00a6eb781e0b1c6754ae1f38790531)
+---
+ inet/getnameinfo.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/inet/getnameinfo.c b/inet/getnameinfo.c
+index 40f67f082fd6..9b1847b02547 100644
+--- a/inet/getnameinfo.c
++++ b/inet/getnameinfo.c
+@@ -175,7 +175,6 @@ getnameinfo (const struct sockaddr *sa, socklen_t addrlen, char *host,
+ 	     socklen_t hostlen, char *serv, socklen_t servlen,
+ 	     int flags)
+ {
+-  int serrno = errno;
+   int herrno;
+   struct hostent th;
+   int ok = 0;
+@@ -326,10 +325,7 @@ getnameinfo (const struct sockaddr *sa, socklen_t addrlen, char *host,
+ 	if (!ok)
+ 	  {
+ 	    if (flags & NI_NAMEREQD)
+-	      {
+-		__set_errno (serrno);
+-		return EAI_NONAME;
+-	      }
++	      return EAI_NONAME;
+ 	    else
+ 	      {
+ 		const char *c;
+@@ -406,10 +402,7 @@ getnameinfo (const struct sockaddr *sa, socklen_t addrlen, char *host,
+ 	  };
+ 
+ 	if (flags & NI_NAMEREQD)
+-	   {
+-	    __set_errno (serrno);
+-	    return EAI_NONAME;
+-	  }
++	  return EAI_NONAME;
+ 
+ 	strncpy (host, "localhost", hostlen);
+ 	break;
+@@ -463,7 +456,6 @@ getnameinfo (const struct sockaddr *sa, socklen_t addrlen, char *host,
+     host[hostlen-1] = 0;
+   if (serv && (servlen > 0))
+     serv[servlen-1] = 0;
+-  errno = serrno;
+   return 0;
+ }
+ libc_hidden_def (getnameinfo)
+-- 
+2.10.2
+

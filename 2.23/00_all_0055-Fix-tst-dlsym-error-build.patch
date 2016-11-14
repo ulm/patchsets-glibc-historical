@@ -1,0 +1,32 @@
+From 7ee3626a10e5b1cee042dc62cb7ca8d270de33a7 Mon Sep 17 00:00:00 2001
+From: Adhemerval Zanella <adhemerval.zanella@linaro.com>
+Date: Thu, 31 Mar 2016 10:51:51 -0300
+Subject: [PATCH] Fix tst-dlsym-error build
+
+This patch fixes the new test tst-dlsym-error build on aarch64
+(and possible other architectures as well) due missing strchrnul
+definition.
+
+	* elf/tst-dlsym-error.c: Include <string.h> for strchrnul.
+
+(cherry picked from commit e91bd7465816f474617dcb4bbfe72f3594c5783c)
+(cherry picked from commit a824d609581d5ee7544aabcbbc70e8da44b2b5b6)
+---
+ elf/tst-dlsym-error.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/elf/tst-dlsym-error.c b/elf/tst-dlsym-error.c
+index 11b035881dcf..fb084c510c7d 100644
+--- a/elf/tst-dlsym-error.c
++++ b/elf/tst-dlsym-error.c
+@@ -20,6 +20,7 @@
+ #include <gnu/lib-names.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ 
+ /* Used to disambiguate symbol names.  */
+ static int counter;
+-- 
+2.10.2
+

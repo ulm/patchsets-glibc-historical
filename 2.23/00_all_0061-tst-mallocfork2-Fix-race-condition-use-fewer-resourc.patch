@@ -1,0 +1,74 @@
+From 1aa6738de4fcd332a83f24899f464994ebab9865 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Fri, 13 May 2016 16:55:01 +0200
+Subject: [PATCH] tst-mallocfork2: Fix race condition, use fewer resources
+
+The first SIGUSR1 signal could arrive when sigusr1_sender_pid
+was still 0.  As a result, kill would send SIGSTOP to the
+entire process group.  This would cause the test to hang before
+printing any output.
+
+This commit also adds a sched_yield to the signal source, so that
+it does not flood the parent process with signals it has never a
+chance to handle.
+
+Even with these changes, tst-mallocfork2 still fails reliably
+after the fix in commit commit 56290d6e762c1194547e73ff0b948cd79d3a1e03
+(Increase fork signal safety for single-threaded processes) is
+backed out.
+
+(cherry picked from commit e2cd73a2ccabe8acae28719a0c3c1c03f2b5f9fb)
+
+The backport increases the timeout to 20 seconds, in line with
+the default on master.  (The branch default of 2 seconds is too
+tight.)
+
+(cherry picked from commit 25a34b0ac1356c1442380db2d2b13e05ccaeedd9)
+---
+ malloc/tst-mallocfork2.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/malloc/tst-mallocfork2.c b/malloc/tst-mallocfork2.c
+index a9e3e94aad21..4b20f3ca9ae2 100644
+--- a/malloc/tst-mallocfork2.c
++++ b/malloc/tst-mallocfork2.c
+@@ -25,6 +25,7 @@
+    still make fork unsafe, even in single-threaded processes.  */
+ 
+ #include <errno.h>
++#include <sched.h>
+ #include <signal.h>
+ #include <stdbool.h>
+ #include <stdio.h>
+@@ -70,7 +71,9 @@ sigusr1_handler (int signo)
+      signals from the subprocess.  */
+   if (sigusr1_received)
+     return;
+-  if (kill (sigusr1_sender_pid, SIGSTOP) != 0)
++  /* sigusr1_sender_pid might not be initialized in the parent when
++     the first SIGUSR1 signal arrives.  */
++  if (sigusr1_sender_pid > 0 && kill (sigusr1_sender_pid, SIGSTOP) != 0)
+     {
+       write_message ("error: kill (SIGSTOP)\n");
+       abort ();
+@@ -123,6 +126,9 @@ signal_sender (int signo, bool sleep)
+         }
+       if (sleep)
+         usleep (1 * 1000 * 1000);
++      else
++        /* Reduce the rate at which we send signals.  */
++        sched_yield ();
+     }
+ }
+ 
+@@ -208,5 +214,7 @@ do_test (void)
+   return 0;
+ }
+ 
++#define TIMEOUT 20
++
+ #define TEST_FUNCTION do_test ()
+ #include "../test-skeleton.c"
+-- 
+2.10.2
+

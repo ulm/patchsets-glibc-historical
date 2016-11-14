@@ -1,0 +1,62 @@
+From f7076e089854bbbce413dd9a832d3f39515d0d45 Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@suse.de>
+Date: Thu, 16 Jun 2016 12:44:29 +0200
+Subject: [PATCH] Return proper status from _nss_nis_initgroups_dyn (bug 20262)
+
+(cherry picked from commit 73fb56a4d51fd4437e4cde6dd3c8077a610f88a8)
+(cherry picked from commit 395b1b9cbfda75fcdef0a9654d7ef6bf8bf7db11)
+---
+ nis/nss_nis/nis-initgroups.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/nis/nss_nis/nis-initgroups.c b/nis/nss_nis/nis-initgroups.c
+index dec385cec7ae..0368667cf630 100644
+--- a/nis/nss_nis/nis-initgroups.c
++++ b/nis/nss_nis/nis-initgroups.c
+@@ -266,7 +266,7 @@ _nss_nis_initgroups_dyn (const char *user, gid_t group, long int *start,
+ 
+   tmpbuf = __alloca (buflen);
+ 
+-  do
++  while (1)
+     {
+       while ((status =
+ 	      internal_getgrent_r (&grpbuf, tmpbuf, buflen, errnop,
+@@ -275,8 +275,11 @@ _nss_nis_initgroups_dyn (const char *user, gid_t group, long int *start,
+ 	tmpbuf = extend_alloca (tmpbuf, buflen, 2 * buflen);
+ 
+       if (status != NSS_STATUS_SUCCESS)
+-	goto done;
+-
++	{
++	  if (status == NSS_STATUS_NOTFOUND)
++	    status = NSS_STATUS_SUCCESS;
++	  goto done;
++	}
+ 
+       g = &grpbuf;
+       if (g->gr_gid != group)
+@@ -304,7 +307,11 @@ _nss_nis_initgroups_dyn (const char *user, gid_t group, long int *start,
+ 
+ 		    newgroups = realloc (groups, newsize * sizeof (*groups));
+ 		    if (newgroups == NULL)
+-		      goto done;
++		      {
++			status = NSS_STATUS_TRYAGAIN;
++			*errnop = errno;
++			goto done;
++		      }
+ 		    *groupsp = groups = newgroups;
+                     *size = newsize;
+                   }
+@@ -316,7 +323,6 @@ _nss_nis_initgroups_dyn (const char *user, gid_t group, long int *start,
+               }
+         }
+     }
+-  while (status == NSS_STATUS_SUCCESS);
+ 
+ done:
+   while (intern.start != NULL)
+-- 
+2.10.2
+

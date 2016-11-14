@@ -1,0 +1,45 @@
+From 6e4e1b2bb12d1deac1566e59055ed3ee52eb0683 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Thu, 14 Apr 2016 12:53:03 +0200
+Subject: [PATCH] malloc: Add missing internal_function attributes on function
+ definitions
+
+Fixes build on i386 after commit 29d794863cd6e03115d3670707cc873a9965ba92.
+
+(cherry picked from commit 186fe877f3df0b84d57dfbf0386f6332c6aa69bc)
+(cherry picked from commit 888d9a0146b4b8364e065ab359eae5b3db5badb9)
+---
+ malloc/arena.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/malloc/arena.c b/malloc/arena.c
+index 1c70b3516dd4..47715b618a86 100644
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -139,6 +139,7 @@ int __malloc_initialized = -1;
+    subsystem.  */
+ 
+ void
++internal_function
+ __malloc_fork_lock_parent (void)
+ {
+   if (__malloc_initialized < 1)
+@@ -159,6 +160,7 @@ __malloc_fork_lock_parent (void)
+ }
+ 
+ void
++internal_function
+ __malloc_fork_unlock_parent (void)
+ {
+   if (__malloc_initialized < 1)
+@@ -175,6 +177,7 @@ __malloc_fork_unlock_parent (void)
+ }
+ 
+ void
++internal_function
+ __malloc_fork_unlock_child (void)
+ {
+   if (__malloc_initialized < 1)
+-- 
+2.10.2
+

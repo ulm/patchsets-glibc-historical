@@ -1,0 +1,65 @@
+From a6bb6430afb72aaa362e508be98f7b7dd1bfd13e Mon Sep 17 00:00:00 2001
+From: Stefan Liebler <stli@linux.vnet.ibm.com>
+Date: Thu, 14 Apr 2016 12:21:53 +0200
+Subject: [PATCH] Fix strfmon_l: Use specified locale for number formatting [BZ
+ #19633]
+
+The commit 985fc132f23dbb83de76c5af9e783ef1b5900148
+"strfmon_l: Use specified locale for number formatting [BZ #19633]"
+introduced an elf/check-abi-libc testfailure due to __printf_fp_l
+on architectures which use sysdeps/ieee754/ldbl-opt/math_ldbl_opt.h.
+
+This patch uses libc_hidden_def instead of ldbl_hidden_def.
+The ldbl_strong_alias is removed due to the rename of ___printf_fp_l
+to __printf_fp_l.
+
+ChangeLog:
+
+	* stdio-common/printf_fp.c (__printf_fp_l):
+	Rename ___printf_fp_l to __printf_fp_l and
+	remove strong alias. Use libc_hidden_def instead
+	of ldbl_hidden_def macro.
+
+(cherry picked from commit b1b8f5d89d06a994773e22ad4b7fe1036b37f8ab)
+(cherry picked from commit a37d61a662027a5d92fa54ceb75cd3167d732b5f)
+---
+ stdio-common/printf_fp.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/stdio-common/printf_fp.c b/stdio-common/printf_fp.c
+index baada9e038fd..fdfe06b0a74c 100644
+--- a/stdio-common/printf_fp.c
++++ b/stdio-common/printf_fp.c
+@@ -209,9 +209,9 @@ hack_digit (struct hack_digit_param *p)
+ }
+ 
+ int
+-___printf_fp_l (FILE *fp, locale_t loc,
+-		const struct printf_info *info,
+-		const void *const *args)
++__printf_fp_l (FILE *fp, locale_t loc,
++	       const struct printf_info *info,
++	       const void *const *args)
+ {
+   /* The floating-point value to output.  */
+   union
+@@ -1248,14 +1248,13 @@ ___printf_fp_l (FILE *fp, locale_t loc,
+   }
+   return done;
+ }
+-ldbl_hidden_def (___printf_fp_l, __printf_fp_l)
+-ldbl_strong_alias (___printf_fp_l, __printf_fp_l)
++libc_hidden_def (__printf_fp_l)
+ 
+ int
+ ___printf_fp (FILE *fp, const struct printf_info *info,
+ 	      const void *const *args)
+ {
+-  return ___printf_fp_l (fp, _NL_CURRENT_LOCALE, info, args);
++  return __printf_fp_l (fp, _NL_CURRENT_LOCALE, info, args);
+ }
+ ldbl_hidden_def (___printf_fp, __printf_fp)
+ ldbl_strong_alias (___printf_fp, __printf_fp)
+-- 
+2.10.2
+

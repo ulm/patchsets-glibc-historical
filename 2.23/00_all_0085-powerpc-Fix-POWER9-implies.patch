@@ -1,0 +1,32 @@
+From 402a6602288ef72d0f9061bef42c7a9235c9dd07 Mon Sep 17 00:00:00 2001
+From: Tulio Magno Quites Machado Filho <tuliom@linux.vnet.ibm.com>
+Date: Fri, 16 Sep 2016 17:31:58 -0300
+Subject: [PATCH] powerpc: Fix POWER9 implies
+
+Fix multiarch build for POWER9 by correcting the order of the
+directories listed at sysnames configure variable.
+
+(cherry picked from commit 1850ce5a2ea3b908b26165e7e951cd4334129f07)
+(cherry picked from commit 79312adef2645f9051b251c56b0e45f6c4d38058)
+---
+ sysdeps/powerpc/powerpc32/power9/multiarch/Implies | 2 +-
+ sysdeps/powerpc/powerpc64/power9/fpu/Implies       | 1 -
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/sysdeps/powerpc/powerpc32/power9/multiarch/Implies b/sysdeps/powerpc/powerpc32/power9/multiarch/Implies
+index 4393b5687264..1a46ef003586 100644
+--- a/sysdeps/powerpc/powerpc32/power9/multiarch/Implies
++++ b/sysdeps/powerpc/powerpc32/power9/multiarch/Implies
+@@ -1 +1 @@
+-powerpc/powerpc32/power8/fpu/multiarch
++powerpc/powerpc32/power8/multiarch
+diff --git a/sysdeps/powerpc/powerpc64/power9/fpu/Implies b/sysdeps/powerpc/powerpc64/power9/fpu/Implies
+index fad2505ab948..ae0dbaf857bb 100644
+--- a/sysdeps/powerpc/powerpc64/power9/fpu/Implies
++++ b/sysdeps/powerpc/powerpc64/power9/fpu/Implies
+@@ -1,2 +1 @@
+ powerpc/powerpc64/power8/fpu
+-powerpc/powerpc64/power8
+-- 
+2.10.2
+

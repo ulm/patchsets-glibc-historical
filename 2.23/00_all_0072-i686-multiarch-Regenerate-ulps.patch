@@ -1,0 +1,74 @@
+From 2bd7f09e9890e72e169146293242148609aecede Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 30 Jun 2016 00:31:11 +0200
+Subject: [PATCH] i686/multiarch: Regenerate ulps
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This comes from running “make regen-ulps” on AMD Opteron 6272 CPUs.
+
+Changelog:
+	* sysdeps/i386/i686/fpu/multiarch/libm-test-ulps: Regenerated.
+
+(cherry picked from commit 6a40d8df0c269a953726a432c50702372b86c500)
+(cherry picked from commit 3d21617c430d190e5412bc450afad22169218c0e)
+---
+ sysdeps/i386/i686/fpu/multiarch/libm-test-ulps | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/sysdeps/i386/i686/fpu/multiarch/libm-test-ulps b/sysdeps/i386/i686/fpu/multiarch/libm-test-ulps
+index bbb644a591c8..bc1932237e9a 100644
+--- a/sysdeps/i386/i686/fpu/multiarch/libm-test-ulps
++++ b/sysdeps/i386/i686/fpu/multiarch/libm-test-ulps
+@@ -230,9 +230,9 @@ ildouble: 2
+ ldouble: 2
+ 
+ Function: Real part of "cacos_downward":
+-double: 1
++double: 2
+ float: 1
+-idouble: 1
++idouble: 2
+ ifloat: 1
+ ildouble: 2
+ ldouble: 2
+@@ -246,9 +246,9 @@ ildouble: 5
+ ldouble: 5
+ 
+ Function: Real part of "cacos_towardzero":
+-double: 1
++double: 2
+ float: 1
+-idouble: 1
++idouble: 2
+ ifloat: 1
+ ildouble: 2
+ ldouble: 2
+@@ -302,9 +302,9 @@ ildouble: 5
+ ldouble: 5
+ 
+ Function: Imaginary part of "cacosh_downward":
+-double: 1
++double: 2
+ float: 1
+-idouble: 1
++idouble: 2
+ ifloat: 1
+ ildouble: 2
+ ldouble: 2
+@@ -318,9 +318,9 @@ ildouble: 5
+ ldouble: 5
+ 
+ Function: Imaginary part of "cacosh_towardzero":
+-double: 1
++double: 2
+ float: 1
+-idouble: 1
++idouble: 2
+ ifloat: 1
+ ildouble: 2
+ ldouble: 2
+-- 
+2.10.2
+

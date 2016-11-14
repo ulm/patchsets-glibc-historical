@@ -1,0 +1,140 @@
+From b0c4dab125279680938a6fef5825a7c5dc979d19 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Mon, 7 Mar 2016 22:06:18 +0100
+Subject: [PATCH] ldconfig: Do not remove stale symbolic links with -X [BZ
+ #19610]
+
+(cherry picked from commit 920b35c92ed8f41796c090c2819434e56701da5b)
+(cherry picked from commit c4294bd8620fabf0afddc2b85701371fafd40a6b)
+---
+ elf/Makefile          |  7 +++++-
+ elf/ldconfig.c        |  7 +++---
+ elf/tst-ldconfig-X.sh | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 72 insertions(+), 4 deletions(-)
+ create mode 100644 elf/tst-ldconfig-X.sh
+
+diff --git a/elf/Makefile b/elf/Makefile
+index dfcefa9db4dc..bc2dd12fcf74 100644
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -163,7 +163,8 @@ endif
+ endif
+ ifeq ($(run-built-tests),yes)
+ tests-special += $(objpfx)tst-leaks1-mem.out \
+-		 $(objpfx)tst-leaks1-static-mem.out $(objpfx)noload-mem.out
++		 $(objpfx)tst-leaks1-static-mem.out $(objpfx)noload-mem.out \
++		 $(objpfx)tst-ldconfig-X.out
+ endif
+ tlsmod17a-suffixes = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+ tlsmod18a-suffixes = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+@@ -1252,3 +1253,7 @@ $(objpfx)tst-prelink-cmp.out: tst-prelink.exp \
+ 			      $(objpfx)tst-prelink-conflict.out
+ 	cmp $^ > $@; \
+ 	$(evaluate-test)
++
++$(objpfx)tst-ldconfig-X.out : tst-ldconfig-X.sh $(objpfx)ldconfig
++	$(SHELL) $< '$(common-objpfx)' '$(test-wrapper)' '$(test-wrapper-env)' > $@; \
++	$(evaluate-test)
+diff --git a/elf/ldconfig.c b/elf/ldconfig.c
+index 9c6f2ba79110..467ca8266aef 100644
+--- a/elf/ldconfig.c
++++ b/elf/ldconfig.c
+@@ -100,7 +100,8 @@ int opt_format = 1;
+ /* Build cache.  */
+ static int opt_build_cache = 1;
+ 
+-/* Generate links.  */
++/* Enable symbolic link processing.  If set, create or update symbolic
++   links, and remove stale symbolic links.  */
+ static int opt_link = 1;
+ 
+ /* Only process directories specified on the command line.  */
+@@ -141,7 +142,7 @@ static const struct argp_option options[] =
+   { "print-cache", 'p', NULL, 0, N_("Print cache"), 0},
+   { "verbose", 'v', NULL, 0, N_("Generate verbose messages"), 0},
+   { NULL, 'N', NULL, 0, N_("Don't build cache"), 0},
+-  { NULL, 'X', NULL, 0, N_("Don't generate links"), 0},
++  { NULL, 'X', NULL, 0, N_("Don't update symbolic links"), 0},
+   { NULL, 'r', N_("ROOT"), 0, N_("Change to and use ROOT as root directory"), 0},
+   { NULL, 'C', N_("CACHE"), 0, N_("Use CACHE as cache file"), 0},
+   { NULL, 'f', N_("CONF"), 0, N_("Use CONF as configuration file"), 0},
+@@ -800,7 +801,7 @@ search_dir (const struct dir_entry *entry)
+ 		error (0, errno, _("Cannot stat %s"), file_name);
+ 
+ 	      /* Remove stale symlinks.  */
+-	      if (strstr (direntry->d_name, ".so."))
++	      if (opt_link && strstr (direntry->d_name, ".so."))
+ 		unlink (real_file_name);
+ 	      continue;
+ 	    }
+diff --git a/elf/tst-ldconfig-X.sh b/elf/tst-ldconfig-X.sh
+new file mode 100644
+index 000000000000..0c122a5210de
+--- /dev/null
++++ b/elf/tst-ldconfig-X.sh
+@@ -0,0 +1,62 @@
++#!/bin/sh
++# Test that ldconfig -X does not remove stale symbolic links.
++# Copyright (C) 2000-2016 Free Software Foundation, Inc.
++# This file is part of the GNU C Library.
++
++# The GNU C Library is free software; you can redistribute it and/or
++# modify it under the terms of the GNU Lesser General Public
++# License as published by the Free Software Foundation; either
++# version 2.1 of the License, or (at your option) any later version.
++
++# The GNU C Library is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++# Lesser General Public License for more details.
++
++# You should have received a copy of the GNU Lesser General Public
++# License along with the GNU C Library; if not, see
++# <http://www.gnu.org/licenses/>.
++
++set -ex
++
++common_objpfx=$1
++test_wrapper_env=$2
++run_program_env=$3
++
++testroot="${common_objpfx}elf/bug19610-test-directory"
++cleanup () {
++    rm -rf "$testroot"
++}
++trap cleanup 0
++
++rm -rf "$testroot"
++mkdir -p $testroot/lib $testroot/etc
++
++# Relative symbolic link target.
++ln -s libdoesnotexist.so.1.1 $testroot/lib/libdoesnotexist.so.1
++
++# Absolute symbolic link target.
++ln -s $testroot/opt/sw/lib/libdoesnotexist2.so.1.1 $testroot/lib/
++
++errors=0
++check_files () {
++    for name in libdoesnotexist.so.1 libdoesnotexist2.so.1.1 ; do
++	path="$testroot/lib/$name"
++	if test ! -h $path ; then
++	    echo "error: missing file: $path"
++	    errors=1
++	fi
++    done
++}
++
++check_files
++
++${test_wrapper_env} \
++${run_program_env} \
++${common_objpfx}elf/ldconfig -X -f /dev/null \
++  -C $testroot/etc/ld.so.cache \
++  $testroot/lib
++
++check_files
++
++exit $errors
+-- 
+2.10.2
+

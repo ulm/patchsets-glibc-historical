@@ -1,0 +1,38 @@
+From ab98aad2867140c24abaea4c6c7164c490e251f3 Mon Sep 17 00:00:00 2001
+From: Dylan Alex Simon <dylan-sourceware@dylex.net>
+Date: Tue, 15 Mar 2016 13:20:01 -0400
+Subject: [PATCH] math: don't clobber old libm.so on install [BZ #19822]
+
+When installing glibc (w/mathvec enabled) in-place on a system with
+a glibc w/out mathvec enabled, the install will clobber the existing
+libm.so (e.g., /lib64/libm-2.21.so) with a linker script.  This is
+because libm.so is a symlink to libm.so.6 which is a symlink to the
+final libm-2.21.so file.  When the makefile writes the linker script
+directly to libm.so, it gets clobbered.
+
+The simple patch below to math/Makefile fixes this.  It is based on
+the nptl Makefile, which does exactly the same thing in a safer way.
+
+(cherry picked from commit f9378ac3773ffe998a2b3406568778ee9f77f759)
+(cherry picked from commit 73f158cef52f3968e0b9a7785638cf1737c35306)
+---
+ math/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/math/Makefile b/math/Makefile
+index 7d573a0074ff..6aa87f95283a 100644
+--- a/math/Makefile
++++ b/math/Makefile
+@@ -100,7 +100,8 @@ $(inst_libdir)/libm.so: $(common-objpfx)format.lds \
+ 	 cat $<; \
+ 	 echo 'GROUP ( $(slibdir)/libm.so$(libm.so-version) ' \
+ 	      'AS_NEEDED ( $(libdir)/libmvec_nonshared.a $(slibdir)/libmvec.so$(libmvec.so-version) ) )' \
+-	) > $@
++	) > $@.new
++	mv -f $@.new $@
+ endif
+ 
+ # Rules for the test suite.
+-- 
+2.10.2
+

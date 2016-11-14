@@ -1,0 +1,3065 @@
+From 92deb83907f771dc38614628c60309bb7ea84511 Mon Sep 17 00:00:00 2001
+From: Andrew Senkevich <andrew.senkevich@intel.com>
+Date: Mon, 17 Oct 2016 17:55:28 +0300
+Subject: [PATCH] Fixed x86_64 vector sincos/sincosf ABI.
+
+Fixed wrong vector sincos/sincosf ABI to have it compatible with
+current vector function declaration "#pragma omp declare simd notinbranch",
+according to which vector sincos should have vector of pointers for second and
+third parameters. It is fixed with implementation as wrapper to version
+having second and third parameters as pointers.
+
+(cherry-picked from commit ee2196bb6766ca7e63a1ba22ebb7619a3266776a)
+
+(cherry picked from commit 0350824fabf12da92c3ed5e1f3938bc1453a5938)
+---
+ sysdeps/x86/fpu/test-math-vector-sincos.h          |  98 ++++++
+ sysdeps/x86_64/fpu/Makefile                        |  39 +++
+ .../fpu/multiarch/svml_d_sincos2_core_sse4.S       |  56 +++-
+ .../fpu/multiarch/svml_d_sincos4_core_avx2.S       |  98 +++++-
+ .../fpu/multiarch/svml_d_sincos8_core_avx512.S     | 180 ++++++++++-
+ .../fpu/multiarch/svml_s_sincosf16_core_avx512.S   | 310 ++++++++++++++++++-
+ .../fpu/multiarch/svml_s_sincosf4_core_sse4.S      |  80 ++++-
+ .../fpu/multiarch/svml_s_sincosf8_core_avx2.S      | 152 +++++++++-
+ sysdeps/x86_64/fpu/svml_d_sincos2_core.S           |  83 ++++-
+ sysdeps/x86_64/fpu/svml_d_sincos4_core.S           | 125 +++++++-
+ sysdeps/x86_64/fpu/svml_d_sincos4_core_avx.S       | 120 +++++++-
+ sysdeps/x86_64/fpu/svml_d_sincos8_core.S           | 201 ++++++++++++-
+ sysdeps/x86_64/fpu/svml_s_sincosf16_core.S         | 335 ++++++++++++++++++++-
+ sysdeps/x86_64/fpu/svml_s_sincosf4_core.S          | 126 +++++++-
+ sysdeps/x86_64/fpu/svml_s_sincosf8_core.S          | 173 ++++++++++-
+ sysdeps/x86_64/fpu/svml_s_sincosf8_core_avx.S      | 179 ++++++++++-
+ .../x86_64/fpu/test-double-libmvec-sincos-avx.c    |   1 +
+ .../x86_64/fpu/test-double-libmvec-sincos-avx2.c   |   1 +
+ .../x86_64/fpu/test-double-libmvec-sincos-avx512.c |   1 +
+ sysdeps/x86_64/fpu/test-double-libmvec-sincos.c    |  69 +++++
+ sysdeps/x86_64/fpu/test-double-vlen2-wrappers.c    |   6 +-
+ .../x86_64/fpu/test-double-vlen4-avx2-wrappers.c   |  10 +-
+ sysdeps/x86_64/fpu/test-double-vlen4-wrappers.c    |  10 +-
+ sysdeps/x86_64/fpu/test-double-vlen8-wrappers.c    |  10 +-
+ .../x86_64/fpu/test-float-libmvec-sincosf-avx.c    |   1 +
+ .../x86_64/fpu/test-float-libmvec-sincosf-avx2.c   |   1 +
+ .../x86_64/fpu/test-float-libmvec-sincosf-avx512.c |   1 +
+ sysdeps/x86_64/fpu/test-float-libmvec-sincosf.c    |  69 +++++
+ sysdeps/x86_64/fpu/test-float-vlen16-wrappers.c    |  10 +-
+ sysdeps/x86_64/fpu/test-float-vlen4-wrappers.c     |  10 +-
+ .../x86_64/fpu/test-float-vlen8-avx2-wrappers.c    |  13 +-
+ sysdeps/x86_64/fpu/test-float-vlen8-wrappers.c     |  10 +-
+ 32 files changed, 2545 insertions(+), 33 deletions(-)
+ create mode 100644 sysdeps/x86/fpu/test-math-vector-sincos.h
+ create mode 100644 sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx.c
+ create mode 100644 sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx2.c
+ create mode 100644 sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx512.c
+ create mode 100644 sysdeps/x86_64/fpu/test-double-libmvec-sincos.c
+ create mode 100644 sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx.c
+ create mode 100644 sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx2.c
+ create mode 100644 sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx512.c
+ create mode 100644 sysdeps/x86_64/fpu/test-float-libmvec-sincosf.c
+
+diff --git a/sysdeps/x86/fpu/test-math-vector-sincos.h b/sysdeps/x86/fpu/test-math-vector-sincos.h
+new file mode 100644
+index 000000000000..0263fc59357c
+--- /dev/null
++++ b/sysdeps/x86/fpu/test-math-vector-sincos.h
+@@ -0,0 +1,98 @@
++/* Wrappers definitions for tests of ABI of vector sincos/sincosf having
++   vector declaration "#pragma omp declare simd notinbranch".
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#define INIT_VEC_PTRS_LOOP(vec, val, len)			\
++  do								\
++    {								\
++      for (i = 0; i < len; i++)					\
++        {							\
++          vec[i] = &val[i];					\
++        }							\
++    }								\
++  while (0)
++
++/* Wrapper for vector sincos/sincosf compatible with x86_64 and x32 variants
++   of _ZGVbN2vvv_sincos, _ZGVdN4vvv_sincos, _ZGVeN8vvv_sincos;
++   x32 variants of _ZGVbN4vvv_sincosf, _ZGVcN4vvv_sincos, _ZGVdN8vvv_sincosf,
++   _ZGVeN16vvv_sincosf.  */
++#define VECTOR_WRAPPER_fFF_2(scalar_func, vector_func)		\
++extern void vector_func (VEC_TYPE, VEC_INT_TYPE, VEC_INT_TYPE);	\
++void scalar_func (FLOAT x, FLOAT * r, FLOAT * r1)		\
++{								\
++  int i;							\
++  FLOAT r_loc[VEC_LEN], r1_loc[VEC_LEN];			\
++  VEC_TYPE mx;							\
++  VEC_INT_TYPE mr, mr1;						\
++  INIT_VEC_LOOP (mx, x, VEC_LEN);				\
++  INIT_VEC_PTRS_LOOP (((FLOAT **) &mr), r_loc, VEC_LEN);	\
++  INIT_VEC_PTRS_LOOP (((FLOAT **) &mr1), r1_loc, VEC_LEN);	\
++  vector_func (mx, mr, mr1);					\
++  TEST_VEC_LOOP (r_loc, VEC_LEN);				\
++  TEST_VEC_LOOP (r1_loc, VEC_LEN);				\
++  *r = r_loc[0];						\
++  *r1 = r1_loc[0];						\
++  return;							\
++}
++
++/* Wrapper for vector sincos/sincosf compatible with x86_64 variants of
++   _ZGVcN4vvv_sincos, _ZGVeN16vvv_sincosf, _ZGVbN4vvv_sincosf,
++   _ZGVdN8vvv_sincosf, _ZGVcN8vvv_sincosf.  */
++#define VECTOR_WRAPPER_fFF_3(scalar_func, vector_func)		\
++extern void vector_func (VEC_TYPE, VEC_INT_TYPE, VEC_INT_TYPE,  \
++			 VEC_INT_TYPE, VEC_INT_TYPE);		\
++void scalar_func (FLOAT x, FLOAT * r, FLOAT * r1)		\
++{								\
++  int i;							\
++  FLOAT r_loc[VEC_LEN/2], r1_loc[VEC_LEN/2];			\
++  VEC_TYPE mx;							\
++  VEC_INT_TYPE mr, mr1;						\
++  INIT_VEC_LOOP (mx, x, VEC_LEN);				\
++  INIT_VEC_PTRS_LOOP (((FLOAT **) &mr), r_loc, VEC_LEN/2);	\
++  INIT_VEC_PTRS_LOOP (((FLOAT **) &mr1), r1_loc, VEC_LEN/2);	\
++  vector_func (mx, mr, mr, mr1, mr1);				\
++  TEST_VEC_LOOP (r_loc, VEC_LEN/2);				\
++  TEST_VEC_LOOP (r1_loc, VEC_LEN/2);				\
++  *r = r_loc[0];						\
++  *r1 = r1_loc[0];						\
++  return;							\
++}
++
++/* Wrapper for vector sincosf compatible with x86_64 variant of
++   _ZGVcN8vvv_sincosf.  */
++#define VECTOR_WRAPPER_fFF_4(scalar_func, vector_func) 		\
++extern void vector_func (VEC_TYPE, VEC_INT_TYPE, VEC_INT_TYPE,	\
++			 VEC_INT_TYPE, VEC_INT_TYPE,		\
++			 VEC_INT_TYPE, VEC_INT_TYPE,		\
++			 VEC_INT_TYPE, VEC_INT_TYPE);		\
++void scalar_func (FLOAT x, FLOAT * r, FLOAT * r1)		\
++{								\
++  int i;							\
++  FLOAT r_loc[VEC_LEN/4], r1_loc[VEC_LEN/4];			\
++  VEC_TYPE mx;							\
++  VEC_INT_TYPE mr, mr1;						\
++  INIT_VEC_LOOP (mx, x, VEC_LEN);				\
++  INIT_VEC_PTRS_LOOP (((FLOAT **) &mr), r_loc, VEC_LEN/4);	\
++  INIT_VEC_PTRS_LOOP (((FLOAT **) &mr1), r1_loc, VEC_LEN/4);	\
++  vector_func (mx, mr, mr, mr, mr, mr1, mr1, mr1, mr1);		\
++  TEST_VEC_LOOP (r_loc, VEC_LEN/4);				\
++  TEST_VEC_LOOP (r1_loc, VEC_LEN/4);				\
++  *r = r_loc[0];						\
++  *r1 = r1_loc[0];						\
++  return;							\
++}
+diff --git a/sysdeps/x86_64/fpu/Makefile b/sysdeps/x86_64/fpu/Makefile
+index 88742faff16e..83a219fc6042 100644
+--- a/sysdeps/x86_64/fpu/Makefile
++++ b/sysdeps/x86_64/fpu/Makefile
+@@ -30,9 +30,37 @@ ifeq ($(subdir),math)
+ ifeq ($(build-mathvec),yes)
+ libmvec-tests += double-vlen2 double-vlen4 double-vlen4-avx2 \
+ 		 float-vlen4 float-vlen8 float-vlen8-avx2
++tests += test-double-libmvec-sincos test-double-libmvec-sincos-avx \
++	 test-double-libmvec-sincos-avx2 test-float-libmvec-sincosf \
++	 test-float-libmvec-sincosf-avx test-float-libmvec-sincosf-avx2
++
++$(objpfx)test-double-libmvec-sincos: \
++  $(objpfx)test-double-libmvec-sincos.o $(libmvec)
++
++$(objpfx)test-double-libmvec-sincos-avx: \
++  $(objpfx)test-double-libmvec-sincos-avx.o $(libmvec)
++
++$(objpfx)test-double-libmvec-sincos-avx2: \
++  $(objpfx)test-double-libmvec-sincos-avx2.o $(libmvec)
++
++$(objpfx)test-float-libmvec-sincosf: \
++  $(objpfx)test-float-libmvec-sincosf.o $(libmvec)
++
++$(objpfx)test-float-libmvec-sincosf-avx: \
++  $(objpfx)test-float-libmvec-sincosf-avx.o $(libmvec)
++
++$(objpfx)test-float-libmvec-sincosf-avx2: \
++  $(objpfx)test-float-libmvec-sincosf-avx2.o $(libmvec)
+ 
+ ifeq (yes,$(config-cflags-avx512))
+ libmvec-tests += double-vlen8 float-vlen16
++tests += test-double-libmvec-sincos-avx512 test-float-libmvec-sincosf-avx512
++
++$(objpfx)test-double-libmvec-sincos-avx512: \
++  $(objpfx)test-double-libmvec-sincos-avx512.o $(libmvec)
++
++$(objpfx)test-float-libmvec-sincosf-avx512: \
++  $(objpfx)test-float-libmvec-sincosf-avx512.o $(libmvec)
+ endif
+ 
+ double-vlen4-arch-ext-cflags = -mavx
+@@ -43,11 +71,22 @@ float-vlen8-arch-ext-cflags = -mavx
+ float-vlen8-arch-ext2-cflags = -mavx2
+ float-vlen16-arch-ext-cflags = -mavx512f
+ 
++libmvec-sincos-cflags = $(libm-test-fast-math-cflags) -fno-inline -fopenmp -Wno-unknown-pragmas
++
+ CFLAGS-test-double-vlen4-avx2.c = $(libm-test-vec-cflags)
+ CFLAGS-test-double-vlen4-avx2-wrappers.c = $(double-vlen4-arch-ext2-cflags)
+ 
+ CFLAGS-test-float-vlen8-avx2.c = $(libm-test-vec-cflags)
+ CFLAGS-test-float-vlen8-avx2-wrappers.c = $(float-vlen8-arch-ext2-cflags)
+ 
++CFLAGS-test-double-libmvec-sincos.c = $(libmvec-sincos-cflags)
++CFLAGS-test-double-libmvec-sincos-avx.c = $(libmvec-sincos-cflags) $(double-vlen4-arch-ext-cflags) -DREQUIRE_AVX
++CFLAGS-test-double-libmvec-sincos-avx2.c = $(libmvec-sincos-cflags) $(double-vlen4-arch-ext2-cflags) -DREQUIRE_AVX2
++CFLAGS-test-double-libmvec-sincos-avx512.c = $(libmvec-sincos-cflags) $(double-vlen8-arch-ext-cflags) -DREQUIRE_AVX512F
++
++CFLAGS-test-float-libmvec-sincosf.c = $(libmvec-sincos-cflags)
++CFLAGS-test-float-libmvec-sincosf-avx.c = $(libmvec-sincos-cflags) $(float-vlen8-arch-ext-cflags) -DREQUIRE_AVX
++CFLAGS-test-float-libmvec-sincosf-avx2.c = $(libmvec-sincos-cflags) $(float-vlen8-arch-ext2-cflags) -DREQUIRE_AVX2
++CFLAGS-test-float-libmvec-sincosf-avx512.c = $(libmvec-sincos-cflags) $(float-vlen16-arch-ext-cflags) -DREQUIRE_AVX512F
+ endif
+ endif
+diff --git a/sysdeps/x86_64/fpu/multiarch/svml_d_sincos2_core_sse4.S b/sysdeps/x86_64/fpu/multiarch/svml_d_sincos2_core_sse4.S
+index 65ad54012263..ab701a3a5f4d 100644
+--- a/sysdeps/x86_64/fpu/multiarch/svml_d_sincos2_core_sse4.S
++++ b/sysdeps/x86_64/fpu/multiarch/svml_d_sincos2_core_sse4.S
+@@ -20,7 +20,7 @@
+ #include "svml_d_trig_data.h"
+ 
+ 	.text
+-ENTRY (_ZGVbN2vvv_sincos_sse4)
++ENTRY (_ZGVbN2vl8l8_sincos_sse4)
+ /*
+    ALGORITHM DESCRIPTION:
+ 
+@@ -311,4 +311,58 @@ ENTRY (_ZGVbN2vvv_sincos_sse4)
+ 
+         movsd     %xmm0, 256(%rsp,%r15)
+         jmp       .LBL_1_7
++END (_ZGVbN2vl8l8_sincos_sse4)
++libmvec_hidden_def(_ZGVbN2vl8l8_sincos_sse4)
++
++/* vvv version implemented with wrapper to vl8l8 variant.  */
++ENTRY (_ZGVbN2vvv_sincos_sse4)
++#ifndef __ILP32__
++        subq      $72, %rsp
++        .cfi_def_cfa_offset 80
++        movdqu    %xmm1, 32(%rsp)
++        lea       (%rsp), %rdi
++        movdqu    %xmm2, 48(%rdi)
++        lea       16(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(_ZGVbN2vl8l8_sincos_sse4)
++        movq      32(%rsp), %rdx
++        movq      48(%rsp), %rsi
++        movq      40(%rsp), %r8
++        movq      56(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      16(%rsp), %rcx
++        movq      8(%rsp), %rdi
++        movq      24(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        addq      $72, %rsp
++        .cfi_def_cfa_offset 8
++        ret
++#else
++        subl    $72, %esp
++        .cfi_def_cfa_offset 80
++        leal    48(%rsp), %esi
++        movaps  %xmm1, 16(%esp)
++        leal    32(%rsp), %edi
++        movaps  %xmm2, (%esp)
++        call    HIDDEN_JUMPTARGET(_ZGVbN2vl8l8_sincos_sse4)
++        movdqa  16(%esp), %xmm1
++        movsd   32(%esp), %xmm0
++        movq    %xmm1, %rax
++        movdqa  (%esp), %xmm2
++        movsd   %xmm0, (%eax)
++        movsd   40(%esp), %xmm0
++        pextrd  $1, %xmm1, %eax
++        movsd   %xmm0, (%eax)
++        movsd   48(%esp), %xmm0
++        movq    %xmm2, %rax
++        movsd   %xmm0, (%eax)
++        movsd   56(%esp), %xmm0
++        pextrd  $1, %xmm2, %eax
++        movsd   %xmm0, (%eax)
++        addl    $72, %esp
++        .cfi_def_cfa_offset 8
++        ret
++#endif
+ END (_ZGVbN2vvv_sincos_sse4)
+diff --git a/sysdeps/x86_64/fpu/multiarch/svml_d_sincos4_core_avx2.S b/sysdeps/x86_64/fpu/multiarch/svml_d_sincos4_core_avx2.S
+index 60d03e9f8b10..f534afbb670e 100644
+--- a/sysdeps/x86_64/fpu/multiarch/svml_d_sincos4_core_avx2.S
++++ b/sysdeps/x86_64/fpu/multiarch/svml_d_sincos4_core_avx2.S
+@@ -20,7 +20,7 @@
+ #include "svml_d_trig_data.h"
+ 
+ 	.text
+-ENTRY (_ZGVdN4vvv_sincos_avx2)
++ENTRY (_ZGVdN4vl8l8_sincos_avx2)
+ /*
+    ALGORITHM DESCRIPTION:
+ 
+@@ -274,4 +274,100 @@ ENTRY (_ZGVdN4vvv_sincos_avx2)
+         vmovsd    %xmm0, 384(%rsp,%r15)
+         jmp       .LBL_1_7
+ 
++END (_ZGVdN4vl8l8_sincos_avx2)
++libmvec_hidden_def(_ZGVdN4vl8l8_sincos_avx2)
++
++/* vvv version implemented with wrapper to vl8l8 variant.  */
++ENTRY (_ZGVdN4vvv_sincos_avx2)
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-32, %rsp
++        subq      $128, %rsp
++        vmovdqu   %ymm1, 64(%rsp)
++        lea       (%rsp), %rdi
++        vmovdqu   %ymm2, 96(%rdi)
++        lea       32(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(_ZGVdN4vl8l8_sincos_avx2)
++        movq      64(%rsp), %rdx
++        movq      96(%rsp), %rsi
++        movq      72(%rsp), %r8
++        movq      104(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      32(%rsp), %rcx
++        movq      8(%rsp), %rdi
++        movq      40(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      80(%rsp), %rax
++        movq      112(%rsp), %rcx
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        movq      88(%rsp), %rdi
++        movq      120(%rsp), %r9
++        movq      16(%rsp), %r11
++        movq      48(%rsp), %rdx
++        movq      24(%rsp), %rsi
++        movq      56(%rsp), %r8
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      %rsi, (%rdi)
++        movq      %r8, (%r9)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-32, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x78,0x6
++        leal    -48(%rbp), %esi
++        leal    -80(%rbp), %edi
++        subl    $104, %esp
++        vmovaps %xmm1, -96(%ebp)
++        vmovaps %xmm2, -112(%ebp)
++        call    HIDDEN_JUMPTARGET(_ZGVdN4vl8l8_sincos_avx2)
++        movl    -96(%ebp), %eax
++        vmovsd  -80(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -92(%ebp), %eax
++        vmovsd  -72(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -88(%ebp), %eax
++        vmovsd  -64(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -84(%ebp), %eax
++        vmovsd  -56(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -112(%ebp), %eax
++        vmovsd  -48(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -108(%ebp), %eax
++        vmovsd  -40(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -104(%ebp), %eax
++        vmovsd  -32(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -100(%ebp), %eax
++        vmovsd  -24(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        addl    $104, %esp
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
+ END (_ZGVdN4vvv_sincos_avx2)
+diff --git a/sysdeps/x86_64/fpu/multiarch/svml_d_sincos8_core_avx512.S b/sysdeps/x86_64/fpu/multiarch/svml_d_sincos8_core_avx512.S
+index 44700f90b863..2ff217be8de3 100644
+--- a/sysdeps/x86_64/fpu/multiarch/svml_d_sincos8_core_avx512.S
++++ b/sysdeps/x86_64/fpu/multiarch/svml_d_sincos8_core_avx512.S
+@@ -36,9 +36,9 @@
+      sin(R), sin(R') are approximated by corresponding polynomial.  */
+ 
+ 	.text
+-ENTRY (_ZGVeN8vvv_sincos_knl)
++ENTRY (_ZGVeN8vl8l8_sincos_knl)
+ #ifndef HAVE_AVX512_ASM_SUPPORT
+-WRAPPER_IMPL_AVX512_fFF _ZGVdN4vvv_sincos
++WRAPPER_IMPL_AVX512_fFF _ZGVdN4vl8l8_sincos
+ #else
+         pushq     %rbp
+         cfi_adjust_cfa_offset (8)
+@@ -304,11 +304,12 @@ WRAPPER_IMPL_AVX512_fFF _ZGVdN4vvv_sincos
+         jmp       .LBL_1_7
+ 
+ #endif
+-END (_ZGVeN8vvv_sincos_knl)
++END (_ZGVeN8vl8l8_sincos_knl)
++libmvec_hidden_def(_ZGVeN8vl8l8_sincos_knl)
+ 
+-ENTRY (_ZGVeN8vvv_sincos_skx)
++ENTRY (_ZGVeN8vl8l8_sincos_skx)
+ #ifndef HAVE_AVX512_ASM_SUPPORT
+-WRAPPER_IMPL_AVX512_fFF _ZGVdN4vvv_sincos
++WRAPPER_IMPL_AVX512_fFF _ZGVdN4vl8l8_sincos
+ #else
+         pushq     %rbp
+         cfi_adjust_cfa_offset (8)
+@@ -585,6 +586,175 @@ WRAPPER_IMPL_AVX512_fFF _ZGVdN4vvv_sincos
+         jmp       .LBL_2_7
+ 
+ #endif
++END (_ZGVeN8vl8l8_sincos_skx)
++libmvec_hidden_def(_ZGVeN8vl8l8_sincos_skx)
++
++/* Wrapper between vvv and vl8l8 vector variants.  */
++.macro WRAPPER_AVX512_vvv_vl8l8 callee
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-64, %rsp
++        subq      $256, %rsp
++        /* Encoding for vmovups %zmm1, 128(%rsp).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x4c
++        .byte 0x24
++        .byte 0x02
++        lea       (%rsp), %rdi
++        /* Encoding for vmovups %zmm2, 192(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x57
++        .byte 0x03
++        lea       64(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      128(%rsp), %rdx
++        movq      136(%rsp), %rsi
++        movq      144(%rsp), %r8
++        movq      152(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      8(%rsp), %rcx
++        movq      16(%rsp), %rdi
++        movq      24(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      160(%rsp), %rax
++        movq      168(%rsp), %rcx
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        movq      176(%rsp), %rdi
++        movq      184(%rsp), %r9
++        movq      32(%rsp), %r11
++        movq      40(%rsp), %rdx
++        movq      48(%rsp), %rsi
++        movq      56(%rsp), %r8
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      192(%rsp), %r11
++        movq      200(%rsp), %rdx
++        movq      %rsi, (%rdi)
++        movq      %r8, (%r9)
++        movq      208(%rsp), %rsi
++        movq      216(%rsp), %r8
++        movq      64(%rsp), %r10
++        movq      72(%rsp), %rax
++        movq      80(%rsp), %rcx
++        movq      88(%rsp), %rdi
++        movq      %r10, (%r11)
++        movq      %rax, (%rdx)
++        movq      224(%rsp), %r10
++        movq      232(%rsp), %rax
++        movq      %rcx, (%rsi)
++        movq      %rdi, (%r8)
++        movq      240(%rsp), %rcx
++        movq      248(%rsp), %rdi
++        movq      96(%rsp), %r9
++        movq      104(%rsp), %r11
++        movq      112(%rsp), %rdx
++        movq      120(%rsp), %rsi
++        movq      %r9, (%r10)
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      %rsi, (%rdi)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-64, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x78,0x6
++        leal    -112(%rbp), %esi
++        leal    -176(%rbp), %edi
++        subl    $232, %esp
++        vmovdqa %ymm1, -208(%ebp)
++        vmovdqa %ymm2, -240(%ebp)
++        call    HIDDEN_JUMPTARGET(\callee)
++        vmovdqa -208(%ebp), %xmm0
++        vmovq   %xmm0, %rax
++        vmovsd  -176(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -168(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movq    -200(%ebp), %rax
++        vmovsd  -160(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -152(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movq    -192(%ebp), %rax
++        vmovsd  -144(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -136(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movq    -184(%ebp), %rax
++        vmovsd  -128(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -120(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovdqa -240(%ebp), %xmm0
++        vmovq   %xmm0, %rax
++        vmovsd  -112(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -104(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movq    -232(%ebp), %rax
++        vmovsd  -96(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -88(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movq    -224(%ebp), %rax
++        vmovsd  -80(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -72(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movq    -216(%ebp), %rax
++        vmovsd  -64(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        shrq    $32, %rax
++        vmovsd  -56(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        addl    $232, %esp
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
++ENTRY (_ZGVeN8vvv_sincos_knl)
++WRAPPER_AVX512_vvv_vl8l8 _ZGVeN8vl8l8_sincos_knl
++END (_ZGVeN8vvv_sincos_knl)
++
++ENTRY (_ZGVeN8vvv_sincos_skx)
++WRAPPER_AVX512_vvv_vl8l8 _ZGVeN8vl8l8_sincos_skx
+ END (_ZGVeN8vvv_sincos_skx)
+ 
+ 	.section .rodata, "a"
+diff --git a/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf16_core_avx512.S b/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf16_core_avx512.S
+index 758aeeaeed91..f6ed609b5f35 100644
+--- a/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf16_core_avx512.S
++++ b/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf16_core_avx512.S
+@@ -49,9 +49,9 @@
+            R2 = XOR( RC, SC ).  */
+ 
+ 	.text
+-ENTRY (_ZGVeN16vvv_sincosf_knl)
++ENTRY (_ZGVeN16vl4l4_sincosf_knl)
+ #ifndef HAVE_AVX512_ASM_SUPPORT
+-WRAPPER_IMPL_AVX512_fFF _ZGVdN8vvv_sincosf
++WRAPPER_IMPL_AVX512_fFF _ZGVdN8vl4l4_sincosf
+ #else
+         pushq     %rbp
+         cfi_adjust_cfa_offset (8)
+@@ -267,9 +267,10 @@ WRAPPER_IMPL_AVX512_fFF _ZGVdN8vvv_sincosf
+         vmovss    %xmm0, 1280(%rsp,%r15,8)
+         jmp       .LBL_1_7
+ #endif
+-END (_ZGVeN16vvv_sincosf_knl)
++END (_ZGVeN16vl4l4_sincosf_knl)
++libmvec_hidden_def(_ZGVeN16vl4l4_sincosf_knl)
+ 
+-ENTRY (_ZGVeN16vvv_sincosf_skx)
++ENTRY (_ZGVeN16vl4l4_sincosf_skx)
+ #ifndef HAVE_AVX512_ASM_SUPPORT
+ WRAPPER_IMPL_AVX512_fFF _ZGVdN8vvv_sincosf
+ #else
+@@ -496,6 +497,307 @@ WRAPPER_IMPL_AVX512_fFF _ZGVdN8vvv_sincosf
+         vmovss    %xmm0, 1280(%rsp,%r15,8)
+         jmp       .LBL_2_7
+ #endif
++END (_ZGVeN16vl4l4_sincosf_skx)
++libmvec_hidden_def(_ZGVeN16vl4l4_sincosf_skx)
++
++/* Wrapper between vvv and vl4l4 vector variants.  */
++.macro WRAPPER_AVX512_vvv_vl4l4 callee
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-64, %rsp
++        subq      $384, %rsp
++        /* Encoding for vmovups %zmm1, 128(%rsp).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x4c
++        .byte 0x24
++        .byte 0x02
++        lea       (%rsp), %rdi
++        /* Encoding for vmovups %zmm2, 192(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x57
++        .byte 0x03
++        /* Encoding for vmovups %zmm3, 256(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x5f
++        .byte 0x04
++        /* Encoding for vmovups %zmm4, 320(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x67
++        .byte 0x05
++        lea       64(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      128(%rsp), %rdx
++        movq      136(%rsp), %rsi
++        movq      144(%rsp), %r8
++        movq      152(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      160(%rsp), %rax
++        movq      168(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      176(%rsp), %rdi
++        movq      184(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      192(%rsp), %r11
++        movq      200(%rsp), %rdx
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      208(%rsp), %rsi
++        movq      216(%rsp), %r8
++        movl      32(%rsp), %r10d
++        movl      36(%rsp), %eax
++        movl      40(%rsp), %ecx
++        movl      44(%rsp), %edi
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      224(%rsp), %r10
++        movq      232(%rsp), %rax
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movq      240(%rsp), %rcx
++        movq      248(%rsp), %rdi
++        movl      48(%rsp), %r9d
++        movl      52(%rsp), %r11d
++        movl      56(%rsp), %edx
++        movl      60(%rsp), %esi
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movq      256(%rsp), %r9
++        movq      264(%rsp), %r11
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movq      272(%rsp), %rdx
++        movq      280(%rsp), %rsi
++        movl      64(%rsp), %r8d
++        movl      68(%rsp), %r10d
++        movl      72(%rsp), %eax
++        movl      76(%rsp), %ecx
++        movl      %r8d, (%r9)
++        movl      %r10d, (%r11)
++        movq      288(%rsp), %r8
++        movq      296(%rsp), %r10
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      304(%rsp), %rax
++        movq      312(%rsp), %rcx
++        movl      80(%rsp), %edi
++        movl      84(%rsp), %r9d
++        movl      88(%rsp), %r11d
++        movl      92(%rsp), %edx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      320(%rsp), %rdi
++        movq      328(%rsp), %r9
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      336(%rsp), %r11
++        movq      344(%rsp), %rdx
++        movl      96(%rsp), %esi
++        movl      100(%rsp), %r8d
++        movl      104(%rsp), %r10d
++        movl      108(%rsp), %eax
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      352(%rsp), %rsi
++        movq      360(%rsp), %r8
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      368(%rsp), %r10
++        movq      376(%rsp), %rax
++        movl      112(%rsp), %ecx
++        movl      116(%rsp), %edi
++        movl      120(%rsp), %r9d
++        movl      124(%rsp), %r11d
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-64, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x78,0x6
++        leal    -112(%rbp), %esi
++        leal    -176(%rbp), %edi
++        subl    $296, %esp
++        /* Encoding for vmovdqa64 %zmm1, -240(%ebp).  */
++        .byte 0x67
++        .byte 0x62
++        .byte 0xf1
++        .byte 0xfd
++        .byte 0x48
++        .byte 0x7f
++        .byte 0x8d
++        .byte 0x10
++        .byte 0xff
++        .byte 0xff
++        .byte 0xff
++        /* Encoding for vmovdqa64 %zmm2, -304(%ebp).  */
++        .byte 0x67
++        .byte 0x62
++        .byte 0xf1
++        .byte 0xfd
++        .byte 0x48
++        .byte 0x7f
++        .byte 0x95
++        .byte 0xd0
++        .byte 0xfe
++        .byte 0xff
++        .byte 0xff
++        call    HIDDEN_JUMPTARGET(\callee)
++        movl    -240(%ebp), %eax
++        vmovss  -176(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -236(%ebp), %eax
++        vmovss  -172(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -232(%ebp), %eax
++        vmovss  -168(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -228(%ebp), %eax
++        vmovss  -164(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -224(%ebp), %eax
++        vmovss  -160(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -220(%ebp), %eax
++        vmovss  -156(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -216(%ebp), %eax
++        vmovss  -152(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -212(%ebp), %eax
++        vmovss  -148(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -208(%ebp), %eax
++        vmovss  -144(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -204(%ebp), %eax
++        vmovss  -140(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -200(%ebp), %eax
++        vmovss  -136(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -196(%ebp), %eax
++        vmovss  -132(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -192(%ebp), %eax
++        vmovss  -128(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -188(%ebp), %eax
++        vmovss  -124(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -184(%ebp), %eax
++        vmovss  -120(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -180(%ebp), %eax
++        vmovss  -116(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -304(%ebp), %eax
++        vmovss  -112(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -300(%ebp), %eax
++        vmovss  -108(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -296(%ebp), %eax
++        vmovss  -104(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -292(%ebp), %eax
++        vmovss  -100(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -288(%ebp), %eax
++        vmovss  -96(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -284(%ebp), %eax
++        vmovss  -92(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -280(%ebp), %eax
++        vmovss  -88(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -276(%ebp), %eax
++        vmovss  -84(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -272(%ebp), %eax
++        vmovss  -80(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -268(%ebp), %eax
++        vmovss  -76(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -264(%ebp), %eax
++        vmovss  -72(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -260(%ebp), %eax
++        vmovss  -68(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -256(%ebp), %eax
++        vmovss  -64(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -252(%ebp), %eax
++        vmovss  -60(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -248(%ebp), %eax
++        vmovss  -56(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -244(%ebp), %eax
++        vmovss  -52(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        addl    $296, %esp
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
++ENTRY (_ZGVeN16vvv_sincosf_knl)
++WRAPPER_AVX512_vvv_vl4l4 _ZGVeN16vl4l4_sincosf_knl
++END (_ZGVeN16vvv_sincosf_knl)
++
++ENTRY (_ZGVeN16vvv_sincosf_skx)
++WRAPPER_AVX512_vvv_vl4l4 _ZGVeN16vl4l4_sincosf_skx
+ END (_ZGVeN16vvv_sincosf_skx)
+ 
+ 	.section .rodata, "a"
+diff --git a/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf4_core_sse4.S b/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf4_core_sse4.S
+index 643fc0ca3b2f..16993aaffcc3 100644
+--- a/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf4_core_sse4.S
++++ b/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf4_core_sse4.S
+@@ -20,7 +20,7 @@
+ #include "svml_s_trig_data.h"
+ 
+ 	.text
+-ENTRY (_ZGVbN4vvv_sincosf_sse4)
++ENTRY (_ZGVbN4vl4l4_sincosf_sse4)
+ /*
+    ALGORITHM DESCRIPTION:
+ 
+@@ -265,4 +265,82 @@ ENTRY (_ZGVbN4vvv_sincosf_sse4)
+         movss     %xmm0, 256(%rsp,%r15,8)
+         jmp       .LBL_1_7
+ 
++END (_ZGVbN4vl4l4_sincosf_sse4)
++libmvec_hidden_def(_ZGVbN4vl4l4_sincosf_sse4)
++
++/* vvv version implemented with wrapper to vl4l4 variant.  */
++ENTRY (_ZGVbN4vvv_sincosf_sse4)
++#ifndef __ILP32__
++        subq      $104, %rsp
++        .cfi_def_cfa_offset 112
++        movdqu    %xmm1, 32(%rsp)
++        lea       (%rsp), %rdi
++        movdqu    %xmm2, 48(%rdi)
++        lea       16(%rsp), %rsi
++        movdqu    %xmm3, 48(%rsi)
++        movdqu    %xmm4, 64(%rsi)
++        call      HIDDEN_JUMPTARGET(_ZGVbN4vl4l4_sincosf_sse4)
++        movq      32(%rsp), %rdx
++        movq      40(%rsp), %rsi
++        movq      48(%rsp), %r8
++        movq      56(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      64(%rsp), %rax
++        movq      72(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      80(%rsp), %rdi
++        movq      88(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        addq      $104, %rsp
++        .cfi_def_cfa_offset 8
++        ret
++#else
++        subl    $72, %esp
++        .cfi_def_cfa_offset 80
++        leal    48(%rsp), %esi
++        movaps  %xmm1, 16(%esp)
++        leal    32(%rsp), %edi
++        movaps  %xmm2, (%esp)
++        call    HIDDEN_JUMPTARGET(_ZGVbN4vl4l4_sincosf_sse4)
++        movl    16(%esp), %eax
++        movss   32(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    20(%esp), %eax
++        movss   36(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    24(%esp), %eax
++        movss   40(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    28(%esp), %eax
++        movss   44(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    (%esp), %eax
++        movss   48(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    4(%esp), %eax
++        movss   52(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    8(%esp), %eax
++        movss   56(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movl    12(%esp), %eax
++        movss   60(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        addl    $72, %esp
++        .cfi_def_cfa_offset 8
++        ret
++#endif
+ END (_ZGVbN4vvv_sincosf_sse4)
+diff --git a/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf8_core_avx2.S b/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf8_core_avx2.S
+index f2a0ba71160e..75aae00a4642 100644
+--- a/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf8_core_avx2.S
++++ b/sysdeps/x86_64/fpu/multiarch/svml_s_sincosf8_core_avx2.S
+@@ -20,7 +20,7 @@
+ #include "svml_s_trig_data.h"
+ 
+ 	.text
+-ENTRY(_ZGVdN8vvv_sincosf_avx2)
++ENTRY (_ZGVdN8vl4l4_sincosf_avx2)
+ /*
+    ALGORITHM DESCRIPTION:
+ 
+@@ -238,4 +238,152 @@ ENTRY(_ZGVdN8vvv_sincosf_avx2)
+         vmovss    %xmm0, 384(%rsp,%r15,8)
+         jmp       .LBL_1_7
+ 
+-END(_ZGVdN8vvv_sincosf_avx2)
++END (_ZGVdN8vl4l4_sincosf_avx2)
++libmvec_hidden_def(_ZGVdN8vl4l4_sincosf_avx2)
++
++/* vvv version implemented with wrapper to vl4l4 variant.  */
++ENTRY (_ZGVdN8vvv_sincosf_avx2)
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-32, %rsp
++        subq      $192, %rsp
++        vmovdqu   %ymm1, 64(%rsp)
++        lea       (%rsp), %rdi
++        vmovdqu   %ymm2, 96(%rdi)
++        vmovdqu   %ymm3, 128(%rdi)
++        vmovdqu   %ymm4, 160(%rdi)
++        lea       32(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(_ZGVdN8vl4l4_sincosf_avx2)
++        movq      64(%rsp), %rdx
++        movq      72(%rsp), %rsi
++        movq      80(%rsp), %r8
++        movq      88(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      96(%rsp), %rax
++        movq      104(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      112(%rsp), %rdi
++        movq      120(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      128(%rsp), %r11
++        movq      136(%rsp), %rdx
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      144(%rsp), %rsi
++        movq      152(%rsp), %r8
++        movl      32(%rsp), %r10d
++        movl      36(%rsp), %eax
++        movl      40(%rsp), %ecx
++        movl      44(%rsp), %edi
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      160(%rsp), %r10
++        movq      168(%rsp), %rax
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movq      176(%rsp), %rcx
++        movq      184(%rsp), %rdi
++        movl      48(%rsp), %r9d
++        movl      52(%rsp), %r11d
++        movl      56(%rsp), %edx
++        movl      60(%rsp), %esi
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-32, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x78,0x6
++        leal    -48(%rbp), %esi
++        leal    -80(%rbp), %edi
++        subl    $136, %esp
++        vmovdqa %ymm1, -112(%ebp)
++        vmovdqa %ymm2, -144(%ebp)
++        call    HIDDEN_JUMPTARGET(_ZGVdN8vl4l4_sincosf_avx2)
++        vmovdqa -112(%ebp), %xmm0
++        vmovq   %xmm0, %rax
++        vmovss  -80(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -76(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        movq    -104(%ebp), %rax
++        vmovss  -72(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -68(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        movq    -96(%ebp), %rax
++        vmovss  -64(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -60(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        movq    -88(%ebp), %rax
++        vmovss  -56(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -52(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        vmovdqa -144(%ebp), %xmm0
++        vmovq   %xmm0, %rax
++        vmovss  -48(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -44(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        movq    -136(%ebp), %rax
++        vmovss  -40(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -36(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        movq    -128(%ebp), %rax
++        vmovss  -32(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -28(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        movq    -120(%ebp), %rax
++        vmovss  -24(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -20(%ebp), %xmm0
++        shrq    $32, %rax
++        vmovss  %xmm0, (%eax)
++        addl    $136, %esp
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++END (_ZGVdN8vvv_sincosf_avx2)
+diff --git a/sysdeps/x86_64/fpu/svml_d_sincos2_core.S b/sysdeps/x86_64/fpu/svml_d_sincos2_core.S
+index 74afa0a67763..96ab726f791b 100644
+--- a/sysdeps/x86_64/fpu/svml_d_sincos2_core.S
++++ b/sysdeps/x86_64/fpu/svml_d_sincos2_core.S
+@@ -20,8 +20,89 @@
+ #include "svml_d_wrapper_impl.h"
+ 
+ 	.text
+-ENTRY (_ZGVbN2vvv_sincos)
++ENTRY (_ZGVbN2vl8l8_sincos)
+ WRAPPER_IMPL_SSE2_fFF sincos
++END (_ZGVbN2vl8l8_sincos)
++libmvec_hidden_def (_ZGVbN2vl8l8_sincos)
++
++/* SSE2 ISA version as wrapper to scalar (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_SSE2_fFF_vvv callee
++#ifndef __ILP32__
++        subq      $88, %rsp
++        cfi_adjust_cfa_offset(88)
++        movaps    %xmm0, 64(%rsp)
++        lea       (%rsp), %rdi
++        movdqa    %xmm1, 32(%rdi)
++        lea       16(%rsp), %rsi
++        movdqa    %xmm2, 32(%rsi)
++        call      JUMPTARGET(\callee)
++        movsd     72(%rsp), %xmm0
++        lea       8(%rsp), %rdi
++        lea       24(%rsp), %rsi
++        call      JUMPTARGET(\callee)
++        movq      32(%rsp), %rdx
++        movq      48(%rsp), %rsi
++        movq      40(%rsp), %r8
++        movq      56(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      16(%rsp), %rcx
++        movq      8(%rsp), %rdi
++        movq      24(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        addq      $88, %rsp
++        cfi_adjust_cfa_offset(-88)
++        ret
++#else
++        pushq   %rbp
++        .cfi_def_cfa_offset 16
++        .cfi_offset 6, -16
++        pushq   %rbx
++        .cfi_def_cfa_offset 24
++        .cfi_offset 3, -24
++        subl    $88, %esp
++        .cfi_def_cfa_offset 112
++        leal    64(%rsp), %esi
++        movaps  %xmm1, 32(%esp)
++        leal    48(%rsp), %edi
++        movaps  %xmm2, 16(%esp)
++        movq    %rsi, %rbp
++        movq    %rdi, %rbx
++        movaps  %xmm0, (%esp)
++        call    JUMPTARGET(\callee)
++        movupd  8(%esp), %xmm0
++        leal    8(%rbp), %esi
++        leal    8(%rbx), %edi
++        call    JUMPTARGET(\callee)
++        movdqa  32(%esp), %xmm1
++        movsd   48(%esp), %xmm0
++        movq    %xmm1, %rax
++        movdqa  16(%esp), %xmm2
++        movsd   %xmm0, (%eax)
++        movsd   56(%esp), %xmm0
++        pextrd  $1, %xmm1, %eax
++        movsd   %xmm0, (%eax)
++        movsd   64(%esp), %xmm0
++        movq    %xmm2, %rax
++        movsd   %xmm0, (%eax)
++        movsd   72(%esp), %xmm0
++        pextrd  $1, %xmm2, %eax
++        movsd   %xmm0, (%eax)
++        addl    $88, %esp
++        .cfi_def_cfa_offset 24
++        popq    %rbx
++        .cfi_def_cfa_offset 16
++        popq    %rbp
++        .cfi_def_cfa_offset 8
++        ret
++#endif
++.endm
++
++ENTRY (_ZGVbN2vvv_sincos)
++WRAPPER_IMPL_SSE2_fFF_vvv sincos
+ END (_ZGVbN2vvv_sincos)
+ 
+ #ifndef USE_MULTIARCH
+diff --git a/sysdeps/x86_64/fpu/svml_d_sincos4_core.S b/sysdeps/x86_64/fpu/svml_d_sincos4_core.S
+index 2c0b011fb30a..088d5ad9177a 100644
+--- a/sysdeps/x86_64/fpu/svml_d_sincos4_core.S
++++ b/sysdeps/x86_64/fpu/svml_d_sincos4_core.S
+@@ -20,8 +20,131 @@
+ #include "svml_d_wrapper_impl.h"
+ 
+ 	.text
++ENTRY (_ZGVdN4vl8l8_sincos)
++WRAPPER_IMPL_AVX_fFF _ZGVbN2vl8l8_sincos
++END (_ZGVdN4vl8l8_sincos)
++libmvec_hidden_def (_ZGVdN4vl8l8_sincos)
++
++/* AVX2 ISA version as wrapper to SSE ISA version (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_AVX2_fFF_vvv callee
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-32, %rsp
++        subq      $160, %rsp
++        vmovupd   %ymm0, 128(%rsp)
++        lea       (%rsp), %rdi
++        vmovdqu   %ymm1, 64(%rdi)
++        vmovdqu   %ymm2, 96(%rdi)
++        lea       32(%rsp), %rsi
++        vzeroupper
++        call      HIDDEN_JUMPTARGET(\callee)
++        vmovupd   144(%rsp), %xmm0
++        lea       16(%rsp), %rdi
++        lea       48(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      64(%rsp), %rdx
++        movq      96(%rsp), %rsi
++        movq      72(%rsp), %r8
++        movq      104(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      32(%rsp), %rcx
++        movq      8(%rsp), %rdi
++        movq      40(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      80(%rsp), %rax
++        movq      112(%rsp), %rcx
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        movq      88(%rsp), %rdi
++        movq      120(%rsp), %r9
++        movq      16(%rsp), %r11
++        movq      48(%rsp), %rdx
++        movq      24(%rsp), %rsi
++        movq      56(%rsp), %r8
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      %rsi, (%rdi)
++        movq      %r8, (%r9)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-32, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r12
++        leal    -80(%rbp), %esi
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x70,0x6
++        .cfi_escape 0x10,0xc,0x2,0x76,0x78
++        leal    -112(%rbp), %edi
++        movq    %rsi, %r12
++        pushq   %rbx
++        .cfi_escape 0x10,0x3,0x2,0x76,0x68
++        movq    %rdi, %rbx
++        subl    $152, %esp
++        vmovaps %xmm1, -128(%ebp)
++        vmovaps %xmm2, -144(%ebp)
++        vmovapd %ymm0, -176(%ebp)
++        vzeroupper
++        call    HIDDEN_JUMPTARGET(\callee)
++        leal    16(%r12), %esi
++        vmovapd -160(%ebp), %xmm0
++        leal    16(%rbx), %edi
++        call    HIDDEN_JUMPTARGET(\callee)
++        movq    -128(%ebp), %rax
++        vmovsd  -112(%ebp), %xmm0
++        vmovdqa -128(%ebp), %xmm5
++        vmovdqa -144(%ebp), %xmm1
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -104(%ebp), %xmm0
++        vpextrd $1, %xmm5, %eax
++        vmovsd  %xmm0, (%eax)
++        movq    -120(%ebp), %rax
++        vmovsd  -96(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -88(%ebp), %xmm0
++        vpextrd $3, %xmm5, %eax
++        vmovsd  %xmm0, (%eax)
++        movq    -144(%ebp), %rax
++        vmovsd  -80(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -72(%ebp), %xmm0
++        vpextrd $1, %xmm1, %eax
++        vmovsd  %xmm0, (%eax)
++        movq    -136(%ebp), %rax
++        vmovsd  -64(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -56(%ebp), %xmm0
++        vpextrd $3, %xmm1, %eax
++        vmovsd  %xmm0, (%eax)
++        addl    $152, %esp
++        popq    %rbx
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %r12
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
+ ENTRY (_ZGVdN4vvv_sincos)
+-WRAPPER_IMPL_AVX_fFF _ZGVbN2vvv_sincos
++WRAPPER_IMPL_AVX2_fFF_vvv _ZGVbN2vl8l8_sincos
+ END (_ZGVdN4vvv_sincos)
+ 
+ #ifndef USE_MULTIARCH
+diff --git a/sysdeps/x86_64/fpu/svml_d_sincos4_core_avx.S b/sysdeps/x86_64/fpu/svml_d_sincos4_core_avx.S
+index e4320a97c7f8..a60a524eeb80 100644
+--- a/sysdeps/x86_64/fpu/svml_d_sincos4_core_avx.S
++++ b/sysdeps/x86_64/fpu/svml_d_sincos4_core_avx.S
+@@ -20,6 +20,124 @@
+ #include "svml_d_wrapper_impl.h"
+ 
+ 	.text
++ENTRY (_ZGVcN4vl8l8_sincos)
++WRAPPER_IMPL_AVX_fFF _ZGVbN2vl8l8_sincos
++END (_ZGVcN4vl8l8_sincos)
++
++/* AVX ISA version as wrapper to SSE ISA version (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_AVX_fFF_vvv callee
++#ifndef __ILP32__
++        pushq     %rbp
++        movq      %rsp, %rbp
++        andq      $-32, %rsp
++        subq      $160, %rsp
++        vmovupd   %ymm0, 64(%rsp)
++        lea       (%rsp), %rdi
++        vmovdqu   %xmm1, 96(%rdi)
++        vmovdqu   %xmm2, 112(%rdi)
++        vmovdqu   %xmm3, 128(%rdi)
++        vmovdqu   %xmm4, 144(%rdi)
++        lea       32(%rsp), %rsi
++	vzeroupper
++        call      HIDDEN_JUMPTARGET(\callee)
++        vmovdqu   80(%rsp), %xmm0
++        lea       16(%rsp), %rdi
++        lea       48(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      96(%rsp), %rdx
++        movq      104(%rsp), %rsi
++        movq      112(%rsp), %r8
++        movq      120(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      8(%rsp), %rcx
++        movq      16(%rsp), %rdi
++        movq      24(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      128(%rsp), %rax
++        movq      136(%rsp), %rcx
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        movq      144(%rsp), %rdi
++        movq      152(%rsp), %r9
++        movq      32(%rsp), %r11
++        movq      40(%rsp), %rdx
++        movq      48(%rsp), %rsi
++        movq      56(%rsp), %r8
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      %rsi, (%rdi)
++        movq      %r8, (%r9)
++        movq      %rbp, %rsp
++        popq      %rbp
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-32, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r12
++        leal    -80(%rbp), %esi
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x70,0x6
++        .cfi_escape 0x10,0xc,0x2,0x76,0x78
++        leal    -112(%rbp), %edi
++        movq    %rsi, %r12
++        pushq   %rbx
++        .cfi_escape 0x10,0x3,0x2,0x76,0x68
++        movq    %rdi, %rbx
++        subl    $152, %esp
++        vmovaps %xmm1, -128(%ebp)
++        vmovaps %xmm2, -144(%ebp)
++        vmovapd %ymm0, -176(%ebp)
++        vzeroupper
++        call    HIDDEN_JUMPTARGET(\callee)
++        leal    16(%r12), %esi
++        vmovupd -160(%ebp), %xmm0
++        leal    16(%rbx), %edi
++        call    HIDDEN_JUMPTARGET(\callee)
++        movq    -128(%ebp), %rax
++        vmovsd  -112(%ebp), %xmm0
++        vmovdqa -128(%ebp), %xmm5
++        vmovdqa -144(%ebp), %xmm1
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -104(%ebp), %xmm0
++        vpextrd $1, %xmm5, %eax
++        vmovsd  %xmm0, (%eax)
++        movq    -120(%ebp), %rax
++        vmovsd  -96(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -88(%ebp), %xmm0
++        vpextrd $3, %xmm5, %eax
++        vmovsd  %xmm0, (%eax)
++        movq    -144(%ebp), %rax
++        vmovsd  -80(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -72(%ebp), %xmm0
++        vpextrd $1, %xmm1, %eax
++        vmovsd  %xmm0, (%eax)
++        movq    -136(%ebp), %rax
++        vmovsd  -64(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        vmovsd  -56(%ebp), %xmm0
++        vpextrd $3, %xmm1, %eax
++        vmovsd  %xmm0, (%eax)
++        addl    $152, %esp
++        popq    %rbx
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %r12
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
+ ENTRY (_ZGVcN4vvv_sincos)
+-WRAPPER_IMPL_AVX_fFF _ZGVbN2vvv_sincos
++WRAPPER_IMPL_AVX_fFF_vvv _ZGVbN2vl8l8_sincos
+ END (_ZGVcN4vvv_sincos)
+diff --git a/sysdeps/x86_64/fpu/svml_d_sincos8_core.S b/sysdeps/x86_64/fpu/svml_d_sincos8_core.S
+index 68d490e5bc68..7f51ed5c8ca3 100644
+--- a/sysdeps/x86_64/fpu/svml_d_sincos8_core.S
++++ b/sysdeps/x86_64/fpu/svml_d_sincos8_core.S
+@@ -20,6 +20,205 @@
+ #include "svml_d_wrapper_impl.h"
+ 
+ 	.text
++ENTRY (_ZGVeN8vl8l8_sincos)
++WRAPPER_IMPL_AVX512_fFF _ZGVdN4vl8l8_sincos
++END (_ZGVeN8vl8l8_sincos)
++
++/* AVX512 ISA version as wrapper to AVX2 ISA version (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_AVX512_fFF_vvv callee
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-64, %rsp
++        subq      $320, %rsp
++        /* Encoding for vmovups %zmm0, 256(%rsp).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x44
++        .byte 0x24
++        .byte 0x04
++        lea       (%rsp), %rdi
++        /* Encoding for vmovups %zmm1, 128(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x4f
++        .byte 0x02
++        /* Encoding for vmovups %zmm2, 192(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x57
++        .byte 0x03
++        lea       64(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        vmovdqu   288(%rsp), %ymm0
++        lea       32(%rsp), %rdi
++        lea       96(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      128(%rsp), %rdx
++        movq      192(%rsp), %rsi
++        movq      136(%rsp), %r8
++        movq      200(%rsp), %r10
++        movq      (%rsp), %rax
++        movq      64(%rsp), %rcx
++        movq      8(%rsp), %rdi
++        movq      72(%rsp), %r9
++        movq      %rax, (%rdx)
++        movq      %rcx, (%rsi)
++        movq      144(%rsp), %rax
++        movq      208(%rsp), %rcx
++        movq      %rdi, (%r8)
++        movq      %r9, (%r10)
++        movq      152(%rsp), %rdi
++        movq      216(%rsp), %r9
++        movq      16(%rsp), %r11
++        movq      80(%rsp), %rdx
++        movq      24(%rsp), %rsi
++        movq      88(%rsp), %r8
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      160(%rsp), %r11
++        movq      224(%rsp), %rdx
++        movq      %rsi, (%rdi)
++        movq      %r8, (%r9)
++        movq      168(%rsp), %rsi
++        movq      232(%rsp), %r8
++        movq      32(%rsp), %r10
++        movq      96(%rsp), %rax
++        movq      40(%rsp), %rcx
++        movq      104(%rsp), %rdi
++        movq      %r10, (%r11)
++        movq      %rax, (%rdx)
++        movq      176(%rsp), %r10
++        movq      240(%rsp), %rax
++        movq      %rcx, (%rsi)
++        movq      %rdi, (%r8)
++        movq      184(%rsp), %rcx
++        movq      248(%rsp), %rdi
++        movq      48(%rsp), %r9
++        movq      112(%rsp), %r11
++        movq      56(%rsp), %rdx
++        movq      120(%rsp), %rsi
++        movq      %r9, (%r10)
++        movq      %r11, (%rax)
++        movq      %rdx, (%rcx)
++        movq      %rsi, (%rdi)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-64, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r12
++        leal    -112(%rbp), %esi
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x70,0x6
++        .cfi_escape 0x10,0xc,0x2,0x76,0x78
++        leal    -176(%rbp), %edi
++        movq    %rsi, %r12
++        pushq   %rbx
++        .cfi_escape 0x10,0x3,0x2,0x76,0x68
++        movq    %rdi, %rbx
++        subl    $280, %esp
++        vmovdqa %ymm1, -208(%ebp)
++        vmovdqa %ymm2, -240(%ebp)
++        /* Encoding for vmovapd %zmm0, -304(%ebp).  */
++        .byte 0x67
++        .byte 0x62
++        .byte 0xf1
++        .byte 0xfd
++        .byte 0x48
++        .byte 0x29
++        .byte 0x85
++        .byte 0xd0
++        .byte 0xfe
++        .byte 0xff
++        .byte 0xff
++        call    HIDDEN_JUMPTARGET(\callee)
++        leal    32(%r12), %esi
++        vmovupd -272(%ebp), %ymm0
++        leal    32(%rbx), %edi
++        call    HIDDEN_JUMPTARGET(\callee)
++        movl    -208(%ebp), %eax
++        vmovsd  -176(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -204(%ebp), %eax
++        vmovsd  -168(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -200(%ebp), %eax
++        vmovsd  -160(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -196(%ebp), %eax
++        vmovsd  -152(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -192(%ebp), %eax
++        vmovsd  -144(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -188(%ebp), %eax
++        vmovsd  -136(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -184(%ebp), %eax
++        vmovsd  -128(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -180(%ebp), %eax
++        vmovsd  -120(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -240(%ebp), %eax
++        vmovsd  -112(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -236(%ebp), %eax
++        vmovsd  -104(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -232(%ebp), %eax
++        vmovsd  -96(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -228(%ebp), %eax
++        vmovsd  -88(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -224(%ebp), %eax
++        vmovsd  -80(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -220(%ebp), %eax
++        vmovsd  -72(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -216(%ebp), %eax
++        vmovsd  -64(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        movl    -212(%ebp), %eax
++        vmovsd  -56(%ebp), %xmm0
++        vmovsd  %xmm0, (%eax)
++        addl    $280, %esp
++        popq    %rbx
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %r12
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
+ ENTRY (_ZGVeN8vvv_sincos)
+-WRAPPER_IMPL_AVX512_fFF _ZGVdN4vvv_sincos
++WRAPPER_IMPL_AVX512_fFF_vvv _ZGVdN4vl8l8_sincos
+ END (_ZGVeN8vvv_sincos)
+diff --git a/sysdeps/x86_64/fpu/svml_s_sincosf16_core.S b/sysdeps/x86_64/fpu/svml_s_sincosf16_core.S
+index 5cbf10b8dac0..aae1adb8d711 100644
+--- a/sysdeps/x86_64/fpu/svml_s_sincosf16_core.S
++++ b/sysdeps/x86_64/fpu/svml_s_sincosf16_core.S
+@@ -20,6 +20,339 @@
+ #include "svml_s_wrapper_impl.h"
+ 
+ 	.text
++ENTRY (_ZGVeN16vl4l4_sincosf)
++WRAPPER_IMPL_AVX512_fFF _ZGVdN8vl4l4_sincosf
++END (_ZGVeN16vl4l4_sincosf)
++
++/* AVX512 ISA version as wrapper to AVX2 ISA version (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_AVX512_fFF_vvv callee
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-64, %rsp
++        subq      $448, %rsp
++        /* Encoding for vmovups %zmm0, 384(%rsp).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x44
++        .byte 0x24
++        .byte 0x06
++        lea       (%rsp), %rdi
++        /* Encoding for vmovups %zmm1, 128(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x4f
++        .byte 0x02
++        /* Encoding for vmovups %zmm2, 192(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x57
++        .byte 0x03
++        /* Encoding for vmovups %zmm3, 256(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x5f
++        .byte 0x04
++        /* Encoding for vmovups %zmm4, 320(%rdi).  */
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x11
++        .byte 0x67
++        .byte 0x05
++        lea       64(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        vmovdqu   416(%rsp), %ymm0
++        lea       32(%rsp), %rdi
++        lea       96(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      128(%rsp), %rdx
++        movq      136(%rsp), %rsi
++        movq      144(%rsp), %r8
++        movq      152(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      160(%rsp), %rax
++        movq      168(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      176(%rsp), %rdi
++        movq      184(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      192(%rsp), %r11
++        movq      200(%rsp), %rdx
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      208(%rsp), %rsi
++        movq      216(%rsp), %r8
++        movl      32(%rsp), %r10d
++        movl      36(%rsp), %eax
++        movl      40(%rsp), %ecx
++        movl      44(%rsp), %edi
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      224(%rsp), %r10
++        movq      232(%rsp), %rax
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movq      240(%rsp), %rcx
++        movq      248(%rsp), %rdi
++        movl      48(%rsp), %r9d
++        movl      52(%rsp), %r11d
++        movl      56(%rsp), %edx
++        movl      60(%rsp), %esi
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movq      256(%rsp), %r9
++        movq      264(%rsp), %r11
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movq      272(%rsp), %rdx
++        movq      280(%rsp), %rsi
++        movl      64(%rsp), %r8d
++        movl      68(%rsp), %r10d
++        movl      72(%rsp), %eax
++        movl      76(%rsp), %ecx
++        movl      %r8d, (%r9)
++        movl      %r10d, (%r11)
++        movq      288(%rsp), %r8
++        movq      296(%rsp), %r10
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      304(%rsp), %rax
++        movq      312(%rsp), %rcx
++        movl      80(%rsp), %edi
++        movl      84(%rsp), %r9d
++        movl      88(%rsp), %r11d
++        movl      92(%rsp), %edx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      320(%rsp), %rdi
++        movq      328(%rsp), %r9
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      336(%rsp), %r11
++        movq      344(%rsp), %rdx
++        movl      96(%rsp), %esi
++        movl      100(%rsp), %r8d
++        movl      104(%rsp), %r10d
++        movl      108(%rsp), %eax
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      352(%rsp), %rsi
++        movq      360(%rsp), %r8
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      368(%rsp), %r10
++        movq      376(%rsp), %rax
++        movl      112(%rsp), %ecx
++        movl      116(%rsp), %edi
++        movl      120(%rsp), %r9d
++        movl      124(%rsp), %r11d
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-64, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r12
++        leal    -112(%rbp), %esi
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x70,0x6
++        .cfi_escape 0x10,0xc,0x2,0x76,0x78
++        leal    -176(%rbp), %edi
++        movq    %rsi, %r12
++        pushq   %rbx
++        .cfi_escape 0x10,0x3,0x2,0x76,0x68
++        movq    %rdi, %rbx
++        subl    $344, %esp
++        /* Encoding for vmovdqa64 %zmm1, -240(%ebp).  */
++        .byte 0x67
++        .byte 0x62
++        .byte 0xf1
++        .byte 0xfd
++        .byte 0x48
++        .byte 0x7f
++        .byte 0x8d
++        .byte 0x10
++        .byte 0xff
++        .byte 0xff
++        .byte 0xff
++        /* Encoding for vmovdqa64 %zmm2, -304(%ebp).  */
++        .byte 0x67
++        .byte 0x62
++        .byte 0xf1
++        .byte 0xfd
++        .byte 0x48
++        .byte 0x7f
++        .byte 0x95
++        .byte 0xd0
++        .byte 0xfe
++        .byte 0xff
++        .byte 0xff
++        /* Encoding for vmovaps %zmm0, -368(%ebp).  */
++        .byte 0x67
++        .byte 0x62
++        .byte 0xf1
++        .byte 0x7c
++        .byte 0x48
++        .byte 0x29
++        .byte 0x85
++        .byte 0x90
++        .byte 0xfe
++        .byte 0xff
++        .byte 0xff
++        call    HIDDEN_JUMPTARGET(\callee)
++        leal    32(%r12), %esi
++        vmovups -336(%ebp), %ymm0
++        leal    32(%rbx), %edi
++        call    HIDDEN_JUMPTARGET(\callee)
++        movl    -240(%ebp), %eax
++        vmovss  -176(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -236(%ebp), %eax
++        vmovss  -172(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -232(%ebp), %eax
++        vmovss  -168(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -228(%ebp), %eax
++        vmovss  -164(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -224(%ebp), %eax
++        vmovss  -160(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -220(%ebp), %eax
++        vmovss  -156(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -216(%ebp), %eax
++        vmovss  -152(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -212(%ebp), %eax
++        vmovss  -148(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -208(%ebp), %eax
++        vmovss  -144(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -204(%ebp), %eax
++        vmovss  -140(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -200(%ebp), %eax
++        vmovss  -136(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -196(%ebp), %eax
++        vmovss  -132(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -192(%ebp), %eax
++        vmovss  -128(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -188(%ebp), %eax
++        vmovss  -124(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -184(%ebp), %eax
++        vmovss  -120(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -180(%ebp), %eax
++        vmovss  -116(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -304(%ebp), %eax
++        vmovss  -112(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -300(%ebp), %eax
++        vmovss  -108(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -296(%ebp), %eax
++        vmovss  -104(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -292(%ebp), %eax
++        vmovss  -100(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -288(%ebp), %eax
++        vmovss  -96(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -284(%ebp), %eax
++        vmovss  -92(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -280(%ebp), %eax
++        vmovss  -88(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -276(%ebp), %eax
++        vmovss  -84(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -272(%ebp), %eax
++        vmovss  -80(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -268(%ebp), %eax
++        vmovss  -76(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -264(%ebp), %eax
++        vmovss  -72(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -260(%ebp), %eax
++        vmovss  -68(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -256(%ebp), %eax
++        vmovss  -64(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -252(%ebp), %eax
++        vmovss  -60(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -248(%ebp), %eax
++        vmovss  -56(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -244(%ebp), %eax
++        vmovss  -52(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        addl    $344, %esp
++        popq    %rbx
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %r12
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
+ ENTRY (_ZGVeN16vvv_sincosf)
+-WRAPPER_IMPL_AVX512_fFF _ZGVdN8vvv_sincosf
++WRAPPER_IMPL_AVX512_fFF_vvv _ZGVdN8vl4l4_sincosf
+ END (_ZGVeN16vvv_sincosf)
+diff --git a/sysdeps/x86_64/fpu/svml_s_sincosf4_core.S b/sysdeps/x86_64/fpu/svml_s_sincosf4_core.S
+index 1a7d2733afea..0963c391fff9 100644
+--- a/sysdeps/x86_64/fpu/svml_s_sincosf4_core.S
++++ b/sysdeps/x86_64/fpu/svml_s_sincosf4_core.S
+@@ -16,13 +16,135 @@
+    License along with the GNU C Library; if not, see
+    <http://www.gnu.org/licenses/>.  */
+ 
+-
+ #include <sysdep.h>
+ #include "svml_s_wrapper_impl.h"
+ 
+ 	.text
+-ENTRY (_ZGVbN4vvv_sincosf)
++ENTRY (_ZGVbN4vl4l4_sincosf)
+ WRAPPER_IMPL_SSE2_fFF sincosf
++END (_ZGVbN4vl4l4_sincosf)
++libmvec_hidden_def (_ZGVbN4vl4l4_sincosf)
++
++/* SSE2 ISA version as wrapper to scalar (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_SSE2_fFF_vvv callee
++#ifndef __ILP32__
++        subq      $120, %rsp
++        cfi_adjust_cfa_offset(120)
++        movaps    %xmm0, 96(%rsp)
++        lea       (%rsp), %rdi
++        movdqa    %xmm1, 32(%rdi)
++        lea       16(%rsp), %rsi
++        movdqa    %xmm2, 32(%rsi)
++        movdqa    %xmm3, 48(%rsi)
++        movdqa    %xmm4, 64(%rsi)
++        call      JUMPTARGET(\callee)
++        movss     100(%rsp), %xmm0
++        lea       4(%rsp), %rdi
++        lea       20(%rsp), %rsi
++        call      JUMPTARGET(\callee)
++        movss     104(%rsp), %xmm0
++        lea       8(%rsp), %rdi
++        lea       24(%rsp), %rsi
++        call      JUMPTARGET(\callee)
++        movss     108(%rsp), %xmm0
++        lea       12(%rsp), %rdi
++        lea       28(%rsp), %rsi
++        call      JUMPTARGET(\callee)
++        movq      32(%rsp), %rdx
++        movq      40(%rsp), %rsi
++        movq      48(%rsp), %r8
++        movq      56(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      64(%rsp), %rax
++        movq      72(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      80(%rsp), %rdi
++        movq      88(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        addq      $120, %rsp
++        cfi_adjust_cfa_offset(-120)
++        ret
++#else
++        pushq   %rbp
++        .cfi_def_cfa_offset 16
++        .cfi_offset 6, -16
++        pushq   %rbx
++        .cfi_def_cfa_offset 24
++        .cfi_offset 3, -24
++        subl    $88, %esp
++        .cfi_def_cfa_offset 112
++        leal    64(%rsp), %esi
++        movaps  %xmm1, (%esp)
++        leal    48(%rsp), %edi
++        movaps  %xmm2, 16(%esp)
++        movq    %rsi, %rbp
++        movq    %rdi, %rbx
++        movaps  %xmm0, 32(%esp)
++        call    JUMPTARGET(\callee)
++        movups  36(%esp), %xmm0
++        leal    4(%rbp), %esi
++        leal    4(%rbx), %edi
++        call    JUMPTARGET(\callee)
++        movups  40(%esp), %xmm0
++        leal    8(%rbp), %esi
++        leal    8(%rbx), %edi
++        call    JUMPTARGET(\callee)
++        movups  44(%esp), %xmm0
++        leal    12(%rbp), %esi
++        leal    12(%rbx), %edi
++        call    JUMPTARGET(\callee)
++        movq    (%esp), %rax
++        movss   48(%esp), %xmm0
++        movdqa  (%esp), %xmm4
++        movdqa  16(%esp), %xmm7
++        movss   %xmm0, (%eax)
++        movss   52(%esp), %xmm0
++        pextrd  $1, %xmm4, %eax
++        movss   %xmm0, (%eax)
++        movq    8(%esp), %rax
++        movss   56(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movss   60(%esp), %xmm0
++        pextrd  $3, %xmm4, %eax
++        movss   %xmm0, (%eax)
++        movq    16(%esp), %rax
++        movss   64(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movss   68(%esp), %xmm0
++        pextrd  $1, %xmm7, %eax
++        movss   %xmm0, (%eax)
++        movq    24(%esp), %rax
++        movss   72(%esp), %xmm0
++        movss   %xmm0, (%eax)
++        movss   76(%esp), %xmm0
++        pextrd  $3, %xmm7, %eax
++        movss   %xmm0, (%eax)
++        addl    $88, %esp
++        .cfi_def_cfa_offset 24
++        popq    %rbx
++        .cfi_def_cfa_offset 16
++        popq    %rbp
++        .cfi_def_cfa_offset 8
++        ret
++#endif
++.endm
++
++ENTRY (_ZGVbN4vvv_sincosf)
++WRAPPER_IMPL_SSE2_fFF_vvv sincosf
+ END (_ZGVbN4vvv_sincosf)
+ 
+ #ifndef USE_MULTIARCH
+diff --git a/sysdeps/x86_64/fpu/svml_s_sincosf8_core.S b/sysdeps/x86_64/fpu/svml_s_sincosf8_core.S
+index 74d1dfd1a80a..93ac91608fc3 100644
+--- a/sysdeps/x86_64/fpu/svml_s_sincosf8_core.S
++++ b/sysdeps/x86_64/fpu/svml_s_sincosf8_core.S
+@@ -20,8 +20,179 @@
+ #include "svml_s_wrapper_impl.h"
+ 
+ 	.text
++ENTRY (_ZGVdN8vl4l4_sincosf)
++WRAPPER_IMPL_AVX_fFF _ZGVbN4vl4l4_sincosf
++END (_ZGVdN8vl4l4_sincosf)
++libmvec_hidden_def (_ZGVdN8vl4l4_sincosf)
++
++/* AVX2 ISA version as wrapper to SSE ISA version (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_AVX2_fFF_vvv callee
++#ifndef __ILP32__
++        pushq     %rbp
++        cfi_adjust_cfa_offset (8)
++        cfi_rel_offset (%rbp, 0)
++        movq      %rsp, %rbp
++        cfi_def_cfa_register (%rbp)
++        andq      $-32, %rsp
++        subq      $224, %rsp
++        vmovups   %ymm0, 192(%rsp)
++        lea       (%rsp), %rdi
++        vmovdqu   %ymm1, 64(%rdi)
++        vmovdqu   %ymm2, 96(%rdi)
++        vmovdqu   %ymm3, 128(%rdi)
++        vmovdqu   %ymm4, 160(%rdi)
++        lea       32(%rsp), %rsi
++	vzeroupper
++        call      HIDDEN_JUMPTARGET(\callee)
++        vmovups   208(%rsp), %xmm0
++        lea       16(%rsp), %rdi
++        lea       48(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      64(%rsp), %rdx
++        movq      72(%rsp), %rsi
++        movq      80(%rsp), %r8
++        movq      88(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      96(%rsp), %rax
++        movq      104(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      112(%rsp), %rdi
++        movq      120(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      128(%rsp), %r11
++        movq      136(%rsp), %rdx
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      144(%rsp), %rsi
++        movq      152(%rsp), %r8
++        movl      32(%rsp), %r10d
++        movl      36(%rsp), %eax
++        movl      40(%rsp), %ecx
++        movl      44(%rsp), %edi
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      160(%rsp), %r10
++        movq      168(%rsp), %rax
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movq      176(%rsp), %rcx
++        movq      184(%rsp), %rdi
++        movl      48(%rsp), %r9d
++        movl      52(%rsp), %r11d
++        movl      56(%rsp), %edx
++        movl      60(%rsp), %esi
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movq      %rbp, %rsp
++        cfi_def_cfa_register (%rsp)
++        popq      %rbp
++        cfi_adjust_cfa_offset (-8)
++        cfi_restore (%rbp)
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-32, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r12
++        leal    -80(%rbp), %esi
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x70,0x6
++        .cfi_escape 0x10,0xc,0x2,0x76,0x78
++        leal    -112(%rbp), %edi
++        movq    %rsi, %r12
++        pushq   %rbx
++        .cfi_escape 0x10,0x3,0x2,0x76,0x68
++        movq    %rdi, %rbx
++        subl    $184, %esp
++        vmovdqa %ymm1, -144(%ebp)
++        vmovdqa %ymm2, -176(%ebp)
++        vmovaps %ymm0, -208(%ebp)
++	vzeroupper
++        call    HIDDEN_JUMPTARGET(\callee)
++        leal    16(%r12), %esi
++        vmovups -192(%ebp), %xmm0
++        leal    16(%rbx), %edi
++        call    HIDDEN_JUMPTARGET(\callee)
++        movl    -144(%ebp), %eax
++        vmovss  -112(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -140(%ebp), %eax
++        vmovss  -108(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -136(%ebp), %eax
++        vmovss  -104(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -132(%ebp), %eax
++        vmovss  -100(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -128(%ebp), %eax
++        vmovss  -96(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -124(%ebp), %eax
++        vmovss  -92(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -120(%ebp), %eax
++        vmovss  -88(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -116(%ebp), %eax
++        vmovss  -84(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -176(%ebp), %eax
++        vmovss  -80(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -172(%ebp), %eax
++        vmovss  -76(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -168(%ebp), %eax
++        vmovss  -72(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -164(%ebp), %eax
++        vmovss  -68(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -160(%ebp), %eax
++        vmovss  -64(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -156(%ebp), %eax
++        vmovss  -60(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -152(%ebp), %eax
++        vmovss  -56(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        movl    -148(%ebp), %eax
++        vmovss  -52(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        addl    $184, %esp
++        popq    %rbx
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %r12
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
+ ENTRY (_ZGVdN8vvv_sincosf)
+-WRAPPER_IMPL_AVX_fFF _ZGVbN4vvv_sincosf
++WRAPPER_IMPL_AVX2_fFF_vvv _ZGVbN4vl4l4_sincosf
+ END (_ZGVdN8vvv_sincosf)
+ 
+ #ifndef USE_MULTIARCH
+diff --git a/sysdeps/x86_64/fpu/svml_s_sincosf8_core_avx.S b/sysdeps/x86_64/fpu/svml_s_sincosf8_core_avx.S
+index 55b8b2d768b4..cd88195ee7dc 100644
+--- a/sysdeps/x86_64/fpu/svml_s_sincosf8_core_avx.S
++++ b/sysdeps/x86_64/fpu/svml_s_sincosf8_core_avx.S
+@@ -20,6 +20,179 @@
+ #include "svml_s_wrapper_impl.h"
+ 
+         .text
+-ENTRY(_ZGVcN8vvv_sincosf)
+-WRAPPER_IMPL_AVX_fFF _ZGVbN4vvv_sincosf
+-END(_ZGVcN8vvv_sincosf)
++ENTRY (_ZGVcN8vl4l4_sincosf)
++WRAPPER_IMPL_AVX_fFF _ZGVbN4vl4l4_sincosf
++END (_ZGVcN8vl4l4_sincosf)
++
++/* AVX ISA version as wrapper to SSE ISA version (for vector
++   function declared with #pragma omp declare simd notinbranch).  */
++.macro WRAPPER_IMPL_AVX_fFF_vvv callee
++#ifndef __ILP32__
++        pushq     %rbp
++        movq      %rsp, %rbp
++        andq      $-32, %rsp
++        subq      $224, %rsp
++        vmovups   %ymm0, 64(%rsp)
++        lea       (%rsp), %rdi
++        vmovdqu   %xmm1, 96(%rdi)
++        vmovdqu   %xmm2, 112(%rdi)
++        vmovdqu   %xmm3, 128(%rdi)
++        vmovdqu   %xmm4, 144(%rdi)
++        vmovdqu   %xmm5, 160(%rdi)
++        lea       32(%rsp), %rsi
++        vmovdqu   %xmm6, 144(%rsi)
++        vmovdqu   %xmm7, 160(%rsi)
++        vzeroupper
++        call      HIDDEN_JUMPTARGET(\callee)
++        vmovdqu   80(%rsp), %xmm0
++        lea       16(%rsp), %rdi
++        lea       48(%rsp), %rsi
++        call      HIDDEN_JUMPTARGET(\callee)
++        movq      96(%rsp), %rdx
++        movq      104(%rsp), %rsi
++        movq      112(%rsp), %r8
++        movq      120(%rsp), %r10
++        movl      (%rsp), %eax
++        movl      4(%rsp), %ecx
++        movl      8(%rsp), %edi
++        movl      12(%rsp), %r9d
++        movl      %eax, (%rdx)
++        movl      %ecx, (%rsi)
++        movq      128(%rsp), %rax
++        movq      136(%rsp), %rcx
++        movl      %edi, (%r8)
++        movl      %r9d, (%r10)
++        movq      144(%rsp), %rdi
++        movq      152(%rsp), %r9
++        movl      16(%rsp), %r11d
++        movl      20(%rsp), %edx
++        movl      24(%rsp), %esi
++        movl      28(%rsp), %r8d
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movq      160(%rsp), %r11
++        movq      168(%rsp), %rdx
++        movl      %esi, (%rdi)
++        movl      %r8d, (%r9)
++        movq      176(%rsp), %rsi
++        movq      184(%rsp), %r8
++        movl      32(%rsp), %r10d
++        movl      36(%rsp), %eax
++        movl      40(%rsp), %ecx
++        movl      44(%rsp), %edi
++        movl      %r10d, (%r11)
++        movl      %eax, (%rdx)
++        movq      192(%rsp), %r10
++        movq      200(%rsp), %rax
++        movl      %ecx, (%rsi)
++        movl      %edi, (%r8)
++        movq      16(%rbp), %rcx
++        movq      24(%rbp), %rdi
++        movl      48(%rsp), %r9d
++        movl      52(%rsp), %r11d
++        movl      56(%rsp), %edx
++        movl      60(%rsp), %esi
++        movl      %r9d, (%r10)
++        movl      %r11d, (%rax)
++        movl      %edx, (%rcx)
++        movl      %esi, (%rdi)
++        movq      %rbp, %rsp
++        popq      %rbp
++        ret
++#else
++        leal    8(%rsp), %r10d
++        .cfi_def_cfa 10, 0
++        andl    $-32, %esp
++        pushq   -8(%r10d)
++        pushq   %rbp
++        .cfi_escape 0x10,0x6,0x2,0x76,0
++        movl    %esp, %ebp
++        pushq   %r12
++        leal    -80(%rbp), %esi
++        pushq   %r10
++        .cfi_escape 0xf,0x3,0x76,0x70,0x6
++        .cfi_escape 0x10,0xc,0x2,0x76,0x78
++        leal    -112(%rbp), %edi
++        movq    %rsi, %r12
++        pushq   %rbx
++        .cfi_escape 0x10,0x3,0x2,0x76,0x68
++        movq    %rdi, %rbx
++        subl    $184, %esp
++        vmovaps %xmm1, -128(%ebp)
++        vmovaps %xmm2, -144(%ebp)
++        vmovaps %xmm3, -160(%ebp)
++        vmovaps %xmm4, -176(%ebp)
++        vmovaps %ymm0, -208(%ebp)
++        vzeroupper
++        call    HIDDEN_JUMPTARGET(\callee)
++        leal    16(%r12), %esi
++        vmovups -192(%ebp), %xmm0
++        leal    16(%rbx), %edi
++        call    HIDDEN_JUMPTARGET(\callee)
++        movq    -128(%ebp), %rax
++        vmovss  -112(%ebp), %xmm0
++        vmovdqa -128(%ebp), %xmm7
++        vmovdqa -144(%ebp), %xmm3
++        vmovss  %xmm0, (%eax)
++        vmovss  -108(%ebp), %xmm0
++        vpextrd $1, %xmm7, %eax
++        vmovss  %xmm0, (%eax)
++        movq    -120(%ebp), %rax
++        vmovss  -104(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -100(%ebp), %xmm0
++        vpextrd $3, %xmm7, %eax
++        vmovdqa -160(%ebp), %xmm7
++        vmovss  %xmm0, (%eax)
++        movq    -144(%ebp), %rax
++        vmovss  -96(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -92(%ebp), %xmm0
++        vpextrd $1, %xmm3, %eax
++        vmovss  %xmm0, (%eax)
++        movq    -136(%ebp), %rax
++        vmovss  -88(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -84(%ebp), %xmm0
++        vpextrd $3, %xmm3, %eax
++        vmovss  %xmm0, (%eax)
++        movq    -160(%ebp), %rax
++        vmovss  -80(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -76(%ebp), %xmm0
++        vpextrd $1, %xmm7, %eax
++        vmovss  %xmm0, (%eax)
++        movq    -152(%ebp), %rax
++        vmovss  -72(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -68(%ebp), %xmm0
++        vpextrd $3, %xmm7, %eax
++        vmovss  %xmm0, (%eax)
++        movq    -176(%ebp), %rax
++        vmovss  -64(%ebp), %xmm0
++        vmovdqa -176(%ebp), %xmm3
++        vmovss  %xmm0, (%eax)
++        vmovss  -60(%ebp), %xmm0
++        vpextrd $1, %xmm3, %eax
++        vmovss  %xmm0, (%eax)
++        movq    -168(%ebp), %rax
++        vmovss  -56(%ebp), %xmm0
++        vmovss  %xmm0, (%eax)
++        vmovss  -52(%ebp), %xmm0
++        vpextrd $3, %xmm3, %eax
++        vmovss  %xmm0, (%eax)
++        addl    $184, %esp
++        popq    %rbx
++        popq    %r10
++        .cfi_def_cfa 10, 0
++        popq    %r12
++        popq    %rbp
++        leal    -8(%r10), %esp
++        .cfi_def_cfa 7, 8
++        ret
++#endif
++.endm
++
++ENTRY (_ZGVcN8vvv_sincosf)
++WRAPPER_IMPL_AVX_fFF_vvv _ZGVbN4vl4l4_sincosf
++END (_ZGVcN8vvv_sincosf)
+diff --git a/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx.c b/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx.c
+new file mode 100644
+index 000000000000..896f1bcbaf7e
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx.c
+@@ -0,0 +1 @@
++#include "test-double-libmvec-sincos.c"
+diff --git a/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx2.c b/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx2.c
+new file mode 100644
+index 000000000000..896f1bcbaf7e
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx2.c
+@@ -0,0 +1 @@
++#include "test-double-libmvec-sincos.c"
+diff --git a/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx512.c b/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx512.c
+new file mode 100644
+index 000000000000..896f1bcbaf7e
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-double-libmvec-sincos-avx512.c
+@@ -0,0 +1 @@
++#include "test-double-libmvec-sincos.c"
+diff --git a/sysdeps/x86_64/fpu/test-double-libmvec-sincos.c b/sysdeps/x86_64/fpu/test-double-libmvec-sincos.c
+new file mode 100644
+index 000000000000..80348a260e26
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-double-libmvec-sincos.c
+@@ -0,0 +1,69 @@
++/* Test for vector sincos ABI.
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <math.h>
++#include <math-tests-arch.h>
++
++#define N 1000
++double x[N], s[N], c[N];
++double* s_ptrs[N];
++double* c_ptrs[N];
++int arch_check = 1;
++
++static void
++init_arg (void)
++{
++  int i;
++
++  CHECK_ARCH_EXT;
++
++  arch_check = 0;
++
++  for(i = 0; i < N; i++)
++  {
++    x[i] = i / 3;
++    s_ptrs[i] = &s[i];
++    c_ptrs[i] = &c[i];
++  }
++}
++
++static int
++test_sincos_abi (void)
++{
++  int i;
++
++  init_arg ();
++
++  if (arch_check)
++    return 77;
++
++#pragma omp simd
++  for(i = 0; i < N; i++)
++    sincos (x[i], s_ptrs[i], c_ptrs[i]);
++
++  return 0;
++}
++
++static int
++do_test (void)
++{
++    return test_sincos_abi ();
++}
++
++#define TEST_FUNCTION do_test ()
++#include "../../../test-skeleton.c"
+diff --git a/sysdeps/x86_64/fpu/test-double-vlen2-wrappers.c b/sysdeps/x86_64/fpu/test-double-vlen2-wrappers.c
+index a9d15979aa38..375582e6d35a 100644
+--- a/sysdeps/x86_64/fpu/test-double-vlen2-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-double-vlen2-wrappers.c
+@@ -17,13 +17,17 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-double-vlen2.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #define VEC_TYPE __m128d
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cos), _ZGVbN2v_cos)
+ VECTOR_WRAPPER (WRAPPER_NAME (sin), _ZGVbN2v_sin)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincos), _ZGVbN2vvv_sincos)
+ VECTOR_WRAPPER (WRAPPER_NAME (log), _ZGVbN2v_log)
+ VECTOR_WRAPPER (WRAPPER_NAME (exp), _ZGVbN2v_exp)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (pow), _ZGVbN2vv_pow)
++
++#define VEC_INT_TYPE __m128i
++
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincos), _ZGVbN2vvv_sincos)
+diff --git a/sysdeps/x86_64/fpu/test-double-vlen4-avx2-wrappers.c b/sysdeps/x86_64/fpu/test-double-vlen4-avx2-wrappers.c
+index eb6a531502e0..00b7d4ef2612 100644
+--- a/sysdeps/x86_64/fpu/test-double-vlen4-avx2-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-double-vlen4-avx2-wrappers.c
+@@ -17,6 +17,7 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-double-vlen4.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #undef VEC_SUFF
+@@ -26,7 +27,14 @@
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cos), _ZGVdN4v_cos)
+ VECTOR_WRAPPER (WRAPPER_NAME (sin), _ZGVdN4v_sin)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincos), _ZGVdN4vvv_sincos)
+ VECTOR_WRAPPER (WRAPPER_NAME (log), _ZGVdN4v_log)
+ VECTOR_WRAPPER (WRAPPER_NAME (exp), _ZGVdN4v_exp)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (pow), _ZGVdN4vv_pow)
++
++#ifndef __ILP32__
++# define VEC_INT_TYPE __m256i
++#else
++# define VEC_INT_TYPE __m128i
++#endif
++
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincos), _ZGVdN4vvv_sincos)
+diff --git a/sysdeps/x86_64/fpu/test-double-vlen4-wrappers.c b/sysdeps/x86_64/fpu/test-double-vlen4-wrappers.c
+index 52b81da3eef2..51ddbfadf5ae 100644
+--- a/sysdeps/x86_64/fpu/test-double-vlen4-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-double-vlen4-wrappers.c
+@@ -17,13 +17,21 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-double-vlen4.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #define VEC_TYPE __m256d
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cos), _ZGVcN4v_cos)
+ VECTOR_WRAPPER (WRAPPER_NAME (sin), _ZGVcN4v_sin)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincos), _ZGVcN4vvv_sincos)
+ VECTOR_WRAPPER (WRAPPER_NAME (log), _ZGVcN4v_log)
+ VECTOR_WRAPPER (WRAPPER_NAME (exp), _ZGVcN4v_exp)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (pow), _ZGVcN4vv_pow)
++
++#define VEC_INT_TYPE __m128i
++
++#ifndef __ILP32__
++VECTOR_WRAPPER_fFF_3 (WRAPPER_NAME (sincos), _ZGVcN4vvv_sincos)
++#else
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincos), _ZGVcN4vvv_sincos)
++#endif
+diff --git a/sysdeps/x86_64/fpu/test-double-vlen8-wrappers.c b/sysdeps/x86_64/fpu/test-double-vlen8-wrappers.c
+index c10bb9cb4ac8..5460b6b26b02 100644
+--- a/sysdeps/x86_64/fpu/test-double-vlen8-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-double-vlen8-wrappers.c
+@@ -17,13 +17,21 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-double-vlen8.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #define VEC_TYPE __m512d
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cos), _ZGVeN8v_cos)
+ VECTOR_WRAPPER (WRAPPER_NAME (sin), _ZGVeN8v_sin)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincos), _ZGVeN8vvv_sincos)
+ VECTOR_WRAPPER (WRAPPER_NAME (log), _ZGVeN8v_log)
+ VECTOR_WRAPPER (WRAPPER_NAME (exp), _ZGVeN8v_exp)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (pow), _ZGVeN8vv_pow)
++
++#ifndef __ILP32__
++# define VEC_INT_TYPE __m512i
++#else
++# define VEC_INT_TYPE __m256i
++#endif
++
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincos), _ZGVeN8vvv_sincos)
+diff --git a/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx.c b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx.c
+new file mode 100644
+index 000000000000..5b45f0a055bb
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx.c
+@@ -0,0 +1 @@
++#include "test-float-libmvec-sincosf.c"
+diff --git a/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx2.c b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx2.c
+new file mode 100644
+index 000000000000..5b45f0a055bb
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx2.c
+@@ -0,0 +1 @@
++#include "test-float-libmvec-sincosf.c"
+diff --git a/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx512.c b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx512.c
+new file mode 100644
+index 000000000000..5b45f0a055bb
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf-avx512.c
+@@ -0,0 +1 @@
++#include "test-float-libmvec-sincosf.c"
+diff --git a/sysdeps/x86_64/fpu/test-float-libmvec-sincosf.c b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf.c
+new file mode 100644
+index 000000000000..3b7aad877b84
+--- /dev/null
++++ b/sysdeps/x86_64/fpu/test-float-libmvec-sincosf.c
+@@ -0,0 +1,69 @@
++/* Test for vector sincosf ABI.
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <math.h>
++#include <math-tests-arch.h>
++
++#define N 1000
++float x[N], s[N], c[N];
++float *s_ptrs[N];
++float *c_ptrs[N];
++int arch_check = 1;
++
++static void
++init_arg (void)
++{
++  int i;
++
++  CHECK_ARCH_EXT;
++
++  arch_check = 0;
++
++  for(i = 0; i < N; i++)
++  {
++    x[i] = i / 3;
++    s_ptrs[i] = &s[i];
++    c_ptrs[i] = &c[i];
++  }
++}
++
++static int
++test_sincosf_abi (void)
++{
++  int i;
++
++  init_arg ();
++
++  if (arch_check)
++    return 77;
++
++#pragma omp simd
++  for(i = 0; i < N; i++)
++    sincosf (x[i], s_ptrs[i], c_ptrs[i]);
++
++  return 0;
++}
++
++static int
++do_test (void)
++{
++  return test_sincosf_abi ();
++}
++
++#define TEST_FUNCTION do_test ()
++#include "../../../test-skeleton.c"
+diff --git a/sysdeps/x86_64/fpu/test-float-vlen16-wrappers.c b/sysdeps/x86_64/fpu/test-float-vlen16-wrappers.c
+index dc09e4a3387e..f3bf7dcc3e47 100644
+--- a/sysdeps/x86_64/fpu/test-float-vlen16-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-float-vlen16-wrappers.c
+@@ -17,13 +17,21 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-float-vlen16.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #define VEC_TYPE __m512
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cosf), _ZGVeN16v_cosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (sinf), _ZGVeN16v_sinf)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincosf), _ZGVeN16vvv_sincosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (logf), _ZGVeN16v_logf)
+ VECTOR_WRAPPER (WRAPPER_NAME (expf), _ZGVeN16v_expf)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (powf), _ZGVeN16vv_powf)
++
++#define VEC_INT_TYPE __m512i
++
++#ifndef __ILP32__
++VECTOR_WRAPPER_fFF_3 (WRAPPER_NAME (sincosf), _ZGVeN16vvv_sincosf)
++#else
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincosf), _ZGVeN16vvv_sincosf)
++#endif
+diff --git a/sysdeps/x86_64/fpu/test-float-vlen4-wrappers.c b/sysdeps/x86_64/fpu/test-float-vlen4-wrappers.c
+index 0bb9818146f1..4060f944c53d 100644
+--- a/sysdeps/x86_64/fpu/test-float-vlen4-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-float-vlen4-wrappers.c
+@@ -17,13 +17,21 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-float-vlen4.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #define VEC_TYPE __m128
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cosf), _ZGVbN4v_cosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (sinf), _ZGVbN4v_sinf)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincosf), _ZGVbN4vvv_sincosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (logf), _ZGVbN4v_logf)
+ VECTOR_WRAPPER (WRAPPER_NAME (expf), _ZGVbN4v_expf)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (powf), _ZGVbN4vv_powf)
++
++#define VEC_INT_TYPE __m128i
++
++#ifndef __ILP32__
++VECTOR_WRAPPER_fFF_3 (WRAPPER_NAME (sincosf), _ZGVbN4vvv_sincosf)
++#else
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincosf), _ZGVbN4vvv_sincosf)
++#endif
+diff --git a/sysdeps/x86_64/fpu/test-float-vlen8-avx2-wrappers.c b/sysdeps/x86_64/fpu/test-float-vlen8-avx2-wrappers.c
+index 4985ac237919..d1fc43225c59 100644
+--- a/sysdeps/x86_64/fpu/test-float-vlen8-avx2-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-float-vlen8-avx2-wrappers.c
+@@ -17,6 +17,7 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-float-vlen8.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #undef VEC_SUFF
+@@ -26,7 +27,17 @@
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cosf), _ZGVdN8v_cosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (sinf), _ZGVdN8v_sinf)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincosf), _ZGVdN8vvv_sincosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (logf), _ZGVdN8v_logf)
+ VECTOR_WRAPPER (WRAPPER_NAME (expf), _ZGVdN8v_expf)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (powf), _ZGVdN8vv_powf)
++
++/* Redefinition of wrapper to be compatible with _ZGVdN8vvv_sincosf.  */
++#undef VECTOR_WRAPPER_fFF
++
++#define VEC_INT_TYPE __m256i
++
++#ifndef __ILP32__
++VECTOR_WRAPPER_fFF_3 (WRAPPER_NAME (sincosf), _ZGVdN8vvv_sincosf)
++#else
++VECTOR_WRAPPER_fFF_2 (WRAPPER_NAME (sincosf), _ZGVdN8vvv_sincosf)
++#endif
+diff --git a/sysdeps/x86_64/fpu/test-float-vlen8-wrappers.c b/sysdeps/x86_64/fpu/test-float-vlen8-wrappers.c
+index 9cc2883399a0..99b462afebbb 100644
+--- a/sysdeps/x86_64/fpu/test-float-vlen8-wrappers.c
++++ b/sysdeps/x86_64/fpu/test-float-vlen8-wrappers.c
+@@ -17,13 +17,21 @@
+    <http://www.gnu.org/licenses/>.  */
+ 
+ #include "test-float-vlen8.h"
++#include "test-math-vector-sincos.h"
+ #include <immintrin.h>
+ 
+ #define VEC_TYPE __m256
+ 
+ VECTOR_WRAPPER (WRAPPER_NAME (cosf), _ZGVcN8v_cosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (sinf), _ZGVcN8v_sinf)
+-VECTOR_WRAPPER_fFF (WRAPPER_NAME (sincosf), _ZGVcN8vvv_sincosf)
+ VECTOR_WRAPPER (WRAPPER_NAME (logf), _ZGVcN8v_logf)
+ VECTOR_WRAPPER (WRAPPER_NAME (expf), _ZGVcN8v_expf)
+ VECTOR_WRAPPER_ff (WRAPPER_NAME (powf), _ZGVcN8vv_powf)
++
++#define VEC_INT_TYPE __m128i
++
++#ifndef __ILP32__
++VECTOR_WRAPPER_fFF_4 (WRAPPER_NAME (sincosf), _ZGVcN8vvv_sincosf)
++#else
++VECTOR_WRAPPER_fFF_3 (WRAPPER_NAME (sincosf), _ZGVcN8vvv_sincosf)
++#endif
+-- 
+2.10.2
+

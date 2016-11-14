@@ -1,0 +1,161 @@
+From 4a003be3ae533aedb3f5c79424ba046f3bb0af77 Mon Sep 17 00:00:00 2001
+From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
+Date: Tue, 26 Apr 2016 17:40:25 -0300
+Subject: [PATCH] libio: Update internal fmemopen position after write (BZ
+ #20005)
+
+Current GLIBC fmemopen fails with a simple testcase:
+
+  char buffer[500] = "x";
+  FILE *stream;
+  stream = fmemopen(buffer, 500, "r+");
+  fwrite("fish",sizeof(char),5,stream);
+  printf("pos-1:%ld\n",ftell(stream));
+  fflush(stream);
+  printf("pos-2:%ld\n",ftell(stream));
+
+It returns:
+
+  pos-1:5
+  pos-2:0
+
+Where it should return:
+
+  pos-1:5
+  pos-2:5
+
+This is due the internal write function does not correctly update the internal
+object position state and then the seek operation returns a wrong value.  This
+patch fixes it.
+
+It fixes both BZ #20005 and BZ #19230 (marked as duplicated). A new test is
+added to check for such case.
+
+Tested on x86_64 and i686.
+
+This is a backport of f9123b5003e62b6e54996076e860f23aee9a0593.
+
+	* libio/fmemopen.c (fmemopen_write): Update internal position after
+	write.
+	* stdio-common/Makefile (tests): Add tst-fmemopen4.c.
+	* stdio-common/tst-fmemopen4.c: New file..
+
+(cherry picked from commit c2fba3b047c2fac50985a47ff96075b5d9078432)
+---
+ libio/fmemopen.c             |  6 ++--
+ stdio-common/Makefile        |  2 +-
+ stdio-common/tst-fmemopen4.c | 71 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 75 insertions(+), 4 deletions(-)
+ create mode 100644 stdio-common/tst-fmemopen4.c
+
+diff --git a/libio/fmemopen.c b/libio/fmemopen.c
+index 23b5c5fea872..9264b724ee60 100644
+--- a/libio/fmemopen.c
++++ b/libio/fmemopen.c
+@@ -86,10 +86,10 @@ fmemopen_write (void *cookie, const char *b, size_t s)
+ 
+   memcpy (&(c->buffer[pos]), b, s);
+ 
+-  pos += s;
+-  if ((size_t) pos > c->maxpos)
++  c->pos += s;
++  if ((size_t) c->pos > c->maxpos)
+     {
+-      c->maxpos = pos;
++      c->maxpos = c->pos;
+       if (addnullc)
+ 	c->buffer[c->maxpos] = '\0';
+     }
+diff --git a/stdio-common/Makefile b/stdio-common/Makefile
+index cc79d347bca6..83ff00a482b4 100644
+--- a/stdio-common/Makefile
++++ b/stdio-common/Makefile
+@@ -58,7 +58,7 @@ tests := tstscanf test_rdwr test-popen tstgetln test-fseek \
+ 	 scanf16 scanf17 tst-setvbuf1 tst-grouping bug23 bug24 \
+ 	 bug-vfprintf-nargs tst-long-dbl-fphex tst-fphex-wide tst-sprintf3 \
+ 	 bug25 tst-printf-round bug23-2 bug23-3 bug23-4 bug26 tst-fmemopen3 \
+-	 tst-printf-bz18872
++	 tst-printf-bz18872 tst-fmemopen4
+ 
+ test-srcs = tst-unbputc tst-printf
+ 
+diff --git a/stdio-common/tst-fmemopen4.c b/stdio-common/tst-fmemopen4.c
+new file mode 100644
+index 000000000000..e24f1cacd9f1
+--- /dev/null
++++ b/stdio-common/tst-fmemopen4.c
+@@ -0,0 +1,71 @@
++/* fmemopen tests for BZ#1930 and BZ#20005.
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <assert.h>
++#include <stdio.h>
++#include <string.h>
++#include <sys/types.h>
++
++
++/* Check if fflush does not reset the file position.  */
++static int
++do_test (void)
++{
++  char buffer[500] = "x";
++
++  FILE *stream = fmemopen (buffer, sizeof (buffer), "r+");
++  if (stream == NULL)
++    {
++      printf ("error: fmemopen could not open stream\n");
++      return 1;
++    }
++
++  const char test[] = "test";
++
++  size_t r = fwrite (test, sizeof (char), sizeof (test), stream);
++  if (r != sizeof (test))
++    {
++      printf ("error: fwrite returned %zu, expected %zu\n", r, sizeof(test));
++      return 1;
++    }
++
++  r = ftell (stream);
++  if (r != sizeof (test))
++    {
++      printf ("error: ftell return %zu, expected %zu\n", r, sizeof(test));
++      return 1;
++    }
++
++  if (fflush (stream) != 0)
++    {
++      printf ("error: fflush failed\n");
++      return 1;
++    }
++
++  r = ftell (stream);
++  if (r != sizeof (test))
++    {
++      printf ("error: ftell return %zu, expected %zu\n", r, sizeof(test));
++      return 1;
++    }
++
++  return 0;
++}
++
++#define TEST_FUNCTION do_test ()
++#include "../test-skeleton.c"
+-- 
+2.10.2
+

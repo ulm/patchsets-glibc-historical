@@ -1,0 +1,26 @@
+From d182de941a4920f8339d448e60e18371ee2561d5 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Wed, 17 Aug 2016 16:14:02 +0200
+Subject: [PATCH] nptl/tst-once5: Reduce time to expected failure
+
+(cherry picked from commit 1f645571d2db9008b3cd3d5acb9ff93357864283)
+(cherry picked from commit 2eda04ec6f55d2a622481aeb51e4c42cf1607995)
+---
+ nptl/tst-once5.cc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/nptl/tst-once5.cc b/nptl/tst-once5.cc
+index 978d8271bdaf..513ac53f6f8d 100644
+--- a/nptl/tst-once5.cc
++++ b/nptl/tst-once5.cc
+@@ -75,5 +75,7 @@ do_test (void)
+   return result;
+ }
+ 
++// The test currently hangs and is XFAILed.  Reduce the timeout.
++#define TIMEOUT 1
+ #define TEST_FUNCTION do_test ()
+ #include "../test-skeleton.c"
+-- 
+2.10.2
+

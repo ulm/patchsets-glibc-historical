@@ -1,0 +1,66 @@
+From 742bcfaa70ea522406dd046adafefa933d29ca50 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Wed, 27 Apr 2016 17:15:57 +0200
+Subject: [PATCH] nss_dns: Skip over non-PTR records in the netent code [BZ
+ #19868]
+
+This requires additional checks for the RDATA length and the
+availability of record metadata.
+
+(cherry picked from commit a12f9431b3808e78b9ed397e4fce7de69410d94d)
+(cherry picked from commit 1e5ac8a1daa360cd9632e5056e4bdf29e18ac2c7)
+---
+ resolv/nss_dns/dns-network.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/resolv/nss_dns/dns-network.c b/resolv/nss_dns/dns-network.c
+index 8f301a706b30..ad6acffb8c90 100644
+--- a/resolv/nss_dns/dns-network.c
++++ b/resolv/nss_dns/dns-network.c
+@@ -345,10 +345,23 @@ getanswer_r (const querybuf *answer, int anslen, struct netent *result,
+       if (n < 0 || res_dnok (bp) == 0)
+ 	break;
+       cp += n;
++
++      if (end_of_message - cp < 10)
++	{
++	  __set_h_errno (NO_RECOVERY);
++	  return NSS_STATUS_UNAVAIL;
++	}
++
+       GETSHORT (type, cp);
+       GETSHORT (class, cp);
+       cp += INT32SZ;		/* TTL */
+-      GETSHORT (n, cp);
++      uint16_t rdatalen;
++      GETSHORT (rdatalen, cp);
++      if (end_of_message - cp < rdatalen)
++	{
++	  __set_h_errno (NO_RECOVERY);
++	  return NSS_STATUS_UNAVAIL;
++	}
+ 
+       if (class == C_IN && type == T_PTR)
+ 	{
+@@ -370,7 +383,7 @@ getanswer_r (const querybuf *answer, int anslen, struct netent *result,
+ 	      cp += n;
+ 	      return NSS_STATUS_UNAVAIL;
+ 	    }
+-	  cp += n;
++	  cp += rdatalen;
+          if (alias_pointer + 2 < &net_data->aliases[MAX_NR_ALIASES])
+            {
+              *alias_pointer++ = bp;
+@@ -381,6 +394,9 @@ getanswer_r (const querybuf *answer, int anslen, struct netent *result,
+              ++have_answer;
+            }
+ 	}
++      else
++	/* Skip over unknown record data.  */
++	cp += rdatalen;
+     }
+ 
+   if (have_answer)
+-- 
+2.10.2
+

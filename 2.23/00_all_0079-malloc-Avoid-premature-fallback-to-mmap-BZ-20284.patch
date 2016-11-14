@@ -1,0 +1,42 @@
+From 3f97c0cafa1d661fe2ffa946c215f613beb32cd6 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Tue, 21 Jun 2016 21:29:21 +0200
+Subject: [PATCH] malloc: Avoid premature fallback to mmap [BZ #20284]
+
+Before this change, the while loop in reused_arena which avoids
+returning a corrupt arena would never execute its body if the selected
+arena were not corrupt.  As a result, result == begin after the loop,
+and the function returns NULL, triggering fallback to mmap.
+
+(cherry picked from commit a3b473373ee43a292f5ec68a7fda6b9cfb26a9b0)
+(cherry picked from commit a69d26143b80cb1927481509279577c57bc22ba4)
+---
+ malloc/arena.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/malloc/arena.c b/malloc/arena.c
+index 0e5cc0f54d8e..232b6a29600d 100644
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -795,14 +795,12 @@ reused_arena (mstate avoid_arena)
+     {
+       result = result->next;
+       if (result == begin)
+-	break;
++	/* We looped around the arena list.  We could not find any
++	   arena that was either not corrupted or not the one we
++	   wanted to avoid.  */
++	return NULL;
+     }
+ 
+-  /* We could not find any arena that was either not corrupted or not the one
+-     we wanted to avoid.  */
+-  if (result == begin || result == avoid_arena)
+-    return NULL;
+-
+   /* No arena available without contention.  Wait for the next in line.  */
+   LIBC_PROBE (memory_arena_reuse_wait, 3, &result->mutex, result, avoid_arena);
+   (void) mutex_lock (&result->mutex);
+-- 
+2.10.2
+

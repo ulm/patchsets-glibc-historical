@@ -1,0 +1,38 @@
+From 57d20e7914f44c12a08a2125affbbb8340256a31 Mon Sep 17 00:00:00 2001
+From: Samuel Thibault <samuel.thibault@ens-lyon.org>
+Date: Tue, 22 Mar 2016 09:58:48 +0100
+Subject: [PATCH] Fix malloc threaded tests link on non-Linux
+
+	* malloc/Makefile ($(objpfx)tst-malloc-backtrace,
+	$(objpfx)tst-malloc-thread-exit, $(objpfx)tst-malloc-thread-fail): Use
+	$(shared-thread-library) instead of hardcoding the path to libpthread.
+
+(cherry picked from commit b87e41378beca3c98ec3464d64835e66cc788497)
+(cherry picked from commit a5c2f42566460fc73755c768e8e1c59dbd5a4bb2)
+---
+ malloc/Makefile | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/malloc/Makefile b/malloc/Makefile
+index 360288bef847..59d4264ae0c5 100644
+--- a/malloc/Makefile
++++ b/malloc/Makefile
+@@ -46,12 +46,9 @@ extra-libs-others = $(extra-libs)
+ libmemusage-routines = memusage
+ libmemusage-inhibit-o = $(filter-out .os,$(object-suffixes))
+ 
+-$(objpfx)tst-malloc-backtrace: $(common-objpfx)nptl/libpthread.so \
+-			       $(common-objpfx)nptl/libpthread_nonshared.a
+-$(objpfx)tst-malloc-thread-exit: $(common-objpfx)nptl/libpthread.so \
+-			       $(common-objpfx)nptl/libpthread_nonshared.a
+-$(objpfx)tst-malloc-thread-fail: $(common-objpfx)nptl/libpthread.so \
+-			       $(common-objpfx)nptl/libpthread_nonshared.a
++$(objpfx)tst-malloc-backtrace: $(shared-thread-library)
++$(objpfx)tst-malloc-thread-exit: $(shared-thread-library)
++$(objpfx)tst-malloc-thread-fail: $(shared-thread-library)
+ 
+ # These should be removed by `make clean'.
+ extra-objs = mcheck-init.o libmcheck.a
+-- 
+2.10.2
+

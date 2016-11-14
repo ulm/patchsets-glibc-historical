@@ -1,0 +1,271 @@
+From 52affab7cc2787033713b73bbc2a9c412469012f Mon Sep 17 00:00:00 2001
+From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
+Date: Wed, 27 Apr 2016 11:51:01 -0300
+Subject: [PATCH] libio: Fix fmemopen append mode failure (BZ# 20012)
+
+The fmemopen implementation does not account the file position correctly in
+append mode. The following example shows the failure:
+
+===
+int main ()
+{
+  char buf[10] = "test";
+  FILE *fp = fmemopen (buf, 10, "a+");
+  fseek (fp, 0, SEEK_SET);
+
+  int gr;
+  if ((gr = getc (fp)) != 't' ||
+      (gr = getc (fp)) != 'e' ||
+      (gr = getc (fp)) != 's' ||
+      (gr = getc (fp)) != 't' ||
+      (gr = getc (fp)) != EOF)
+    {
+      printf ("%s: getc failed returned %i\n", __FUNCTION__, gr);
+      return 1;
+    }
+
+  return 0;
+}
+===
+
+This is due both how read and write operation update the buffer position,
+taking in consideration buffer lenght instead of maximum position defined
+by the open mode.  This patch fixes it and also fixes fseek not returning
+EINVAL for invalid whence modes.
+
+Tested on x86_64 and i686.
+
+This is a backport of b65b205fbcabbb02463e31df17f5cabf7556f892.
+
+	[BZ #20012]
+	* libio/fmemopen.c (fmemopen_read): Use buffer maximum position, not
+	length to calculate the buffer to read.
+	(fmemopen_write): Set the buffer position based on bytes written.
+	(fmemopen_seek): Return EINVAL for invalid whence modes.
+
+(cherry picked from commit 321e1cef26ccbece949b16622ef74c203bd8ecc6)
+---
+ libio/fmemopen.c             |  28 +++++-----
+ stdio-common/tst-fmemopen3.c | 118 ++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 132 insertions(+), 14 deletions(-)
+
+diff --git a/libio/fmemopen.c b/libio/fmemopen.c
+index 9264b724ee60..0f655909e8f3 100644
+--- a/libio/fmemopen.c
++++ b/libio/fmemopen.c
+@@ -50,16 +50,14 @@ fmemopen_read (void *cookie, char *b, size_t s)
+ 
+   if (c->pos + s > c->maxpos)
+     {
+-      if ((size_t) c->pos == c->maxpos)
+-	return 0;
+-      s = c->size - c->pos;
++      s = c->maxpos - c->pos;
++      if ((size_t) c->pos > c->maxpos)
++	s = 0;
+     }
+ 
+   memcpy (b, &(c->buffer[c->pos]), s);
+ 
+   c->pos += s;
+-  if ((size_t) c->pos > c->maxpos)
+-    c->maxpos = c->pos;
+ 
+   return s;
+ }
+@@ -70,28 +68,29 @@ fmemopen_write (void *cookie, const char *b, size_t s)
+ {
+   fmemopen_cookie_t *c = (fmemopen_cookie_t *) cookie;;
+   _IO_off64_t pos = c->append ? c->maxpos : c->pos;
+-  int addnullc;
+-
+-  addnullc = (s == 0 || b[s - 1] != '\0');
++  int addnullc = (s == 0 || b[s - 1] != '\0');
+ 
+-  if (pos + s + addnullc > c->size)
++  if (pos + s > c->size)
+     {
+       if ((size_t) (c->pos + addnullc) >= c->size)
+ 	{
+ 	  __set_errno (ENOSPC);
+ 	  return 0;
+ 	}
+-      s = c->size - pos - addnullc;
++      s = c->size - pos;
+     }
+ 
+   memcpy (&(c->buffer[pos]), b, s);
+ 
+-  c->pos += s;
++  c->pos = pos + s;
+   if ((size_t) c->pos > c->maxpos)
+     {
+       c->maxpos = c->pos;
+-      if (addnullc)
++      if (c->maxpos < c->size && addnullc)
+ 	c->buffer[c->maxpos] = '\0';
++      /* A null byte is written in a stream open for update iff it fits.  */
++      else if (c->append == 0 && addnullc != 0)
++	c->buffer[c->size-1] = '\0';
+     }
+ 
+   return s;
+@@ -123,7 +122,10 @@ fmemopen_seek (void *cookie, _IO_off64_t *p, int w)
+     }
+ 
+   if (np < 0 || (size_t) np > c->size)
+-    return -1;
++    {
++      __set_errno (EINVAL);
++      return -1;
++    }
+ 
+   *p = c->pos = np;
+ 
+diff --git a/stdio-common/tst-fmemopen3.c b/stdio-common/tst-fmemopen3.c
+index 250f9ecc75fb..054b0697b3fe 100644
+--- a/stdio-common/tst-fmemopen3.c
++++ b/stdio-common/tst-fmemopen3.c
+@@ -25,8 +25,13 @@ static void
+ print_buffer (const char *s, size_t n)
+ {
+   size_t i;
++  printf ("{");
+   for (i=0; i<n; ++i)
+-    printf ("0x%02X (%c), ", s[i], s[i]);
++    {
++      printf ("0x%02X (%c)", s[i], s[i]);
++      if (i != n)
++	printf (", ");
++    }
+ }
+ 
+ /* This test check append mode initial position (a/a+) based on POSIX defition
+@@ -186,6 +191,112 @@ do_test_read_seek_negative (void)
+ }
+ 
+ static int
++do_test_write_append_2 (const char *str)
++{
++  char buf[10];
++  size_t strn = strlen (str);
++  strcpy (buf, str);
++
++  FILE *fp = fmemopen (buf, sizeof (buf), "a+");
++  size_t r = ftell (fp);
++  size_t e = strlen (buf);
++  if (r != e)
++    {
++      printf ("%s: ftell returned %zu, expected %zu\n", __FUNCTION__, r, e);
++      return 1;
++    }
++
++  if (fseek (fp, 0, SEEK_SET) == -1)
++    {
++      printf ("%s: fseek returned -1\n", __FUNCTION__);
++      return 1;
++    }
++
++  int gr;
++  for (int i=0; i<strn; ++i)
++    {
++      if ((gr = getc (fp)) != str[i])
++	{
++	  printf ("%s: getc failed returned %d, expected %d\n", __FUNCTION__,
++		  gr, str[i]);
++	  return 1;
++        }
++    }
++  if ((gr = getc (fp)) != EOF)
++    {
++      printf ("%s: getc failed returned %d, expected EOF\n", __FUNCTION__,
++	      gr);
++      return 1;
++    }
++
++  if (fseek (fp, e+1, SEEK_SET) == -1)
++    {
++      printf ("%s: fseek returned -1\n", __FUNCTION__);
++      return 1;
++    }
++
++  if ((r = ftell (fp)) != e+1)
++    {
++      printf ("%s: ftell returned %zu, expected %zu\n", __FUNCTION__, r, e+1);
++      return 1;
++    }
++
++  if ((gr = getc (fp)) != EOF)
++    {
++      printf ("%s: getc failed returned %i\n", __FUNCTION__, gr);
++      return 1;
++    }
++
++  /* Check if internal position is not changed with a getc returning EOF.  */
++  if ((r = ftell (fp)) != e+1)
++    {
++      printf ("%s: ftell returned %zu, expected %zu\n", __FUNCTION__, r, e+1);
++      return 1;
++    }
++
++  if (fseek (fp, 0, SEEK_CUR) == -1)
++    {
++      printf ("%s: fseek returned -1\n", __FUNCTION__);
++      return 1;
++    }
++
++  /* This should be overwritten by fprintf + fflush.  */
++  buf[e+2] = 'X';
++
++  if ((r = fprintf (fp, "%d", 101)) != 3)
++    {
++      printf ("%s: fprintf returned %zu, expected %d\n", __FUNCTION__, r, 3);
++      return 1;
++    }
++
++  fflush (fp);
++
++  /* Check if internal position is changed by 3 (strlen of '101').  */
++  if ((r = ftell (fp)) != e+3)
++    {
++      printf ("%s: ftell returned %zu, expected %zu\n", __FUNCTION__, r, e+3);
++      return 1;
++    }
++
++  char exp[20];
++  sprintf (exp, "%s%d", str,  101);
++  if (memcmp (buf, exp, strlen (exp)) != 0)
++    {
++      printf ("%s: check failed:", __FUNCTION__);
++      printf ("\nexpected: ");
++      print_buffer (buf, sizeof (buf));
++      printf ("\nbuffer:   ");
++      print_buffer (exp, sizeof (exp));
++      printf ("\n");
++      return 1;
++    }
++
++  fclose(fp);
++
++  return 0;
++}
++
++static int
+ do_test (void)
+ {
+   int ret = 0;
+@@ -199,6 +310,11 @@ do_test (void)
+ 
+   ret += do_test_read_seek_negative ();
+ 
++  /* First test plus addend will fit in the define buffer of size 10.  */
++  ret += do_test_write_append_2 ("test");
++  /* The second test will also fit, but not the final '\0'.  */
++  ret += do_test_write_append_2 ("testing");
++
+   return ret;
+ }
+ 
+-- 
+2.10.2
+

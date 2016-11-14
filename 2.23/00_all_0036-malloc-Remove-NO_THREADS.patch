@@ -1,0 +1,85 @@
+From fae1b8da66aae5ef731328d04c9aa1715c4bc9a4 Mon Sep 17 00:00:00 2001
+From: Florian Weimer <fweimer@redhat.com>
+Date: Fri, 19 Feb 2016 17:07:45 +0100
+Subject: [PATCH] malloc: Remove NO_THREADS
+
+No functional change.  It was not possible to build without
+threading support before.
+
+(cherry picked from commit 59eda029a8a35e5f4e5cd7be0f84c6629e48ec6e)
+(cherry picked from commit f69ae17e843b00d3495b736f4381c1fa64dc02bc)
+---
+ malloc/arena.c                   |  3 ---
+ malloc/malloc.c                  |  2 --
+ sysdeps/generic/malloc-machine.h | 19 -------------------
+ 3 files changed, 24 deletions(-)
+
+diff --git a/malloc/arena.c b/malloc/arena.c
+index 1edb4d4d3504..ca0e5058c5ae 100644
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -130,8 +130,6 @@ int __malloc_initialized = -1;
+ 
+ /**************************************************************************/
+ 
+-#ifndef NO_THREADS
+-
+ /* atfork support.  */
+ 
+ static void *(*save_malloc_hook)(size_t __size, const void *);
+@@ -330,7 +328,6 @@ ptmalloc_unlock_all2 (void)
+ 
+ #  define ptmalloc_unlock_all2 ptmalloc_unlock_all
+ # endif
+-#endif  /* !NO_THREADS */
+ 
+ /* Initialization routine. */
+ #include <string.h>
+diff --git a/malloc/malloc.c b/malloc/malloc.c
+index d20d5955db4d..1b9d162b2b30 100644
+--- a/malloc/malloc.c
++++ b/malloc/malloc.c
+@@ -1074,10 +1074,8 @@ static void*   realloc_check(void* oldmem, size_t bytes,
+ 			       const void *caller);
+ static void*   memalign_check(size_t alignment, size_t bytes,
+ 				const void *caller);
+-#ifndef NO_THREADS
+ static void*   malloc_atfork(size_t sz, const void *caller);
+ static void      free_atfork(void* mem, const void *caller);
+-#endif
+ 
+ /* ------------------ MMAP support ------------------  */
+ 
+diff --git a/sysdeps/generic/malloc-machine.h b/sysdeps/generic/malloc-machine.h
+index 1ed2d50a20b7..71b95c23e9c8 100644
+--- a/sysdeps/generic/malloc-machine.h
++++ b/sysdeps/generic/malloc-machine.h
+@@ -22,25 +22,6 @@
+ 
+ #include <atomic.h>
+ 
+-#ifndef mutex_init /* No threads, provide dummy macros */
+-
+-# define NO_THREADS
+-
+-/* The mutex functions used to do absolutely nothing, i.e. lock,
+-   trylock and unlock would always just return 0.  However, even
+-   without any concurrently active threads, a mutex can be used
+-   legitimately as an `in use' flag.  To make the code that is
+-   protected by a mutex async-signal safe, these macros would have to
+-   be based on atomic test-and-set operations, for example. */
+-typedef int mutex_t;
+-
+-# define mutex_init(m)          (*(m) = 0)
+-# define mutex_lock(m)          ({ *(m) = 1; 0; })
+-# define mutex_trylock(m)       (*(m) ? 1 : ((*(m) = 1), 0))
+-# define mutex_unlock(m)        (*(m) = 0)
+-
+-#endif /* !defined mutex_init */
+-
+ #ifndef atomic_full_barrier
+ # define atomic_full_barrier() __asm ("" ::: "memory")
+ #endif
+-- 
+2.10.2
+
