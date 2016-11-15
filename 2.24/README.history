@@ -1,3 +1,6 @@
+2		15 Nov 2016
+	+ 00_all_0029-configure-accept-__stack_chk_fail_local-for-ssp-supp.patch
+
 1		11 Nov 2016
 	+ 00_all_0001-x86-Use-sysdep.o-from-libc.a-in-static-libraries.patch
 	+ 00_all_0002-malloc-Preserve-arena-free-list-thread-count-invaria.patch
