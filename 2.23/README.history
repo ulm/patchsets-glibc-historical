@@ -1,3 +1,10 @@
+7		08 Dec 2016
+	+ 00_all_0090-MIPS-Add-.insn-to-ensure-a-text-label-is-defined-as-.patch
+	+ 00_all_0091-alpha-fix-ceil-on-sNaN-input.patch
+	+ 00_all_0092-alpha-fix-floor-on-sNaN-input.patch
+	+ 00_all_0093-alpha-fix-rint-on-sNaN-input.patch
+	+ 00_all_0094-alpha-fix-trunc-for-big-input-values.patch
+
 6		15 Nov 2016
 	+ 00_all_0089-configure-accept-__stack_chk_fail_local-for-ssp-supp.patch
 

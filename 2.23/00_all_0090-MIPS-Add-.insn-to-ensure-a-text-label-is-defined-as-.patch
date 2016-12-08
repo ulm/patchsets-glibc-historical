@@ -1,0 +1,111 @@
+From 6f37754bf262c0301572314e42f75b84d8e04a2b Mon Sep 17 00:00:00 2001
+From: "Maciej W. Rozycki" <macro@imgtec.com>
+Date: Thu, 17 Nov 2016 19:15:51 +0000
+Subject: [PATCH] MIPS: Add `.insn' to ensure a text label is defined as code
+ not data
+
+Avoid a build error with microMIPS compilation and recent versions of
+GAS which complain if a branch targets a label which is marked as data
+rather than microMIPS code:
+
+../sysdeps/mips/mips32/crti.S: Assembler messages:
+../sysdeps/mips/mips32/crti.S:72: Error: branch to a symbol in another ISA mode
+make[2]: *** [.../csu/crti.o] Error 1
+
+as commit 9d862524f6ae ("MIPS: Verify the ISA mode and alignment of
+branch and jump targets") closed a hole in branch processing, making
+relocation calculation respect the ISA mode of the symbol referred.
+This allowed diagnosing the situation where an attempt is made to pass
+control from code assembled for one ISA mode to code assembled for a
+different ISA mode and either relaxing the branch to a cross-mode jump
+or if that is not possible, then reporting this as an error rather than
+letting such code build and then fail unpredictably at the run time.
+
+This however requires the correct annotation of branch targets as code,
+because the ISA mode is not relevant for data symbols and is therefore
+not recorded for them.  The `.insn' pseudo-op is used for this purpose
+and has been supported by GAS since:
+
+Wed Feb 12 14:36:29 1997  Ian Lance Taylor  <ian@cygnus.com>
+
+	* config/tc-mips.c (mips_pseudo_table): Add "insn".
+	(s_insn): New static function.
+	* doc/c-mips.texi: Document .insn.
+
+so there has been no reason to avoid it where required.  More recently
+this pseudo-op has been documented, by the microMIPS architecture
+specification[1][2], as required for the correct interpretation of any
+code label which is not followed by an actual instruction in an assembly
+source.
+
+Use it in our crti.S files then, to mark that the trailing label there
+with no instructions following is indeed not a code bug and the branch
+is legitimate.
+
+References:
+
+[1] "MIPS Architecture for Programmers, Volume II-B: The microMIPS32
+    Instruction Set", MIPS Technologies, Inc., Document Number: MD00582,
+    Revision 5.04, January 15, 2014, Section 7.1 "Assembly-Level
+    Compatibility", p. 533
+
+[2] "MIPS Architecture for Programmers, Volume II-B: The microMIPS64
+    Instruction Set", MIPS Technologies, Inc., Document Number: MD00594,
+    Revision 5.04, January 15, 2014, Section 8.1 "Assembly-Level
+    Compatibility", p. 623
+
+2016-11-23  Matthew Fortune  <Matthew.Fortune@imgtec.com>
+            Maciej W. Rozycki  <macro@imgtec.com>
+
+	* sysdeps/mips/mips32/crti.S (_init): Add `.insn' pseudo-op at
+	`.Lno_weak_fn' label.
+	* sysdeps/mips/mips64/n32/crti.S (_init): Likewise.
+	* sysdeps/mips/mips64/n64/crti.S (_init): Likewise.
+
+(cherry picked from commit cfaf1949ff1f8336b54c43796d0e2531bc8a40a2)
+(cherry picked from commit 8ee1ecb99cd8928b767b9b50f31b5618d046f0f2)
+---
+ sysdeps/mips/mips32/crti.S     | 1 +
+ sysdeps/mips/mips64/n32/crti.S | 1 +
+ sysdeps/mips/mips64/n64/crti.S | 1 +
+ 3 files changed, 3 insertions(+)
+
+diff --git a/sysdeps/mips/mips32/crti.S b/sysdeps/mips/mips32/crti.S
+index 5c0ad7328a81..dfbbdc4f8f78 100644
+--- a/sysdeps/mips/mips32/crti.S
++++ b/sysdeps/mips/mips32/crti.S
+@@ -74,6 +74,7 @@ _init:
+ 	.reloc 1f,R_MIPS_JALR,PREINIT_FUNCTION
+ 1:	jalr $25
+ .Lno_weak_fn:
++	.insn
+ #else
+ 	lw $25,%got(PREINIT_FUNCTION)($28)
+ 	.reloc 1f,R_MIPS_JALR,PREINIT_FUNCTION
+diff --git a/sysdeps/mips/mips64/n32/crti.S b/sysdeps/mips/mips64/n32/crti.S
+index 00b89f3894ca..afe6d8edaae8 100644
+--- a/sysdeps/mips/mips64/n32/crti.S
++++ b/sysdeps/mips/mips64/n32/crti.S
+@@ -74,6 +74,7 @@ _init:
+ 	.reloc 1f,R_MIPS_JALR,PREINIT_FUNCTION
+ 1:	jalr $25
+ .Lno_weak_fn:
++	.insn
+ #else
+ 	lw $25,%got_disp(PREINIT_FUNCTION)($28)
+ 	.reloc 1f,R_MIPS_JALR,PREINIT_FUNCTION
+diff --git a/sysdeps/mips/mips64/n64/crti.S b/sysdeps/mips/mips64/n64/crti.S
+index f59b20c63151..4049d29290ce 100644
+--- a/sysdeps/mips/mips64/n64/crti.S
++++ b/sysdeps/mips/mips64/n64/crti.S
+@@ -74,6 +74,7 @@ _init:
+ 	.reloc 1f,R_MIPS_JALR,PREINIT_FUNCTION
+ 1:	jalr $25
+ .Lno_weak_fn:
++	.insn
+ #else
+ 	ld $25,%got_disp(PREINIT_FUNCTION)($28)
+ 	.reloc 1f,R_MIPS_JALR,PREINIT_FUNCTION
+-- 
+2.11.0.rc2
+
