@@ -1,0 +1,101 @@
+From df13b9c22a0fb690a0ab9dd4af163ae3c459d975 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Tue, 6 Sep 2016 08:50:55 -0700
+Subject: [PATCH] X86-64: Add _dl_runtime_resolve_avx[512]_{opt|slow} [BZ
+ #20508]
+
+There is transition penalty when SSE instructions are mixed with 256-bit
+AVX or 512-bit AVX512 load instructions.  Since _dl_runtime_resolve_avx
+and _dl_runtime_profile_avx512 save/restore 256-bit YMM/512-bit ZMM
+registers, there is transition penalty when SSE instructions are used
+with lazy binding on AVX and AVX512 processors.
+
+To avoid SSE transition penalty, if only the lower 128 bits of the first
+8 vector registers are non-zero, we can preserve %xmm0 - %xmm7 registers
+with the zero upper bits.
+
+For AVX and AVX512 processors which support XGETBV with ECX == 1, we can
+use XGETBV with ECX == 1 to check if the upper 128 bits of YMM registers
+or the upper 256 bits of ZMM registers are zero.  We can restore only the
+non-zero portion of vector registers with AVX/AVX512 load instructions
+which will zero-extend upper bits of vector registers.
+
+This patch adds _dl_runtime_resolve_sse_vex which saves and restores
+XMM registers with 128-bit AVX store/load instructions.  It is used to
+preserve YMM/ZMM registers when only the lower 128 bits are non-zero.
+_dl_runtime_resolve_avx_opt and _dl_runtime_resolve_avx512_opt are added
+and used on AVX/AVX512 processors supporting XGETBV with ECX == 1 so
+that we store and load only the non-zero portion of vector registers.
+This avoids SSE transition penalty caused by _dl_runtime_resolve_avx and
+_dl_runtime_profile_avx512 when only the lower 128 bits of vector
+registers are used.
+
+_dl_runtime_resolve_avx_slow is added and used for AVX processors which
+don't support XGETBV with ECX == 1.  Since there is no SSE transition
+penalty on AVX512 processors which don't support XGETBV with ECX == 1,
+_dl_runtime_resolve_avx512_slow isn't provided.
+
+	[BZ #20495]
+	[BZ #20508]
+	* sysdeps/x86/cpu-features.c (init_cpu_features): For Intel
+	processors, set Use_dl_runtime_resolve_slow and set
+	Use_dl_runtime_resolve_opt if XGETBV suports ECX == 1.
+	* sysdeps/x86/cpu-features.h (bit_arch_Use_dl_runtime_resolve_opt):
+	New.
+	(bit_arch_Use_dl_runtime_resolve_slow): Likewise.
+	(index_arch_Use_dl_runtime_resolve_opt): Likewise.
+	(index_arch_Use_dl_runtime_resolve_slow): Likewise.
+	* sysdeps/x86_64/dl-machine.h (elf_machine_runtime_setup): Use
+	_dl_runtime_resolve_avx512_opt and _dl_runtime_resolve_avx_opt
+	if Use_dl_runtime_resolve_opt is set.  Use
+	_dl_runtime_resolve_slow if Use_dl_runtime_resolve_slow is set.
+	* sysdeps/x86_64/dl-trampoline.S: Include <cpu-features.h>.
+	(_dl_runtime_resolve_opt): New.  Defined for AVX and AVX512.
+	(_dl_runtime_resolve): Add one for _dl_runtime_resolve_sse_vex.
+	* sysdeps/x86_64/dl-trampoline.h (_dl_runtime_resolve_avx_slow):
+	New.
+	(_dl_runtime_resolve_opt): Likewise.
+	(_dl_runtime_profile): Define only if _dl_runtime_profile is
+	defined.
+
+(cherry picked from commit fb0f7a6755c1bfaec38f490fbfcaa39a66ee3604)
+---
+ ChangeLog | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/ChangeLog b/ChangeLog
+index a51771c97668..406a1f2ee451 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,28 @@
++2016-11-30  H.J. Lu  <hongjiu.lu@intel.com>
++
++	[BZ #20495]
++	[BZ #20508]
++	* sysdeps/x86/cpu-features.c (init_cpu_features): For Intel
++	processors, set Use_dl_runtime_resolve_slow and set
++	Use_dl_runtime_resolve_opt if XGETBV suports ECX == 1.
++	* sysdeps/x86/cpu-features.h (bit_arch_Use_dl_runtime_resolve_opt):
++	New.
++	(bit_arch_Use_dl_runtime_resolve_slow): Likewise.
++	(index_arch_Use_dl_runtime_resolve_opt): Likewise.
++	(index_arch_Use_dl_runtime_resolve_slow): Likewise.
++	* sysdeps/x86_64/dl-machine.h (elf_machine_runtime_setup): Use
++	_dl_runtime_resolve_avx512_opt and _dl_runtime_resolve_avx_opt
++	if Use_dl_runtime_resolve_opt is set.  Use
++	_dl_runtime_resolve_slow if Use_dl_runtime_resolve_slow is set.
++	* sysdeps/x86_64/dl-trampoline.S: Include <cpu-features.h>.
++	(_dl_runtime_resolve_opt): New.  Defined for AVX and AVX512.
++	(_dl_runtime_resolve): Add one for _dl_runtime_resolve_sse_vex.
++	* sysdeps/x86_64/dl-trampoline.h (_dl_runtime_resolve_avx_slow):
++	New.
++	(_dl_runtime_resolve_opt): Likewise.
++	(_dl_runtime_profile): Define only if _dl_runtime_profile is
++	defined.
++
+ 2016-11-03  Joseph Myers  <joseph@codesourcery.com>
+ 
+ 	* conform/Makefile ($(linknamespace-header-tests)): Also depend on
+-- 
+2.11.0.rc2
+

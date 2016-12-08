@@ -1,0 +1,97 @@
+From 901db98f36690e4743feefd985c6ba2d7fd19813 Mon Sep 17 00:00:00 2001
+From: Adhemerval Zanella <adhemerval.zanella@linaro.org>
+Date: Mon, 21 Nov 2016 11:06:15 -0200
+Subject: [PATCH] Fix writes past the allocated array bounds in execvpe
+ (BZ#20847)
+
+This patch fixes an invalid write out or stack allocated buffer in
+2 places at execvpe implementation:
+
+  1. On 'maybe_script_execute' function where it allocates the new
+     argument list and it does not account that a minimum of argc
+     plus 3 elements (default shell path, script name, arguments,
+     and ending null pointer) should be considered.  The straightforward
+     fix is just to take account of the correct list size on argument
+     copy.
+
+  2. On '__execvpe' where the executable file name lenght may not
+     account for ending '\0' and thus subsequent path creation may
+     write past array bounds because it requires to add the terminating
+     null.  The fix is to change how to calculate the executable name
+     size to add the final '\0' and adjust the rest of the code
+     accordingly.
+
+As described in GCC bug report 78433 [1], these issues were masked off by
+GCC because it allocated several bytes more than necessary so that many
+off-by-one bugs went unnoticed.
+
+Checked on x86_64 with a latest GCC (7.0.0 20161121) with -O3 on CFLAGS.
+
+	[BZ #20847]
+	* posix/execvpe.c (maybe_script_execute): Remove write past allocated
+	array bounds.
+	(__execvpe): Likewise.
+
+[1] https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78433
+
+(cherry picked from commit d174436712e3cabce70d6cd771f177b6fe0e097b)
+---
+ posix/execvpe.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/posix/execvpe.c b/posix/execvpe.c
+index d933f9c92acf..7cdb06a6112e 100644
+--- a/posix/execvpe.c
++++ b/posix/execvpe.c
+@@ -48,12 +48,13 @@ maybe_script_execute (const char *file, char *const argv[], char *const envp[])
+ 	}
+     }
+ 
+-  /* Construct an argument list for the shell.  */
++  /* Construct an argument list for the shell.  It will contain at minimum 3
++     arguments (current shell, script, and an ending NULL.  */
+   char *new_argv[argc + 1];
+   new_argv[0] = (char *) _PATH_BSHELL;
+   new_argv[1] = (char *) file;
+   if (argc > 1)
+-    memcpy (new_argv + 2, argv + 1, argc * sizeof(char *));
++    memcpy (new_argv + 2, argv + 1, (argc - 1) * sizeof(char *));
+   else
+     new_argv[2] = NULL;
+ 
+@@ -91,10 +92,11 @@ __execvpe (const char *file, char *const argv[], char *const envp[])
+   /* Although GLIBC does not enforce NAME_MAX, we set it as the maximum
+      size to avoid unbounded stack allocation.  Same applies for
+      PATH_MAX.  */
+-  size_t file_len = __strnlen (file, NAME_MAX + 1);
++  size_t file_len = __strnlen (file, NAME_MAX) + 1;
+   size_t path_len = __strnlen (path, PATH_MAX - 1) + 1;
+ 
+-  if ((file_len > NAME_MAX)
++  /* NAME_MAX does not include the terminating null character.  */
++  if (((file_len-1) > NAME_MAX)
+       || !__libc_alloca_cutoff (path_len + file_len + 1))
+     {
+       errno = ENAMETOOLONG;
+@@ -103,6 +105,9 @@ __execvpe (const char *file, char *const argv[], char *const envp[])
+ 
+   const char *subp;
+   bool got_eacces = false;
++  /* The resulting string maximum size would be potentially a entry
++     in PATH plus '/' (path_len + 1) and then the the resulting file name
++     plus '\0' (file_len since it already accounts for the '\0').  */
+   char buffer[path_len + file_len + 1];
+   for (const char *p = path; ; p = subp)
+     {
+@@ -123,7 +128,7 @@ __execvpe (const char *file, char *const argv[], char *const envp[])
+          execute.  */
+       char *pend = mempcpy (buffer, p, subp - p);
+       *pend = '/';
+-      memcpy (pend + (p < subp), file, file_len + 1);
++      memcpy (pend + (p < subp), file, file_len);
+ 
+       __execve (buffer, argv, envp);
+ 
+-- 
+2.11.0.rc2
+

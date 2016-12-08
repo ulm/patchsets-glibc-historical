@@ -1,0 +1,52 @@
+From 04c5f782796052de9d06975061eb3376ccbcbdb1 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 2 Aug 2016 09:18:59 +0200
+Subject: [PATCH] alpha: fix rint on sNaN input
+
+The alpha version of rint wrongly return sNaN for sNaN input. Fix that
+by checking for NaN and by returning the input value added with itself
+in that case.
+
+Changelog:
+	* sysdeps/alpha/fpu/s_rint.c (__rint): Add argument with itself
+	when it is a NaN.
+	* sysdeps/alpha/fpu/s_rintf.c (__rintf): Likewise.
+
+(cherry picked from commit cb7f9d63b921ea1a1cbb4ab377a8484fd5da9a2b)
+(cherry picked from commit 8eb9a92e0522f2d4f2d4167df919d066c85d3408)
+---
+ sysdeps/alpha/fpu/s_rint.c  | 3 +++
+ sysdeps/alpha/fpu/s_rintf.c | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/sysdeps/alpha/fpu/s_rint.c b/sysdeps/alpha/fpu/s_rint.c
+index f33fe72c116b..259348afc08d 100644
+--- a/sysdeps/alpha/fpu/s_rint.c
++++ b/sysdeps/alpha/fpu/s_rint.c
+@@ -23,6 +23,9 @@
+ double
+ __rint (double x)
+ {
++  if (isnan (x))
++    return x + x;
++
+   if (isless (fabs (x), 9007199254740992.0))	/* 1 << DBL_MANT_DIG */
+     {
+       double tmp1, new_x;
+diff --git a/sysdeps/alpha/fpu/s_rintf.c b/sysdeps/alpha/fpu/s_rintf.c
+index 1400dfe8d76b..645728ad5b02 100644
+--- a/sysdeps/alpha/fpu/s_rintf.c
++++ b/sysdeps/alpha/fpu/s_rintf.c
+@@ -22,6 +22,9 @@
+ float
+ __rintf (float x)
+ {
++  if (isnanf (x))
++    return x + x;
++
+   if (isless (fabsf (x), 16777216.0f))	/* 1 << FLT_MANT_DIG */
+     {
+       /* Note that Alpha S_Floating is stored in registers in a
+-- 
+2.11.0.rc2
+

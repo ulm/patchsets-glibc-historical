@@ -1,3 +1,14 @@
+3		08 Dec 2016
+	+ 00_all_0030-Fix-writes-past-the-allocated-array-bounds-in-execvp.patch
+	+ 00_all_0031-MIPS-Add-.insn-to-ensure-a-text-label-is-defined-as-.patch
+	+ 00_all_0032-x86_64-fix-static-build-of-__memcpy_chk-for-compiler.patch
+	+ 00_all_0033-X86-64-Add-_dl_runtime_resolve_avx-512-_-opt-slow-BZ.patch
+	+ 00_all_0034-X86-64-Add-_dl_runtime_resolve_avx-512-_-opt-slow-BZ.patch
+	+ 00_all_0035-alpha-fix-ceil-on-sNaN-input.patch
+	+ 00_all_0036-alpha-fix-floor-on-sNaN-input.patch
+	+ 00_all_0037-alpha-fix-rint-on-sNaN-input.patch
+	+ 00_all_0038-alpha-fix-trunc-for-big-input-values.patch
+
 2		15 Nov 2016
 	+ 00_all_0029-configure-accept-__stack_chk_fail_local-for-ssp-supp.patch
 

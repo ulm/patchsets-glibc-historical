@@ -1,0 +1,79 @@
+From 2afb8a945ddc104c5ef9aa61f32427c19b681232 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 2 Aug 2016 09:18:59 +0200
+Subject: [PATCH] alpha: fix ceil on sNaN input
+
+The alpha version of ceil wrongly return sNaN for sNaN input. Fix that
+by checking for NaN and by returning the input value added with itself
+in that case.
+
+Finally remove the code to handle inexact exception, ceil should never
+generate such an exception.
+
+Changelog:
+	* sysdeps/alpha/fpu/s_ceil.c (__ceil): Add argument with itself
+	when it is a NaN.
+	[_IEEE_FP_INEXACT] Remove.
+	* sysdeps/alpha/fpu/s_ceilf.c (__ceilf): Likewise.
+
+(cherry picked from commit 062e53c195b4a87754632c7d51254867247698b4)
+(cherry picked from commit 3eff6f84311d2679a58a637e3be78b4ced275762)
+---
+ sysdeps/alpha/fpu/s_ceil.c  | 7 +++----
+ sysdeps/alpha/fpu/s_ceilf.c | 7 +++----
+ 2 files changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/sysdeps/alpha/fpu/s_ceil.c b/sysdeps/alpha/fpu/s_ceil.c
+index c1ff864d4b86..e9c350af1cc0 100644
+--- a/sysdeps/alpha/fpu/s_ceil.c
++++ b/sysdeps/alpha/fpu/s_ceil.c
+@@ -26,17 +26,16 @@
+ double
+ __ceil (double x)
+ {
++  if (isnan (x))
++    return x + x;
++
+   if (isless (fabs (x), 9007199254740992.0))	/* 1 << DBL_MANT_DIG */
+     {
+       double tmp1, new_x;
+ 
+       new_x = -x;
+       __asm (
+-#ifdef _IEEE_FP_INEXACT
+-	     "cvttq/svim %2,%1\n\t"
+-#else
+ 	     "cvttq/svm %2,%1\n\t"
+-#endif
+ 	     "cvtqt/m %1,%0\n\t"
+ 	     : "=f"(new_x), "=&f"(tmp1)
+ 	     : "f"(new_x));
+diff --git a/sysdeps/alpha/fpu/s_ceilf.c b/sysdeps/alpha/fpu/s_ceilf.c
+index 7e63a6fe94e7..77e01a99f743 100644
+--- a/sysdeps/alpha/fpu/s_ceilf.c
++++ b/sysdeps/alpha/fpu/s_ceilf.c
+@@ -25,6 +25,9 @@
+ float
+ __ceilf (float x)
+ {
++  if (isnanf (x))
++    return x + x;
++
+   if (isless (fabsf (x), 16777216.0f))	/* 1 << FLT_MANT_DIG */
+     {
+       /* Note that Alpha S_Floating is stored in registers in a
+@@ -36,11 +39,7 @@ __ceilf (float x)
+ 
+       new_x = -x;
+       __asm ("cvtst/s %3,%2\n\t"
+-#ifdef _IEEE_FP_INEXACT
+-	     "cvttq/svim %2,%1\n\t"
+-#else
+ 	     "cvttq/svm %2,%1\n\t"
+-#endif
+ 	     "cvtqt/m %1,%0\n\t"
+ 	     : "=f"(new_x), "=&f"(tmp1), "=&f"(tmp2)
+ 	     : "f"(new_x));
+-- 
+2.11.0.rc2
+

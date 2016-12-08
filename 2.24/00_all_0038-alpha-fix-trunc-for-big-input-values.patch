@@ -1,0 +1,82 @@
+From b73ec923c79ab493a9265930a45800391329571a Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 2 Aug 2016 09:18:59 +0200
+Subject: [PATCH] alpha: fix trunc for big input values
+
+The alpha specific version of trunc and truncf always add and subtract
+0x1.0p23 or 0x1.0p52 even for big values. This causes this kind of
+errors in the testsuite:
+
+  Failure: Test: trunc_towardzero (0x1p107)
+  Result:
+   is:          1.6225927682921334e+32   0x1.fffffffffffffp+106
+   should be:   1.6225927682921336e+32   0x1.0000000000000p+107
+   difference:  1.8014398509481984e+16   0x1.0000000000000p+54
+   ulp       :  0.5000
+   max.ulp   :  0.0000
+
+Change this by returning the input value when its absolute value is
+greater than 0x1.0p23 or 0x1.0p52. NaN have to go through the add and
+subtract operations to get possibly silenced.
+
+Finally remove the code to handle inexact exception, trunc should never
+generate such an exception.
+
+Changelog:
+	* sysdeps/alpha/fpu/s_trunc.c (__trunc): Return the input value
+	when its absolute value is greater than 0x1.0p52.
+	[_IEEE_FP_INEXACT] Remove.
+	* sysdeps/alpha/fpu/s_truncf.c (__truncf): Return the input value
+	when its absolute value is greater than 0x1.0p23.
+	[_IEEE_FP_INEXACT] Remove.
+
+(cherry picked from commit b74d259fe793499134eb743222cd8dd7c74a31ce)
+(cherry picked from commit e6eab16cc302e6c42f79e1af02ce98ebb9a783bc)
+---
+ sysdeps/alpha/fpu/s_trunc.c  | 7 +++----
+ sysdeps/alpha/fpu/s_truncf.c | 7 +++----
+ 2 files changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/sysdeps/alpha/fpu/s_trunc.c b/sysdeps/alpha/fpu/s_trunc.c
+index 16cb114a72f5..4b986a6926eb 100644
+--- a/sysdeps/alpha/fpu/s_trunc.c
++++ b/sysdeps/alpha/fpu/s_trunc.c
+@@ -28,12 +28,11 @@ __trunc (double x)
+   double two52 = copysign (0x1.0p52, x);
+   double r, tmp;
+ 
++  if (isgreaterequal (fabs (x), 0x1.0p52))
++    return x;
++
+   __asm (
+-#ifdef _IEEE_FP_INEXACT
+-	 "addt/suic %2, %3, %1\n\tsubt/suic %1, %3, %0"
+-#else
+ 	 "addt/suc %2, %3, %1\n\tsubt/suc %1, %3, %0"
+-#endif
+ 	 : "=&f"(r), "=&f"(tmp)
+ 	 : "f"(x), "f"(two52));
+ 
+diff --git a/sysdeps/alpha/fpu/s_truncf.c b/sysdeps/alpha/fpu/s_truncf.c
+index 2290f282954d..3e933561663b 100644
+--- a/sysdeps/alpha/fpu/s_truncf.c
++++ b/sysdeps/alpha/fpu/s_truncf.c
+@@ -27,12 +27,11 @@ __truncf (float x)
+   float two23 = copysignf (0x1.0p23, x);
+   float r, tmp;
+ 
++  if (isgreaterequal (fabsf (x), 0x1.0p23))
++    return x;
++
+   __asm (
+-#ifdef _IEEE_FP_INEXACT
+-	 "adds/suic %2, %3, %1\n\tsubs/suic %1, %3, %0"
+-#else
+ 	 "adds/suc %2, %3, %1\n\tsubs/suc %1, %3, %0"
+-#endif
+ 	 : "=&f"(r), "=&f"(tmp)
+ 	 : "f"(x), "f"(two23));
+ 
+-- 
+2.11.0.rc2
+
