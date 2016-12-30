@@ -1,7 +1,7 @@
-#!/sbin/runscript
+#!/sbin/openrc-run
 # Copyright 1999-2005 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/extra/etc/nscd,v 1.8 2012/12/16 22:28:41 vapier Exp $
+# $Header: /var/cvsroot/gentoo/src/patchsets/glibc/extra/etc/nscd,v 1.9 2016/12/30 16:08:36 vapier Exp $
 
 depend() {
 	use dns ldap net slapd
