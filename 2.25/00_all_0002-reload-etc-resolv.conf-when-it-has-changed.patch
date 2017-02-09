@@ -1,0 +1,67 @@
+From fedd527e768b6b90c087d19268f41e7709e527a4 Mon Sep 17 00:00:00 2001
+From: Thorsten Kukuk <kukuk@suse.de>
+Date: Wed, 15 Sep 2004 21:17:10 +0200
+Subject: [PATCH] reload /etc/resolv.conf when it has changed
+
+if /etc/resolv.conf is updated, then make sure applications
+already running get the updated information.
+
+https://bugs.gentoo.org/177416
+https://sourceware.org/bugzilla/show_bug.cgi?id=984
+https://sourceware.org/ml/libc-alpha/2004-09/msg00130.html
+https://sourceware.org/ml/libc-alpha/2016-12/msg00023.html
+https://build.opensuse.org/package/view_file/openSUSE:Factory/glibc/glibc-resolv-reload.diff?expand=1
+---
+ resolv/res_libc.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/resolv/res_libc.c b/resolv/res_libc.c
+index a4b376f15b0b..2d9b0265afa0 100644
+--- a/resolv/res_libc.c
++++ b/resolv/res_libc.c
+@@ -25,6 +25,7 @@
+ #include <arpa/nameser.h>
+ #include <resolv.h>
+ #include <libc-lock.h>
++#include <sys/stat.h>
+ 
+ extern unsigned long long int __res_initstamp attribute_hidden;
+ /* We have atomic increment operations on 64-bit platforms.  */
+@@ -87,12 +88,34 @@ res_init(void) {
+ 	return (__res_vinit(&_res, 1));
+ }
+ 
++static time_t resconf_mtime;
++__libc_lock_define_initialized (static, resconf_mtime_lock);
++
++/* Check if the modification time of resolv.conf has changed.
++   If so, have all threads re-initialize their resolver states */
++static void
++__res_check_resconf (void)
++{
++	struct stat statbuf;
++	if (stat (_PATH_RESCONF, &statbuf) == 0) {
++		__libc_lock_lock (resconf_mtime_lock);
++		if (statbuf.st_mtime != resconf_mtime) {
++			resconf_mtime = statbuf.st_mtime;
++			atomicinclock (lock);
++			atomicinc (__res_initstamp);
++			atomicincunlock (lock);
++		}
++		__libc_lock_unlock (resconf_mtime_lock);
++	}
++}
++
+ /* Initialize resp if RES_INIT is not yet set or if res_init in some other
+    thread requested re-initializing.  */
+ int
+ __res_maybe_init (res_state resp, int preinit)
+ {
+ 	if (resp->options & RES_INIT) {
++		__res_check_resconf ();
+ 		if (__res_initstamp != resp->_u._ext.initstamp) {
+ 			if (resp->nscount > 0)
+ 				__res_iclose (resp, true);
+-- 
+2.11.0
+
