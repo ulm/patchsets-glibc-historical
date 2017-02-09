@@ -1,0 +1,33 @@
+From a0c7c4ebeea470eb00dcd1c8200a902a00b5470b Mon Sep 17 00:00:00 2001
+From: Siddhesh Poyarekar <siddhesh@sourceware.org>
+Date: Thu, 2 Feb 2017 16:15:45 +0530
+Subject: [PATCH] Drop GLIBC_TUNABLES in setxid processes
+
+Drop the GLIBC_TUNABLES environment variable from the environment of
+setxid processes to avoid passing it on to non-setxid children.  This
+prevents potentially insecure tunables in the GLIBC_TUNABLES envvar
+from crossing over into a child that may use a libc that has tunables
+support.
+
+	* sysdeps/generic/unsecvars.h: Add GLIBC_TUNABLES.
+
+(cherry picked from commit 537a06fbdeb9a6c2184c745c15ef3346681f5eeb)
+---
+ sysdeps/generic/unsecvars.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sysdeps/generic/unsecvars.h b/sysdeps/generic/unsecvars.h
+index d5b8119c9cb5..3e56538b51c4 100644
+--- a/sysdeps/generic/unsecvars.h
++++ b/sysdeps/generic/unsecvars.h
+@@ -4,6 +4,7 @@
+ #define UNSECURE_ENVVARS \
+   "GCONV_PATH\0"							      \
+   "GETCONF_DIR\0"							      \
++  "GLIBC_TUNABLES\0"							      \
+   "HOSTALIASES\0"							      \
+   "LD_AUDIT\0"								      \
+   "LD_DEBUG\0"								      \
+-- 
+2.11.0
+

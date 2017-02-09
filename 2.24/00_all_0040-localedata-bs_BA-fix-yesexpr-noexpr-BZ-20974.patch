@@ -1,0 +1,36 @@
+From 5a855ded1c38d27e016aeff54cfd283d337237a9 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 15 Dec 2016 18:34:05 -0500
+Subject: [PATCH] localedata: bs_BA: fix yesexpr/noexpr [BZ #20974]
+
+Both regexes end with a "*." which means the previous match can be
+omitted, and then the . allows them to match any input at all.
+
+This means tools like coreutils' `rm -i` will always delete things
+when prompted because the yesexpr regex matches all inputs (even
+the negative ones).
+
+(cherry picked from commit a035eb6928bc63fb798dcc1421529f933122d74f)
+(cherry picked from commit 7e4405c50fc374d5e80141554c7887a52d1f9118)
+---
+ localedata/locales/bs_BA | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/localedata/locales/bs_BA b/localedata/locales/bs_BA
+index a47f87eb373d..68c2f9471a09 100644
+--- a/localedata/locales/bs_BA
++++ b/localedata/locales/bs_BA
+@@ -148,8 +148,8 @@ copy "en_DK"
+ END LC_CTYPE
+ 
+ LC_MESSAGES
+-yesexpr "<U005E><U005B><U002B><U0031><U0064><U0044><U0079><U0059><U005D><U002A><U002E>"
+-noexpr  "<U005E><U005B><U002D><U0030><U006E><U004E><U005D><U002A><U002E>"
++yesexpr "<U005E><U005B><U002B><U0031><U0064><U0044><U0079><U0059><U005D>"
++noexpr  "<U005E><U005B><U002D><U0030><U006E><U004E><U005D>"
+ yesstr  "<U0064><U0061>"
+ nostr   "<U006E><U0065>"
+ END LC_MESSAGES
+-- 
+2.11.0
+

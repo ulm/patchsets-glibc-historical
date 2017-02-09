@@ -1,0 +1,302 @@
+From 88849c6b0ff4cb1c7840a7071bc9f6fa3c984d3e Mon Sep 17 00:00:00 2001
+From: Carlos O'Donell <carlos@redhat.com>
+Date: Fri, 23 Dec 2016 13:30:22 -0500
+Subject: [PATCH] Bug 11941: ld.so: Improper assert map->l_init_called in
+ dlclose
+
+There is at least one use case where during exit a library destructor
+might call dlclose() on a valid handle and have it fail with an
+assertion. We must allow this case, it is a valid handle, and dlclose()
+should not fail with an assert. In the future we might be able to return
+an error that the dlclose() could not be completed because the opened
+library has already been unloaded and destructors have run as part of
+exit processing.
+
+For more details see:
+https://www.sourceware.org/ml/libc-alpha/2016-12/msg00859.html
+
+(cherry picked from commit 57707b7fcc38855869321f8c7827bfe21d729f37)
+(cherry picked from commit e9e69e468039fcd57276f783a16aa771a8e4214e)
+---
+ elf/Makefile                      | 15 ++++++-
+ elf/dl-close.c                    | 30 ++++++++++---
+ elf/tst-nodelete-dlclose-dso.c    | 90 +++++++++++++++++++++++++++++++++++++++
+ elf/tst-nodelete-dlclose-plugin.c | 40 +++++++++++++++++
+ elf/tst-nodelete-dlclose.c        | 36 ++++++++++++++++
+ 5 files changed, 203 insertions(+), 8 deletions(-)
+ create mode 100644 elf/tst-nodelete-dlclose-dso.c
+ create mode 100644 elf/tst-nodelete-dlclose-plugin.c
+ create mode 100644 elf/tst-nodelete-dlclose.c
+
+diff --git a/elf/Makefile b/elf/Makefile
+index 68c5d82a7094..d51e2c631b6b 100644
+--- a/elf/Makefile
++++ b/elf/Makefile
+@@ -149,7 +149,8 @@ tests += loadtest restest1 preloadtest loadfail multiload origtest resolvfail \
+ 	 tst-nodelete) \
+ 	 tst-initorder tst-initorder2 tst-relsort1 tst-null-argv \
+ 	 tst-ptrguard1 tst-tlsalign tst-tlsalign-extern tst-nodelete-opened \
+-	 tst-nodelete2 tst-audit11 tst-audit12 tst-dlsym-error
++	 tst-nodelete2 tst-audit11 tst-audit12 tst-dlsym-error \
++	 tst-nodelete-dlclose
+ #	 reldep9
+ ifeq ($(build-hardcoded-path-in-tests),yes)
+ tests += tst-dlopen-aout
+@@ -223,7 +224,8 @@ modules-names = testobj1 testobj2 testobj3 testobj4 testobj5 testobj6 \
+ 		tst-array5dep tst-null-argv-lib \
+ 		tst-tlsalign-lib tst-nodelete-opened-lib tst-nodelete2mod \
+ 		tst-audit11mod1 tst-audit11mod2 tst-auditmod11 \
+-		tst-audit12mod1 tst-audit12mod2 tst-audit12mod3 tst-auditmod12
++		tst-audit12mod1 tst-audit12mod2 tst-audit12mod3 tst-auditmod12 \
++		tst-nodelete-dlclose-dso tst-nodelete-dlclose-plugin
+ ifeq (yes,$(have-mtls-dialect-gnu2))
+ tests += tst-gnu2-tls1
+ modules-names += tst-gnu2-tls1mod
+@@ -1267,3 +1269,12 @@ $(objpfx)tst-ldconfig-X.out : tst-ldconfig-X.sh $(objpfx)ldconfig
+ 	$(evaluate-test)
+ 
+ $(objpfx)tst-dlsym-error: $(libdl)
++
++# The application depends on the DSO, and the DSO loads the plugin.
++# The plugin also depends on the DSO. This creates the circular
++# dependency via dlopen that we're testing to make sure works.
++$(objpfx)tst-nodelete-dlclose-dso.so: $(libdl)
++$(objpfx)tst-nodelete-dlclose-plugin.so: $(objpfx)tst-nodelete-dlclose-dso.so
++$(objpfx)tst-nodelete-dlclose: $(objpfx)tst-nodelete-dlclose-dso.so
++$(objpfx)tst-nodelete-dlclose.out: $(objpfx)tst-nodelete-dlclose-dso.so \
++				   $(objpfx)tst-nodelete-dlclose-plugin.so
+diff --git a/elf/dl-close.c b/elf/dl-close.c
+index 687d7de874c5..9f93ab762882 100644
+--- a/elf/dl-close.c
++++ b/elf/dl-close.c
+@@ -805,19 +805,37 @@ _dl_close (void *_map)
+ {
+   struct link_map *map = _map;
+ 
+-  /* First see whether we can remove the object at all.  */
++  /* We must take the lock to examine the contents of map and avoid
++     concurrent dlopens.  */
++  __rtld_lock_lock_recursive (GL(dl_load_lock));
++
++  /* At this point we are guaranteed nobody else is touching the list of
++     loaded maps, but a concurrent dlclose might have freed our map
++     before we took the lock. There is no way to detect this (see below)
++     so we proceed assuming this isn't the case.  First see whether we
++     can remove the object at all.  */
+   if (__glibc_unlikely (map->l_flags_1 & DF_1_NODELETE))
+     {
+-      assert (map->l_init_called);
+       /* Nope.  Do nothing.  */
++      __rtld_lock_unlock_recursive (GL(dl_load_lock));
+       return;
+     }
+ 
++  /* At present this is an unreliable check except in the case where the
++     caller has recursively called dlclose and we are sure the link map
++     has not been freed.  In a non-recursive dlclose the map itself
++     might have been freed and this access is potentially a data race
++     with whatever other use this memory might have now, or worse we
++     might silently corrupt memory if it looks enough like a link map.
++     POSIX has language in dlclose that appears to guarantee that this
++     should be a detectable case and given that dlclose should be threadsafe
++     we need this to be a reliable detection.
++     This is bug 20990. */
+   if (__builtin_expect (map->l_direct_opencount, 1) == 0)
+-    GLRO(dl_signal_error) (0, map->l_name, NULL, N_("shared object not open"));
+-
+-  /* Acquire the lock.  */
+-  __rtld_lock_lock_recursive (GL(dl_load_lock));
++    {
++      __rtld_lock_unlock_recursive (GL(dl_load_lock));
++      _dl_signal_error (0, map->l_name, NULL, N_("shared object not open"));
++    }
+ 
+   _dl_close_worker (map, false);
+ 
+diff --git a/elf/tst-nodelete-dlclose-dso.c b/elf/tst-nodelete-dlclose-dso.c
+new file mode 100644
+index 000000000000..dd930f99cce3
+--- /dev/null
++++ b/elf/tst-nodelete-dlclose-dso.c
+@@ -0,0 +1,90 @@
++/* Bug 11941: Improper assert map->l_init_called in dlclose.
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* This is the primary DSO that is loaded by the appliation.  This DSO
++   then loads a plugin with RTLD_NODELETE.  This plugin depends on this
++   DSO.  This dependency chain means that at application shutdown the
++   plugin will be destructed first.  Thus by the time this DSO is
++   destructed we will be calling dlclose on an object that has already
++   been destructed.  It is allowed to call dlclose in this way and
++   should not assert.  */
++#include <stdio.h>
++#include <stdlib.h>
++#include <dlfcn.h>
++
++/* Plugin to load.  */
++static void *plugin_lib = NULL;
++/* Plugin function.  */
++static void (*plugin_func) (void);
++#define LIB_PLUGIN "tst-nodelete-dlclose-plugin.so"
++
++/* This function is never called but the plugin references it.
++   We do this to avoid any future --as-needed from removing the
++   plugin's DT_NEEDED on this DSO (required for the test).  */
++void
++primary_reference (void)
++{
++  printf ("INFO: Called primary_reference function.\n");
++}
++
++void
++primary (void)
++{
++  char *error;
++
++  plugin_lib = dlopen (LIB_PLUGIN, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE);
++  if (plugin_lib == NULL)
++    {
++      printf ("ERROR: Unable to load plugin library.\n");
++      exit (EXIT_FAILURE);
++    }
++  dlerror ();
++
++  plugin_func = (void (*) (void)) dlsym (plugin_lib, "plugin_func");
++  error = dlerror ();
++  if (error != NULL)
++    {
++      printf ("ERROR: Unable to find symbol with error \"%s\".",
++	      error);
++      exit (EXIT_FAILURE);
++    }
++
++  return;
++}
++
++__attribute__ ((destructor))
++static void
++primary_dtor (void)
++{
++  int ret;
++
++  printf ("INFO: Calling primary destructor.\n");
++
++  /* The destructor runs in the test driver also, which
++     hasn't called primary, in that case do nothing.  */
++  if (plugin_lib == NULL)
++    return;
++
++  ret = dlclose (plugin_lib);
++  if (ret != 0)
++    {
++      printf ("ERROR: Calling dlclose failed with \"%s\"\n",
++	      dlerror ());
++      exit (EXIT_FAILURE);
++    }
++}
+diff --git a/elf/tst-nodelete-dlclose-plugin.c b/elf/tst-nodelete-dlclose-plugin.c
+new file mode 100644
+index 000000000000..8b295c1718fc
+--- /dev/null
++++ b/elf/tst-nodelete-dlclose-plugin.c
+@@ -0,0 +1,40 @@
++/* Bug 11941: Improper assert map->l_init_called in dlclose.
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* This DSO simulates a plugin with a dependency on the
++   primary DSO loaded by the appliation.  */
++#include <stdio.h>
++
++extern void primary_reference (void);
++
++void
++plugin_func (void)
++{
++  printf ("INFO: Calling plugin function.\n");
++  /* Need a reference to the DSO to ensure that a potential --as-needed
++     doesn't remove the DT_NEEDED entry which we rely upon to ensure
++     destruction ordering.  */
++  primary_reference ();
++}
++
++__attribute__ ((destructor))
++static void
++plugin_dtor (void)
++{
++  printf ("INFO: Calling plugin destructor.\n");
++}
+diff --git a/elf/tst-nodelete-dlclose.c b/elf/tst-nodelete-dlclose.c
+new file mode 100644
+index 000000000000..b3d07e184980
+--- /dev/null
++++ b/elf/tst-nodelete-dlclose.c
+@@ -0,0 +1,36 @@
++/* Bug 11941: Improper assert map->l_init_called in dlclose.
++   Copyright (C) 2016 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/* This simulates an application using the primary DSO which loads the
++   plugin DSO.  */
++#include <stdio.h>
++#include <stdlib.h>
++
++extern void primary (void);
++
++static int
++do_test (void)
++{
++  printf ("INFO: Starting application.\n");
++  primary ();
++  printf ("INFO: Exiting application.\n");
++  return 0;
++}
++
++#define TEST_FUNCTION do_test ()
++#include "../test-skeleton.c"
+-- 
+2.11.0
+

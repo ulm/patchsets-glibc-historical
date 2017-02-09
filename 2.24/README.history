@@ -1,3 +1,10 @@
+4		09 Feb 2017
+	+ 00_all_0039-Bug-11941-ld.so-Improper-assert-map-l_init_called-in.patch
+	+ 00_all_0040-localedata-bs_BA-fix-yesexpr-noexpr-BZ-20974.patch
+	+ 00_all_0041-powerpc-Fix-write-after-destroy-in-lock-elision-BZ-2.patch
+	+ 00_all_0042-Drop-GLIBC_TUNABLES-in-setxid-processes.patch
+	+ 00_all_0043-CVE-2015-5180-resolv-Fix-crash-with-internal-QTYPE-B.patch
+
 3		08 Dec 2016
 	+ 00_all_0030-Fix-writes-past-the-allocated-array-bounds-in-execvp.patch
 	+ 00_all_0031-MIPS-Add-.insn-to-ensure-a-text-label-is-defined-as-.patch
