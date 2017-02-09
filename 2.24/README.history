@@ -1,3 +1,7 @@
+5		09 Feb 2017
+	+ 00_all_0044-X86_64-Don-t-use-PLT-nor-GOT-in-static-archives-BZ-2.patch
+	+ 00_all_0045-Revert-sys-types.h-drop-sys-sysmacros.h-include.patch
+
 4		09 Feb 2017
 	+ 00_all_0039-Bug-11941-ld.so-Improper-assert-map-l_init_called-in.patch
 	+ 00_all_0040-localedata-bs_BA-fix-yesexpr-noexpr-BZ-20974.patch

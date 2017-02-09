@@ -1,0 +1,43 @@
+From 27a54a0980cb30f7d3fd930d540c8cd10e2cccd0 Mon Sep 17 00:00:00 2001
+From: "H.J. Lu" <hjl.tools@gmail.com>
+Date: Mon, 28 Nov 2016 09:44:49 -0800
+Subject: [PATCH] X86_64: Don't use PLT nor GOT in static archives [BZ #20750]
+
+There is no need to use PLT nor GOT in static archives to branch to a
+function, regardless whether static archives is compiled with PIC or
+not.  When static archives are used to create dynamic executable,
+PLT/GOT may be used.  The resulting executable still works correctly.
+
+	[BZ #20750]
+	* sysdeps/x86_64/sysdep.h (JUMPTARGET): Check SHARED instead
+	of PIC.
+
+(cherry picked from commit c9070e6305c08365c5f8b604bdca39c699d70cfa)
+(cherry picked from commit d012ea850680a2a94959f1c5136502a0f712b30a)
+---
+ sysdeps/x86_64/sysdep.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/sysdeps/x86_64/sysdep.h b/sysdeps/x86_64/sysdep.h
+index 75ac747be8a8..4b67fa80c19a 100644
+--- a/sysdeps/x86_64/sysdep.h
++++ b/sysdeps/x86_64/sysdep.h
+@@ -89,13 +89,14 @@ lose:									      \
+   END (name)
+ 
+ #undef JUMPTARGET
+-#ifdef PIC
++#ifdef SHARED
+ # ifdef BIND_NOW
+ #  define JUMPTARGET(name)	*name##@GOTPCREL(%rip)
+ # else
+ #  define JUMPTARGET(name)	name##@PLT
+ # endif
+ #else
++/* For static archives, branch to target directly.  */
+ # define JUMPTARGET(name)	name
+ #endif
+ 
+-- 
+2.11.0
+

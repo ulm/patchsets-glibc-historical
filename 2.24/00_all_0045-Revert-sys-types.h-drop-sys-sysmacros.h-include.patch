@@ -1,0 +1,30 @@
+From 764c430aa0c6af6181d5834bcb20d8ea99562992 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Thu, 9 Feb 2017 11:19:48 -0500
+Subject: [PATCH] Revert "sys/types.h: drop sys/sysmacros.h include"
+
+This reverts commit 92bf87d8c4837feaec62958be59c3119b8b4f5ae.
+
+We keep this in the testing version, but once we want to start
+stabilizing, we drop it.
+---
+ posix/sys/types.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/posix/sys/types.h b/posix/sys/types.h
+index b3007db0247c..a7285671bf31 100644
+--- a/posix/sys/types.h
++++ b/posix/sys/types.h
+@@ -217,6 +217,9 @@ typedef int register_t __attribute__ ((__mode__ (__word__)));
+ 
+ /* It also defines `fd_set' and the FD_* macros for `select'.  */
+ # include <sys/select.h>
++
++/* BSD defines these symbols, so we follow.  */
++# include <sys/sysmacros.h>
+ #endif /* Use misc.  */
+ 
+ 
+-- 
+2.11.0
+
