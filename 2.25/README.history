@@ -1,3 +1,11 @@
+2		15 Mar 2017
+	+ 00_all_0006-Fix-getting-tunable-values-on-big-endian-BZ-21109.patch
+	+ 00_all_0007-sunrpc-Avoid-use-after-free-read-access-in-clntudp_c.patch
+	+ 00_all_0008-sunrpc-Improvements-for-UDP-client-timeout-handling-.patch
+	+ 00_all_0009-Document-and-fix-enable-bind-now-BZ-21015.patch
+	+ 00_all_0010-hppa-Fix-setting-of-__libc_stack_end.patch
+	+ 00_all_0011-x86_64-fix-static-build-of-__mempcpy_chk-for-compile.patch
+
 1		09 Feb 2017
 	+ 00_all_0001-disable-ldconfig-during-install.patch
 	+ 00_all_0002-reload-etc-resolv.conf-when-it-has-changed.patch

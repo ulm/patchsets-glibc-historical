@@ -1,0 +1,84 @@
+From 0232af1ad6cbd8378025e804f535ce9449ad49de Mon Sep 17 00:00:00 2001
+From: Siddhesh Poyarekar <siddhesh@sourceware.org>
+Date: Thu, 9 Feb 2017 17:28:54 +0100
+Subject: [PATCH] Fix getting tunable values on big-endian (BZ #21109)
+
+The code to set value passed a tunable_val_t, which when cast to
+int32_t on big-endian gives the wrong value.  Instead, use
+tunable_val_t.numval instead, which can then be safely cast into
+int32_t.
+
+(cherry picked from commit 8cbc826c37c0221ada65a7a622fe079b4e89a4b0)
+(cherry picked from commit 58520986c38e34db60e07260c64c563e3efcf353)
+---
+ elf/dl-tunable-types.h | 4 ++--
+ elf/dl-tunables.c      | 2 ++
+ malloc/arena.c         | 8 ++++----
+ 3 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/elf/dl-tunable-types.h b/elf/dl-tunable-types.h
+index a986f0b5930d..37a4e8021f8f 100644
+--- a/elf/dl-tunable-types.h
++++ b/elf/dl-tunable-types.h
+@@ -21,8 +21,6 @@
+ # define _TUNABLE_TYPES_H_
+ #include <stddef.h>
+ 
+-typedef void (*tunable_callback_t) (void *);
+-
+ typedef enum
+ {
+   TUNABLE_TYPE_INT_32,
+@@ -43,6 +41,8 @@ typedef union
+   const char *strval;
+ } tunable_val_t;
+ 
++typedef void (*tunable_callback_t) (tunable_val_t *);
++
+ /* Security level for tunables.  This decides what to do with individual
+    tunables for AT_SECURE binaries.  */
+ typedef enum
+diff --git a/elf/dl-tunables.c b/elf/dl-tunables.c
+index a8d53d6a311d..e42aa6700331 100644
+--- a/elf/dl-tunables.c
++++ b/elf/dl-tunables.c
+@@ -455,6 +455,8 @@ __tunable_set_val (tunable_id_t id, void *valp, tunable_callback_t callback)
+   if (cur->strval == NULL)
+     return;
+ 
++  /* Caller does not need the value, just call the callback with our tunable
++     value.  */
+   if (valp == NULL)
+     goto cb;
+ 
+diff --git a/malloc/arena.c b/malloc/arena.c
+index b91d7d6b16cd..d49e4a21c840 100644
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -212,9 +212,9 @@ __malloc_fork_unlock_child (void)
+ #if HAVE_TUNABLES
+ static inline int do_set_mallopt_check (int32_t value);
+ void
+-DL_TUNABLE_CALLBACK (set_mallopt_check) (void *valp)
++DL_TUNABLE_CALLBACK (set_mallopt_check) (tunable_val_t *valp)
+ {
+-  int32_t value = *(int32_t *) valp;
++  int32_t value = (int32_t) valp->numval;
+   do_set_mallopt_check (value);
+   if (check_action != 0)
+     __malloc_check_init ();
+@@ -223,9 +223,9 @@ DL_TUNABLE_CALLBACK (set_mallopt_check) (void *valp)
+ # define DL_TUNABLE_CALLBACK_FNDECL(__name, __type) \
+ static inline int do_ ## __name (__type value);				      \
+ void									      \
+-DL_TUNABLE_CALLBACK (__name) (void *valp)				      \
++DL_TUNABLE_CALLBACK (__name) (tunable_val_t *valp)			      \
+ {									      \
+-  __type value = *(__type *) valp;					      \
++  __type value = (__type) (valp)->numval;				      \
+   do_ ## __name (value);						      \
+ }
+ 
+-- 
+2.12.0
+
