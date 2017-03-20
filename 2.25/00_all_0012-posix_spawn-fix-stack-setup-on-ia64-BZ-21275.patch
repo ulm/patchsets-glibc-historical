@@ -1,0 +1,48 @@
+From 1009e1fd879bbe5d1a84a1c6b752306a551058fb Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Mon, 20 Mar 2017 04:47:56 -0400
+Subject: [PATCH] posix_spawn: fix stack setup on ia64 [BZ #21275]
+
+The ia64-specific clone2 call expects the base of the stack mapping and
+the stack size as sep arguments, not an initial stack value as on other
+stack-grows-down architectures.  Reuse the stack-grows-up macro so we
+pass in the right stack base.
+
+Reported-by: Matt Turner <mattst88@gentoo.org>
+(cherry picked from commit ddc3fb333469c2997798742dc0509dc1e3201d91)
+(cherry picked from commit 27ab0d9518746dfb59ed2ba59daefc981dc10e38)
+---
+ sysdeps/unix/sysv/linux/spawni.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/sysdeps/unix/sysv/linux/spawni.c b/sysdeps/unix/sysv/linux/spawni.c
+index 2daf0c5ef040..c96aac889d4b 100644
+--- a/sysdeps/unix/sysv/linux/spawni.c
++++ b/sysdeps/unix/sysv/linux/spawni.c
+@@ -61,17 +61,18 @@
+ #define SPAWN_ERROR	127
+ 
+ #ifdef __ia64__
+-# define CLONE(__fn, __stack, __stacksize, __flags, __args) \
+-  __clone2 (__fn, __stack, __stacksize, __flags, __args, 0, 0, 0)
++# define CLONE(__fn, __stackbase, __stacksize, __flags, __args) \
++  __clone2 (__fn, __stackbase, __stacksize, __flags, __args, 0, 0, 0)
+ #else
+ # define CLONE(__fn, __stack, __stacksize, __flags, __args) \
+   __clone (__fn, __stack, __flags, __args)
+ #endif
+ 
+-#if _STACK_GROWS_DOWN
+-# define STACK(__stack, __stack_size) (__stack + __stack_size)
+-#elif _STACK_GROWS_UP
++/* Since ia64 wants the stackbase w/clone2, re-use the grows-up macro.  */
++#if _STACK_GROWS_UP || defined (__ia64__)
+ # define STACK(__stack, __stack_size) (__stack)
++#elif _STACK_GROWS_DOWN
++# define STACK(__stack, __stack_size) (__stack + __stack_size)
+ #endif
+ 
+ 
+-- 
+2.12.0
+

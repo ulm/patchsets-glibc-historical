@@ -1,3 +1,6 @@
+6		20 Mar 2017
+	+ 00_all_0046-posix_spawn-fix-stack-setup-on-ia64-BZ-21275.patch
+
 5		09 Feb 2017
 	+ 00_all_0044-X86_64-Don-t-use-PLT-nor-GOT-in-static-archives-BZ-2.patch
 	+ 00_all_0045-Revert-sys-types.h-drop-sys-sysmacros.h-include.patch
