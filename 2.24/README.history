@@ -1,3 +1,7 @@
+7		15 June 2017
+	+ 00_all_0047-posix_spawn-use-a-larger-min-stack-for-fstack-check-.patch
+	+ 00_all_0048-sh-Fix-building-with-gcc5-6.patch
+
 6		20 Mar 2017
 	+ 00_all_0046-posix_spawn-fix-stack-setup-on-ia64-BZ-21275.patch
 
