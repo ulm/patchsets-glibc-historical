@@ -1,3 +1,10 @@
+8		15 June 2017
+	+ 00_all_0049-rtld-Completely-ignore-LD_LIBRARY_PATH-for-AT_SECURE.patch
+	+ 00_all_0050-rtld-Reject-overly-long-LD_AUDIT-path-elements.patch
+	+ 00_all_0051-rtld-Reject-overly-long-LD_PRELOAD-path-elements.patch
+	+ 00_all_0052-Add-IS_IN-guard-to-multiarch-IFUNC-implementations.patch
+	+ 00_all_0053-Ignore-and-remove-LD_HWCAP_MASK-for-AT_SECURE-progra.patch
+
 7		15 June 2017
 	+ 00_all_0047-posix_spawn-use-a-larger-min-stack-for-fstack-check-.patch
 	+ 00_all_0048-sh-Fix-building-with-gcc5-6.patch
