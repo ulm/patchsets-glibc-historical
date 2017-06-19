@@ -1,3 +1,10 @@
+8       08 Jun 2017
+    + 00_all_0095-rtld-Completely-ignore-LD_LIBRARY_PATH-for-AT_SECURE.patch
+    + 00_all_0096-rtld-Reject-overly-long-LD_AUDIT-path-elements.patch
+    + 00_all_0097-rtld-Reject-overly-long-LD_PRELOAD-path-elements.patch
+    + 00_all_0098-Ignore-and-remove-LD_HWCAP_MASK-for-AT_SECURE-progra.patch
+    + 00_all_0099-CVE-2015-5180-resolv-Fix-crash-with-internal-QTYPE-B.patch
+
 7		08 Dec 2016
 	+ 00_all_0090-MIPS-Add-.insn-to-ensure-a-text-label-is-defined-as-.patch
 	+ 00_all_0091-alpha-fix-ceil-on-sNaN-input.patch
