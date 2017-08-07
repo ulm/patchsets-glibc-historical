@@ -31,9 +31,15 @@ rm -rf tmp
 rm -f ${PN}-${PV}-*.tar.bz2
 
 mkdir -p tmp/patches
-cp -r ${PV}/*.patch ../README* tmp/patches/ || exit 1
+# copy README.Gentoo.patches
+cp ../README* tmp/patches/ || exit 1
+if [[ ${PV} = 9999 ]]; then
+	echo "Warning: ${PV} patchset includes only extra/"
+else
+	cp ${PV}/*.patch tmp/patches/ || exit 1
+fi
 cp -r extra tmp/ || exit 1
-cp ${PV}/README* tmp/patches/ 2>/dev/null
+cp ${PV}/README* tmp/patches/ 2>/dev/null || exit
 
 if [[ -d ${PV}/man ]] ; then
 	mkdir tmp/man
