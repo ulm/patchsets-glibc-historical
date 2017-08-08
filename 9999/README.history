@@ -1,2 +1,4 @@
+2		08 Aug 2017
+	+ 00_all_0001-disable-ldconfig-during-install.patch
 1		07 Aug 2017
 	+ README.history: intentionally empty
