@@ -1,3 +1,6 @@
+9		[pending]
+	U extra/etc/nsswitch.conf
+
 8		15 June 2017
 	+ 00_all_0049-rtld-Completely-ignore-LD_LIBRARY_PATH-for-AT_SECURE.patch
 	+ 00_all_0050-rtld-Reject-overly-long-LD_AUDIT-path-elements.patch
