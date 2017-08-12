@@ -1,5 +1,6 @@
 3		[pending]
 	U extra/etc/nsswitch.conf
+	U extra/locale/locale-gen
 
 2		08 Aug 2017
 	+ 00_all_0001-disable-ldconfig-during-install.patch

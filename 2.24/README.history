@@ -1,5 +1,6 @@
 9		[pending]
 	U extra/etc/nsswitch.conf
+	U extra/locale/locale-gen
 
 8		15 June 2017
 	+ 00_all_0049-rtld-Completely-ignore-LD_LIBRARY_PATH-for-AT_SECURE.patch
