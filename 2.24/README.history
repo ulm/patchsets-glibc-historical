@@ -1,4 +1,7 @@
-9		[pending]
+10		[pending]
+	+ 00_all_0054-Avoid-.symver-on-common-symbols-BZ-21666.patch
+
+9		12 Aug 2017
 	U extra/etc/nsswitch.conf
 	U extra/locale/locale-gen
 
