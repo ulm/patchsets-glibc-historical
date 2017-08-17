@@ -1,3 +1,6 @@
+8		17 Aug 2017
+	+ 00_all_0021-Fix-i686-memchr-overflow-calculation-BZ-21182.patch
+
 7		13 Aug 2017
 	+ 00_all_0020-Avoid-.symver-on-common-symbols-BZ-21666.patch
 
